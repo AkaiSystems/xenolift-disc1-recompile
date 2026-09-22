@@ -18,7 +18,7 @@ Continue the Xenogears Disc 1 Xenolift recompile at maximum safe cadence. The re
 ## Current verified source state
 - Last completed directive: `c1252`
 - Last landed FIX: `R1470B`
-- Current `runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
+- Current `source/runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
 - c1252 restored the receipted one-second defib6 guard after c1251's immediate trigger regressed the trajectory.
 - c1252 boot run: `RUN rc=0`, `SECONDS=181`, game process exit status `137` at the fuse.
 - c1252 reached field seek `120634` and rendering reached `747520` VRAM writes.

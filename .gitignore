@@ -6,8 +6,10 @@
 .bridge-v1-api-state.json
 .bridge*.pid
 .bridge*_*
+source/.bridge-v1-api-state.json
+source/.bridge*.pid
 
-# Disc / proprietary media (keep on Mac only)
+# Disc / proprietary media (Mac only)
 *.iso
 *.chd
 *.cue
@@ -17,13 +19,14 @@ SLUS_*
 xenogears_boot*
 duckstation/
 disc_stage/
-memcard.mcd
 *.mcd
 *.wav
 
 # Build / caches
+source/target/
 target/
 .cache/
+source/.cache/
 __pycache__/
 *.o
 *.dSYM/
@@ -39,11 +42,13 @@ xenolift.zip
 .DS_Store
 .xenolift-local-archive/
 
-# Backups and cycle dumps (live only on archive branch)
+# Backups and cycle dumps (archive branch only)
 runtime/*.bak*
 runtime/*.pre_*
-runtime/*.orig
-runtime/.z15.c
+source/runtime/*.bak*
+source/runtime/*.pre_*
+source/runtime/*.orig
+source/runtime/.z15.c
 *.pre_*
 firstfault.*/
 patch_c*/

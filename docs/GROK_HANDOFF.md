@@ -23,7 +23,7 @@ The working tree is reported at:
 
 The following essential items are not present in GitHub and must be pushed from that Mac before another agent can build, inspect, test, or continue the recompile:
 
-- `runtime/runtime.c`
+- `source/runtime/runtime.c`
 - the rest of the runtime sources and headers
 - build system files and compiler scripts
 - `run.sh` and boot/launch scripts
@@ -40,7 +40,7 @@ The latest verified source state comes from completed cycle `c1252`:
 
 - Last completed directive: `c1252`
 - Last landed fix: `R1470B`
-- Expected SHA-256 of `runtime/runtime.c`: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
+- Expected SHA-256 of `source/runtime/runtime.c`: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
 - c1252 restored the receipted one-second defib6 guard after c1251's immediate trigger regressed the trajectory.
 - c1252 reached field seek `120634`.
 - Rendering reached `747520` VRAM writes.
@@ -109,13 +109,13 @@ A new Superagent cannot reuse the old bridge unchanged because the bridge is tie
 
 ### Phase A: finish the source upload
 
-From `~/Downloads/xenolift`, stage and commit the local source, then push it to `xenolift-source`. Verify through the GitHub API that the branch exists and contains `runtime/runtime.c`, `run.sh`, and the build files.
+From `~/Downloads/xenolift`, stage and commit the local source, then push it to `xenolift-source`. Verify through the GitHub API that the branch exists and contains `source/runtime/runtime.c`, `run.sh`, and the build files.
 
 ### Phase B: validate integrity
 
 After upload:
 
-1. Verify `runtime/runtime.c` hashes to `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`.
+1. Verify `source/runtime/runtime.c` hashes to `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`.
 2. Count repository files and inspect any GitHub tree truncation.
 3. Verify no API tokens, credentials, `.env` files, or disc images were committed.
 4. Verify no required source was silently omitted by `.gitignore`.
@@ -164,7 +164,7 @@ Only after the repository and bridge are verified:
 The handoff is not complete until all of these are true:
 
 - A source-containing branch exists remotely.
-- `runtime/runtime.c` is present and matches the c1252 SHA-256.
+- `source/runtime/runtime.c` is present and matches the c1252 SHA-256.
 - Build and run scripts are present.
 - Secrets and disc images are absent.
 - Duplicate boot files are inventoried and safely archived rather than blindly deleted.
