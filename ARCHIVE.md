@@ -1,12 +1,8 @@
 # Archive note
 
-The messy full working-tree import is preserved forever on branch `xenolift-source`
+Branch `xenolift-source` is the frozen messy full working-tree dump
 (tag: `archive/xenolift-source-messy-import-2026-09-22`).
 
-Do **not** rewrite or delete that branch.
+Do **not** rewrite or delete that branch. It is **not** the folder `source/`.
 
-Active work uses branch `xenolift-clean` with this layout:
-
-- `source/` — live code
-- `ext/` — external reference material
-- `docs/` — handoffs and history
+Active work: branch `xenolift-clean` (`source/` + `ext/` + `docs/`).

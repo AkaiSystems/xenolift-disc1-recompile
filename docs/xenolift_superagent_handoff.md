@@ -1,7 +1,17 @@
 # Xenolift Recompile Superagent Handoff
 
+Updated: 2026-09-22 (DIRECTOR docs sync — FE1C widen already in pinned SHA)
+
 ## Objective
 Continue the Xenogears Disc 1 Xenolift recompile at maximum safe cadence. The recompile is the only goal. Do not spend cycles on bridge mechanics unless transport is blocking a recompile cycle.
+
+## Repo map (GitHub)
+- Active branch: **`xenolift-clean`** — allowlisted live tree (`source/`, `ext/`, `docs/`).
+- Archive branch: **`xenolift-source`** — frozen messy dump. Never rewrite or delete. Tag: `archive/xenolift-source-messy-import-2026-09-22`.
+- `main` — early docs-only commits; do not treat as the live tree.
+- Mac disc `.bin` and secrets stay on the Mac only.
+
+Owner map: edit/run in `source/`; read-only refs in `ext/`; history/handoffs in `docs/`. Folder `source/` ≠ branch `xenolift-source`.
 
 ## Owner requirements
 - One cycle at a time: directive, immediate pickup, final digest, analysis, next directive.
@@ -17,15 +27,27 @@ Continue the Xenogears Disc 1 Xenolift recompile at maximum safe cadence. The re
 
 ## Current verified source state
 - Last completed directive: `c1252`
-- Last landed FIX: `R1470B`
-- Current `source/runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
-- c1252 restored the receipted one-second defib6 guard after c1251's immediate trigger regressed the trajectory.
+- Last labeled FIX in that cycle: `R1470B`
+- Pinned `source/runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
 - c1252 boot run: `RUN rc=0`, `SECONDS=181`, game process exit status `137` at the fuse.
 - c1252 reached field seek `120634` and rendering reached `747520` VRAM writes.
 - Defib6 completed at seeks `108861` and `108995`.
 
-## Current receipted blocker
-At seek `120634`:
+### R1467A FE1C gate — already in this SHA
+DIRECTOR census (2026-09-22) on `xenolift-clean`: inside block
+`R1467A (c1172): THE PAUSED-STAMPED ARMED-READ START.` … before
+`R1464C (c1163): THE PAUSE-SCHEDULED ARMSTART` (~L3279–L3313), the live gate is already:
+
+```c
+&& (xenolift_mem_read32(0x8004FE1Cu) == 6u || xenolift_mem_read32(0x8004FE1Cu) == 0u)
+```
+
+Fire log text already includes `FE1C-in-0-6`.
+
+**Do not re-apply** a “widen FE1C to 6||0” FIX. Tokens `c1253` / `c1253b` were rejected for stale bridge (`last_completed=c1251b`) and never ran — but the uploaded tree at this SHA already embeds the widen (pre-upload / undocumented relative to those tokens). A naive “require exactly one `== 6u` then replace” selector is **unsafe** on current text (matches the left arm of the OR and can double-OR).
+
+## Current receipted blocker (runtime, not missing OR)
+At seek `120634` (c1252 terminal):
 - `FE04 == seek == 120634`
 - `FDF8 == 2048`
 - `cmd == 09`
@@ -34,43 +56,36 @@ At seek `120634`:
 - `cd_pending == 0`
 - `cd_scheduled == 0`
 - `arm1 == 0`
-- `FE1C == 0`
+- `FE1C == 0` (allowed by current R1467A gate)
 - staged FIFO posture: `data=2060/0`
 
-R1298B emitted armstart declines at 83s and 113s. The source census identified R1467A as the paused-stamped armed-read vehicle. Its documented posture matches the terminal except its gate requires `FE1C == 6`; the terminal holds `FE1C == 0`.
+R1298B emitted armstart declines at ~83s and ~113s.
 
-## Next intended FIX
-A new cycle should widen the FE1C term only inside the block uniquely bounded by:
-- start marker: `R1467A (c1172): THE PAUSED-STAMPED ARMED-READ START.`
-- following marker: `R1464C (c1163): THE PAUSE-SCHEDULED ARMSTART`
+If Mac still sticks here on **this** SHA, investigate **binary ≠ pinned SHA**, **2M-confirm thrash**, or **another vehicle** — not “FE1C still equals 6 only.”
 
-Inside that block, programmatically require exactly one occurrence of:
-`xenolift_mem_read32(0x8004FE1Cu) == 6u`
+## Next action (verify, not phantom FIX)
+Mac 120s verify against the pinned SHA (Hiroshi matrix; Akitoshi success bar):
 
-Replace it with a gate admitting `6u || 0u`, using a cycle-unique marker. Derive all count expectations from the selected block and replacement strings, preserve fail-closed rollback, recompile, and run 120 seconds.
+1. Bridge: stop all `bridge-v1-api.py`; start one foreground bridge; require `HANDSHAKE BASELINE: last_completed=c1252`.
+2. Build from `source/` (or Mac tree matching this SHA). Log source SHA + binary identity.
+3. Run 120s. Grade:
+   - **PASS:** `[pausestart]` R1467A near seek 120634 + seek advances + field continues; no new HALT; armstart/defib6/VRAM not worse than c1252 when probed. FE1C is observational only.
+   - **INCONCLUSIVE:** budget/receipt/SHA gaps.
+   - **REGRESS:** new HALT; lost pausestart/field; seek worse; thrash-dominant stuck.
+4. Stuck with no pausestart → `binary≠SHA` or `confirm_thrash`. **`reapply_OR_forbidden=YES`.**
 
-## Transport blocker at handoff
-The foreground bridge that rejected `c1253` and `c1253b` remained stale at `last_completed=c1251b`, even though the `c1252` digest had landed. Both directives were rejected before execution. No R1471 source mutation occurred.
+Do **not** claim continuous-Disc1 / endgame from one verify cycle.
 
-Before sending another directive:
-1. Stop every `bridge-v1-api.py` process.
-2. Start exactly one foreground bridge.
-3. Require `HANDSHAKE BASELINE: last_completed=c1252`.
-4. Only then send a fresh token parented to `c1252`.
-
-Suggested local recovery command after pressing Ctrl-C:
+## Transport recovery
 ```bash
 pkill -TERM -f '[b]ridge-v1-api.py' 2>/dev/null || true
 sleep 1
-cd ~/Downloads/xenolift
+cd ~/Downloads/xenolift   # or cloned source/ sibling with bridge script
 exec /usr/bin/python3 bridge-v1-api.py
+# Prefer: cd <repo>/source && exec /usr/bin/python3 bridge-v1-api.py
 ```
 
-## Important transfer limitation
-The existing bridge is hardcoded to the current Superagent ID and conversation ID. A cloned Superagent needs a regenerated foreground bridge configured with the clone's agent ID and its new conversation ID. Do not copy or expose the old Base44 access token in this handoff. Capture a new token securely through the hidden Terminal prompt.
+Rejected tokens (no source change, no launch): `c1253`, `c1253b` — `parent_token_mismatch`, stale `last_completed=c1251b`.
 
-## Last rejected tokens
-- `c1253`: rejected, `parent_token_mismatch`, stale bridge reported `last_completed=c1251b`.
-- `c1253b`: rejected, `parent_token_mismatch`, stale bridge reported `last_completed=c1251b`.
-
-Neither token changed source or launched Xenolift.
+## Transfer limitation
+Bridge is tied to Superagent / conversation IDs. Clones need a regenerated bridge and a fresh token via hidden Terminal prompt. Never commit tokens.
