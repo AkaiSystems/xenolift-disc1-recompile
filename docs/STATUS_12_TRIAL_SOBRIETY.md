@@ -13,3 +13,6 @@ FE1C widen was not the missing key for these runs. R1467A Pause-armstart posture
 
 ## 5-day finish
 Still continuous Disc1 **field** past the real CD/field door — but the door in play may be the **1089xx** family, not a 120634 park that these trials never reached.
+
+## Next FIX landed: R1472 (instrumentation)
+Log-only `[pausestart] R1472 decline` camera between R1467A and R1464C. No armstart. runtime.c SHA after patch: `7f31353a545c739cca3172a5e3c5c059d7c4f5b099eca5176ff77f07c0e4e4d7`. Mac: pull `xenolift-clean`, rebuild, run; expect decline lines at 1089xx naming cmd/FE1C fails.

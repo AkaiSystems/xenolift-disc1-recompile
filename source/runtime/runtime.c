@@ -3311,6 +3311,32 @@ static uint32_t cd_read_impl(uint32_t p)
     }
 }
 
+{ /* R1472 (DIRECTOR/Nasir): R1467A FILE-BAND APPROACH DECLINE CAMERA — ZERO BEHAVIORAL. 12 Mac trials stuck ~108987-109042 with [pausestart] R1467A = 0 fires; FE1C 6||0 already in tree. Hypothesis: wrong door class (cmd/FE1C ReadN family) so R1467A outer if never true. This camera: seek in [108900,109120], FE04==seek, FDF8 in [2048,125304], all-dead, and NOT (cmd==09 && FE1C in {0,6}); every 65536 evals, cap 8, print failing R1467A terms. No armstart. PASS next = decline lines name cmd/FE1C; then ONE behavioral FIX aims R1464A/B path. If declines show cmd==09 FE1C in {0,6} with thrash → pivot 2M→time (separate cycle). reapply_OR_forbidden=YES. */
+    static uint32_t r1472_evals = 0, r1472_prints = 0;
+    uint32_t r1472_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+    uint32_t r1472_fdf8 = xenolift_mem_read32(0x8004FDF8u);
+    uint32_t r1472_fe04 = xenolift_mem_read32(0x8004FE04u);
+    int r1472_r1467a_ok = (cd_last_cmd == 0x09u && (r1472_fe1c == 6u || r1472_fe1c == 0u));
+    if (r1472_prints < 8u
+        && cd_seek_lba >= 108900u && cd_seek_lba <= 109120u
+        && r1472_fe04 == (uint32_t)cd_seek_lba
+        && r1472_fdf8 >= 2048u && r1472_fdf8 <= 125304u
+        && cd_read_active == 0 && cd_pending == 0
+        && cd_arm_int1_pending == 0 && cd_scheduled == 0
+        && !r1472_r1467a_ok) {
+        r1472_evals++;
+        if ((r1472_evals & 65535u) == 0u) {
+            r1472_prints++;
+            r861_out("[pausestart] R1472 decline %u/8 @t=%lds seek=%u FE04=%u FDF8=%u cmd=%02X FE1C=%u act=%d pend=%u arm1=%d sched=%d (R1467A needs cmd==09 && FE1C in {0,6}; naming fail terms — no arm)\n",
+                     r1472_prints, (long)(xl_wall() - g_boot_wall_t0),
+                     (unsigned)cd_seek_lba, (unsigned)r1472_fe04, (unsigned)r1472_fdf8,
+                     (unsigned)cd_last_cmd, (unsigned)r1472_fe1c,
+                     (int)cd_read_active, (unsigned)cd_pending,
+                     (int)cd_arm_int1_pending, (int)(cd_scheduled ? 1 : 0));
+        }
+    }
+}
+
 { /* R1464C (c1163): THE PAUSE-SCHEDULED ARMSTART - THE FILE-BAND ARMED+SCHEDULED+NEVER-STARTED PAUSE POSTURE. The c1162 receipts: the R1459V/R1451 both stood down (their classes never formed - the trajectory forked past the TOC spin entirely) and the NEW terminal = spinpost #2 verbatim: seek=108933 FE04==seek FDF8=2048 ARMED sched=1 act=0 pend=0 last_cmd=09 (Pause) FE1C=6 resp_n=3 pos=0 (3 stale acks) FE08=00018801 (the stream-marker ring offset) - the game spinning at 80042AA8 on the response register; EVERY armstart twin refuses on its posture terms (the R1464A/R1464B gate sched==0, cmd in {02,06,0D}, FE1C==1), the R1466B heal refuses on FDF8!=0 (the read IS armed), the v8 stream-serve refuses on act==0. THE COMPOSITE IS THE PROVEN R1298 ARMSTART (act=1 + same-poll cd_data_load + pend=1 + force INT1, proven at 108996, c1035); THIS SIBLING admits the pause-scheduled posture: seek in [100000,300000], FE04==seek (provenance holds), FDF8 in [2048,125304], act==0, pend==0, arm1==0, sched==1 (the scheduled-never-started marker), cmd==09 (the receipted Pause byte, the R818G widen class), FE1C==6 (the receipted pause phase), 2M-poll tuple confirm (flutter-proof), budget 8. Once act=1 breaks the barrier the v8 stream-serve carries the drain (its gates then admit: act!=0, FE04==seek, FDF8>=64). REVERT = fire with zero consumption. */
     static uint32_t r1464c_polls = 0, r1464c_fires = 0;
     static uint32_t r1464c_tseek = 1u, r1464c_tcmd = 1u, r1464c_trn = 1u, r1464c_tf8 = 1u, r1464c_tsched = 1u;
