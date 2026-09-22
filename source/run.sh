@@ -12,6 +12,39 @@ if [ ! -f "$BIN" ]; then echo "[disc] WARNING: disc image NOT FOUND at resolved 
 if [ -f "$BIN" ]; then echo "[disc] BIN=$BIN (found)"; else echo "[disc] BIN=$BIN (NOT FOUND - export XG_DISC_BIN to point at the disc image, else the runtime runs disc-less and CD data reads fail)"; fi
 export PATH="$HOME/.cargo/bin:$PATH"
 cd "$(dirname "$0")"
+
+# JOSH-DIAG: FAIL-CLOSED DEPENDENCY CHECK. The xenolift-clean GitHub reorg
+# silently dropped 6 scripts this pipeline calls (r1394_postemit_guard.py
+# most consequentially - its absence meant the R1394 dispatch-guard patch
+# was silently SKIPPED every cycle with no error, since python3's file-not-
+# found on a missing script is non-fatal here and the pipeline just kept
+# going). A fresh clone must stop loudly instead of silently degrading.
+_JOSH_REQUIRED_SCRIPTS="r1394_postemit_guard.py lzss_ref.py spu_adpcm_scan.py vramtopng.py xenoview.py xenoview_ansi.py"
+_josh_missing=""
+for _js in $_JOSH_REQUIRED_SCRIPTS; do
+  [ -f "$_js" ] || _josh_missing="$_josh_missing $_js"
+done
+if [ -n "$_josh_missing" ]; then
+  echo "[depcheck] FATAL: required helper script(s) missing from this checkout:$_josh_missing" >&2
+  echo "[depcheck] These exist on the xenolift-source archive branch / the original ~/Downloads/xenolift tree; run.sh will not proceed with silently-degraded patching." >&2
+  exit 1
+fi
+echo "[depcheck] all $(echo $_JOSH_REQUIRED_SCRIPTS | wc -w | tr -d ' ') required helper scripts present"
+
+# JOSH-DIAG: capture-artifact advisory (non-fatal by design - a fresh clone
+# SHOULD still boot-and-build without these, just at reduced static coverage;
+# this only makes that tradeoff visible instead of silent).
+_JOSH_CAPTURES="overlay_fault.bin stage2_region.bin overlay_region.bin"
+_josh_missing_cap=""
+for _jc in $_JOSH_CAPTURES; do
+  [ -f "$_jc" ] || _josh_missing_cap="$_josh_missing_cap $_jc"
+done
+if [ -n "$_josh_missing_cap" ]; then
+  echo "[depcheck] WARNING: overlay-capture artifact(s) absent:$_josh_missing_cap - these are gitignored runtime-generated binaries, not in any fresh clone. Static coverage will be ~47.9% instead of ~85-90%, and overlay-module patches (R1051/R1052/R1056 etc.) will report ANCHOR MISSING. Copy them from an existing working tree (e.g. ~/Downloads/xenolift) if you have one, or expect a live run to regenerate them over time." >&2
+else
+  echo "[depcheck] all overlay-capture artifacts present"
+fi
+
 # R541 [liftctl]: seed the live patch panel from env (jdBasic posture)
 if [ -n "$LIFTCTL_CMDS" ]; then
   printf '%s\n' $LIFTCTL_CMDS | tr ';' '\n' > liftctl

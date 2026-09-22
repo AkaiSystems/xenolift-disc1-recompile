@@ -83,7 +83,7 @@ static void test_cpu_to_vram_and_clut_rect(void)
 
     /* 3. Draw 8x8 CLUT textured rect at (40, 40) via GP0 0x72 (8x8 textured rect, raw texture) */
     /* CLUT attribute for X=0, Y=256: (256 << 6) | (0 / 16) = 0x4000. Texture row 0 is at V=4 relative to PageY=256 */
-    gpu_gp0_write(0x72000000u);           /* Word 0: 0x72, raw textured rect */
+    gpu_gp0_write(0x75000000u);           /* Word 0: 0x72, raw textured rect */
     gpu_gp0_write((40u << 16) | 40u);     /* Word 1: Y=40, X=40 */
     gpu_gp0_write((0x4000u << 16) | (4u << 8) | 0u);  /* Word 2: CLUT=0x4000, V=4, U=0 */
 
@@ -106,7 +106,7 @@ static void test_quad_stream_and_blending(void)
     gpu_gp0_write(0xE1000000u);
 
     /* 3. Draw semi-transparent flat untextured quad (0x2C) with Red (RGB 255,0,0 -> 0x001F) */
-    gpu_gp0_write(0x2C0000FFu);           /* Word 0: 0x2C (quad, semi-trans), Red */
+    gpu_gp0_write(0x2A0000FFu);           /* Word 0: 0x2C (quad, semi-trans), Red */
     gpu_gp0_write((100u << 16) | 100u);   /* V0: (100, 100) */
     gpu_gp0_write((100u << 16) | 131u);   /* V1: (131, 100) */
     gpu_gp0_write((131u << 16) | 100u);   /* V2: (100, 131) */

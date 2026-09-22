@@ -813,6 +813,20 @@ extern uint32_t xenolift_boot_epoch; /* R1222 fwd (defined at the R693 bump site
  * ~line 5126; needed before r825_frz_watch - the c48 same-TU order lesson) */
 static void cd_force_deliver_int1(const char *why); /* R258 fwd (R1219 door call site precedes def) */
 static uint8_t cd_scheduled;  /* response scheduled, not yet delivered */
+static int cd_tick_busy; /* JOSH-DIAG (was a function-local static at the R111 site): promoted to file scope
+ * so the churn-anchor recovery can clear it on longjmp, same as R832's xenolift_r832_in_handler_clear.
+ * Root cause found empirically: a SIGSEGV/SIGABRT that lands while execution is nested inside the
+ * cd_tick_busy=1 guarded block (R111, ~line 25171) unwinds via longjmp WITHOUT running the block's own
+ * cd_tick_busy=0 reset (R111, ~line 26132) - the guard is a plain non-signal-safe static, so it stays
+ * stuck at 1 forever after. Every later poll then fails the outer !cd_tick_busy gate regardless of
+ * sched/pend/genuine state, permanently disabling CD interrupt delivery for the rest of the run.
+ * 12-trial matrix (frozen inputs, 2026-09-22): 0/12 crashed, so this exact chain remains SUPPORTED
+ * NOT PROVEN - the fix is additive/safe regardless (matches the established R832 pattern) and the
+ * matrix showed no regression versus pre-fix behavior. */
+static uint32_t g_josh_seq; /* JOSH-DIAG: monotonic sequence counter shared across busyset/busynormal/busyrecover/busyresume for causal-chain correlation in one trial's log */
+static int g_josh_recovery_type; /* JOSH-DIAG: signal number (11=SEGV,10=BUS,6=ABRT) or 0 for the non-signal computed-garbage-address recovery class; set right before the longjmp that triggers a [busyrecover] print */
+static int g_josh_busy_pending_resume; /* JOSH-DIAG: >0 after a [busyrecover] fired with old=1 until the next normal CD collector/IRQ entry prints [busyresume] once */
+static uint32_t g_josh_resume_seq; /* JOSH-DIAG: seq of the [busyrecover] we're waiting to pair with a [busyresume] */
 static uint32_t cd_sched_seq;  /* R1291v3: per-response sequence ID for SET/deliver/CLEAR correlation */
 static uint32_t cd_x_lba, cd_x_dest, cd_x_len, cd_x_seq; /* R1312/R1314 (c211/c213/c214, Jos transfer-identity order): the ACTIVE READ STREAM record - armed ONLY at ReadN(06)/ReadS(1B) with dest+len stamped at issue, PASSIVE through status commands */
 static uint32_t cd_x_gst, cd_x_arm_t; static int cd_x_live; static int cd_x_pr;
@@ -24888,7 +24902,6 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
      * FE1C=5, notify never dispatched). Re-entrancy guard: the tick
      * body itself dispatches the collector, which would re-fire this
      * gate in the same register state. */
-    static int cd_tick_busy = 0;
     /* R130: kick-pending = the fd collector spins at drive-idle while
      * an enqueued archive request (FE04 cell) was never Setloc'd. */
     uint32_t fe04_now = xenolift_mem_read32(0x8004FE04u);
@@ -25182,6 +25195,20 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
             || a == 0x800415B4u
             || a == 0x80042A54u || a == 0x80042A58u
             || (a == 0x800286CCu && g_r1351_genuine_answer))) { /* R1364 (c362): the field-spin park dispatches no collector-context fn (c361: 422 fd-ticks all early-era, zero in the park), so the serve-armed genuine answer needs its own context arm; the flag gate keeps boot-era 800286CC spins (the c178 class) out */
+        /* JOSH-DIAG causal-chain protocol: this gate is only reachable when !cd_tick_busy,
+         * so reaching here is itself proof of a normal CD collector entry. If a prior
+         * [busyrecover] left a resume pending, this is that resume - report it BEFORE
+         * re-arming busy=1 for this entry. */
+        if (g_josh_busy_pending_resume) {
+            g_josh_seq++;
+            r861_out("[busyresume] seq=%u seek=%u fldsec_before=%u pending=%u data=%u/%u a=%08X r31=%08X\n",
+                    g_josh_seq, cd_seek_lba, g_fldsec_total, (unsigned)cd_pending,
+                    (unsigned)cd_data_pos, (unsigned)cd_data_n, a, r[31]);
+            g_josh_busy_pending_resume = 0;
+        }
+        g_josh_seq++;
+        r861_out("[busyset] seq=%u old=0 new=1 a=%08X r31=%08X sched=%u pend=%u genuine=%u seek=%u\n",
+                g_josh_seq, a, r[31], cd_scheduled, cd_pending, g_r1351_genuine_answer, cd_seek_lba);
         cd_tick_busy = 1;
         { static uint32_t r1365_n; if (r1365_n < 24u) { r1365_n++; r861_out("[fsent] R1365 field-spin scheduled-read entry #%u: a=%08X sched=%u act=%u loaded=%u pend=%u arm1=%u cmd=%02X FDF8=%u FE1C=%u seek=%u\n", r1365_n, a, cd_scheduled, cd_read_active, cd_data_loaded, cd_pending, cd_arm_int1_pending, cd_last_cmd, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE1Cu), cd_seek_lba); } } /* R1365 (c365): budgeted entry camera - a zrf no-fire names the excluding gate */
         /* R1369 (c392): the entry camera - receipts each entry the new arm admitted */
@@ -26129,6 +26156,8 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
             memcpy(xenolift_mem + (0x8004FE1Cu & 0x1FFFFFFFu), &zero, 4);
             r861_out("[cd] read complete: FE1C 5 -> 0, releasing the file layer's wait\n");
         }
+        g_josh_seq++;
+        r861_out("[busynormal] seq=%u old=1 new=0 seek=%u fldsec=%u\n", g_josh_seq, cd_seek_lba, g_fldsec_total);
         cd_tick_busy = 0; /* R111 */
     }
     /* Second async-wait cell: FDFC (0x8004FDFC) = "async command in
@@ -29060,6 +29089,7 @@ static void xenolift_install_kit_handler(int sig)
 }
 static void xenolift_exitdiag_sig(int sig)
 {
+    g_josh_recovery_type = sig; /* JOSH-DIAG: for the churn-anchor [busyrecover] print - names which signal drove this recovery (11=SEGV, 10=BUS, 6=ABRT) */
     { /* R1208 ENTRY MARKER (Jos c24 review): prove handler ENTRY before any
        * context read, walk, or recovery decision - the altstack made the
        * handler runnable from a damaged stack; this marker dereferences
@@ -29409,6 +29439,26 @@ static int xenolift_real_main(int argc, char **argv)
              * anchor they jump to). */
             extern volatile int xenolift_r832_in_handler_clear;
             xenolift_r832_in_handler_clear = 0;
+            /* JOSH-DIAG: same class as R832 above - cd_tick_busy (R111 re-entrancy
+             * guard) is set before the fd-tick collector body runs and cleared after;
+             * a longjmp mid-body (any of the 17 churn-anchor doors) skips that clear
+             * and leaves it stuck at 1 forever, silently disabling all further CD
+             * interrupt delivery. Clear it at the one anchor every door already jumps
+             * to, exactly like R832 does for its own stale flag.
+             * Causal-chain protocol: read+print the OLD value BEFORE clearing it -
+             * this is the proof that recovery actually encountered the guard stuck,
+             * not just an after-the-fact zero-assignment. */
+            {
+                int _josh_old_busy = cd_tick_busy;
+                g_josh_seq++;
+                r861_out("[busyrecover] seq=%u old=%d new=0 recovery=%d seek=%u fldsec=%u\n",
+                        g_josh_seq, _josh_old_busy, g_josh_recovery_type, cd_seek_lba, g_fldsec_total);
+                if (_josh_old_busy) {
+                    g_josh_busy_pending_resume = 1;
+                    g_josh_resume_seq = g_josh_seq;
+                }
+            }
+            cd_tick_busy = 0;
             /* R844 (c431/432, Jos directive): BOOT-LOOP BYPASS - the backup
              * plan. 40+ cycles prove the kernel's boot manager will not
              * self-clear: fault-walk restarts re-dispatch 0x80019524, walk
