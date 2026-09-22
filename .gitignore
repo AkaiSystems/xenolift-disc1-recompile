@@ -1,0 +1,53 @@
+# Secrets / local auth
+.env
+.env.*
+*.pem
+*.key
+.bridge-v1-api-state.json
+.bridge*.pid
+.bridge*_*
+
+# Disc / proprietary media (keep on Mac only)
+*.iso
+*.chd
+*.cue
+*.img
+*.bin
+SLUS_*
+xenogears_boot*
+duckstation/
+disc_stage/
+memcard.mcd
+*.mcd
+*.wav
+
+# Build / caches
+target/
+.cache/
+__pycache__/
+*.o
+*.dSYM/
+*.log
+run.log*
+core
+core.*
+boot
+xg_dbg
+xenolift.zip
+
+# Editor / OS
+.DS_Store
+.xenolift-local-archive/
+
+# Backups and cycle dumps (live only on archive branch)
+runtime/*.bak*
+runtime/*.pre_*
+runtime/*.orig
+runtime/.z15.c
+*.pre_*
+firstfault.*/
+patch_c*/
+witness_c*/
+*_snap.*/
+prev_run*/
+c*_shipped.sh
