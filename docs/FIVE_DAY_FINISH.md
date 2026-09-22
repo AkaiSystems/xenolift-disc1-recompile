@@ -17,3 +17,6 @@ Stabilize continuous-field bar under 120s+ budgets; document remaining movie/GPU
 
 ## Runner
 MacBook has the disc. Claude-on-Mac or Terminal `./run.sh`. GitHub is the handoff desk.
+
+## Status note (2026-09-22)
+12 Mac trials: no R1467A pausestart; field stuck ~108987–109042; 239634 = diagnostic not field. See `docs/STATUS_12_TRIAL_SOBRIETY.md`.
