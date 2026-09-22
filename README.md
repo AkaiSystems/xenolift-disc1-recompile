@@ -37,7 +37,9 @@ Organized private continuation repo for the Xenogears Disc 1 Xenolift recompile.
 ## Baseline
 
 Verified in `docs/`: **c1252 / R1470B**.  
-`source/runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`.
+`source/runtime/runtime.c` SHA-256: `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce`.
+
+Behavioral baseline for c1252 was SHA `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e` (already contained FE1C `6||0`). Comment-only R1467A header sync on 2026-09-22 bumped the file SHA to `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce` with **no executable change**.
 
 **Source note:** that SHA already includes the R1467A FE1C gate as `6u || 0u` (docs that say the widen has not landed are stale relative to this tree).
 

@@ -30,7 +30,8 @@ Disc image and live Mac scratch remain on the owner Mac (`~/Downloads/xenolift` 
 
 - Last completed directive: `c1252`
 - Last labeled fix in that cycle: `R1470B`
-- Pinned SHA-256 of `source/runtime/runtime.c`: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
+- Pinned SHA-256 of `source/runtime/runtime.c`: `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce`
+- Behavioral baseline for c1252 was SHA `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e` (already contained FE1C `6||0`). Comment-only R1467A header sync on 2026-09-22 bumped the file SHA to `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce` with **no executable change**.
 - Seek `120634`; VRAM writes `747520`; defib6 at `108861` / `108995`
 - `RUN rc=0`, `SECONDS=181`, process exit `137` (fuse — not game completion)
 

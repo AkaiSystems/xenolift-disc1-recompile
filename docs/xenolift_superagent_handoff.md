@@ -28,7 +28,8 @@ Owner map: edit/run in `source/`; read-only refs in `ext/`; history/handoffs in 
 ## Current verified source state
 - Last completed directive: `c1252`
 - Last labeled FIX in that cycle: `R1470B`
-- Pinned `source/runtime/runtime.c` SHA-256: `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e`
+- Pinned `source/runtime/runtime.c` SHA-256: `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce`
+- Behavioral baseline for c1252 was SHA `096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e` (already contained FE1C `6||0`). Comment-only R1467A header sync on 2026-09-22 bumped the file SHA to `a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce` with **no executable change**.
 - c1252 boot run: `RUN rc=0`, `SECONDS=181`, game process exit status `137` at the fuse.
 - c1252 reached field seek `120634` and rendering reached `747520` VRAM writes.
 - Defib6 completed at seeks `108861` and `108995`.
