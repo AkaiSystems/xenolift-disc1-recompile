@@ -1,0 +1,18 @@
+{
+  "protocol": "xenolift-github-v1",
+  "cycle_id": "verify-c1252-pin",
+  "mode": "verify",
+  "parent": "c1252",
+  "budget_s": 120,
+  "require_sha256_any_of": [
+    "a6d3279bf56d3d8aab13c35aa08515286fe6dd4db6f79421b6ddbd074940a4ce",
+    "096f27debdcdfb5ff92dc4f82e20a705d7dfe0c205d7758899bbbf970d00e36e"
+  ],
+  "reapply_OR_forbidden": true,
+  "pass": [
+    "[pausestart] R1467A or equivalent armstart",
+    "seek advances past 120634",
+    "field continues under budget"
+  ],
+  "notes": "First finish-cadence verify. Do not FE1C 6||0 re-patch."
+}

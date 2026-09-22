@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.akaisystems.xenolift.runner</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/ABS/PATH/TO/xenolift-disc1-recompile/source/runner/watch-and-run.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/ABS/PATH/TO/xenolift-disc1-recompile</string>
+  <key>StartInterval</key>
+  <integer>120</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/xenolift-runner.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/xenolift-runner.err</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>XG_DISC_BIN</key>
+    <string>/ABS/PATH/TO/Xenogears (USA) (Disc 1).bin</string>
+    <key>XENOLIFT_BRANCH</key>
+    <string>xenolift-clean</string>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
