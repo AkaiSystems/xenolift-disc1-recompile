@@ -1,0 +1,23 @@
+--- build ---
+run.sh build R290
+tool health: exec rc=1 magic=7f454c46 out=[usage: xenolift <psx-exe> [out.c] ]
+cargo: SKIPPED (Rust source content unchanged — md5 gate)
+[timing] cargo build: 0s (cycle total: 0s)
+emit: SKIPPED (Rust tool unchanged — cached disc1.c + emit.log)
+[emit] R224 fallthrough-jr-ra guard APPLIED
+overlay module: capture ignored (131072B, 0 nonzero words — pre-install zeros?)
+symbol map: 1228 named functions
+wrote disc1.c
+[timing] emit: 0s (cycle total: 0s)
+compile cache has unstamped objects - wiping (foreign cache suspect)
+link: DONE
+banner check: OK (runtime build R290 in binary)
+[timing] compile+link: 5s (cycle total: 5s)
+--- live viewer ---
+macOS Terminal not detected: open a tab and run: python3 xenoview.py
+--- run ---
+FATAL: disc .bin not found at: /root/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin
+total 0
+drwxr-xr-x 1 root root 60 Sep 12 10:35 .
+drwxr-xr-x 1 root root 60 Sep 12 10:35 ..
+drwxr-xr-x 1 root root 60 Sep 12 10:35 Xenogears (USA) (Disc 1)

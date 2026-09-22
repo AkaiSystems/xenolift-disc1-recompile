@@ -1,0 +1,25 @@
+
+
+# Xenolift generated-output exclusions
+.xenolift-local-archive/
+.env
+.env.*
+*.pem
+*.key
+xenogears_boot*
+xg_dbg
+xenolift.zip
+*.iso
+*.chd
+*.cue
+*.img
+*.o
+*.dSYM/
+*.log
+run.log*
+core
+core.*
+runtime/*.bak_*
+runtime/*.bak_c*
+*.bin
+duckstation/

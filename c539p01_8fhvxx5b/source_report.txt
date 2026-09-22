@@ -1,0 +1,1158 @@
+===ASSIST===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=FIELD-SEEK assist v4 MATCHES=1
+EXCERPT 19587..19672 (not a guaranteed complete function)
+19594:            static uint32_t fmount_epoch = 0xFFFFFFFFu;                                   
+19595:            if (fmount_epoch != xenolift_boot_epoch) {
+19596:                fmount_epoch = xenolift_boot_epoch;
+19597:                xenolift_chanf_fired = 1u;                                                              
+19598:                r861_out("[minput] CHANNEL F: dispatching MountGameStateModule(1) (Field) — game's own mount machinery, one-shot\n");
+19599:                {                                                    
+19612:                    uint32_t was = xenolift_mem_read32(0x800AFC98u);
+19613:                    xenolift_mem_write32(0x800AFC98u, 0);
+19614:                    xenolift_mem_write32(0x800AFC9Cu, 0);
+19615:                    xenolift_mem_write32(0x800AFCA0u, 0);
+19616:                    xenolift_mem_write32(0x800AFCA4u, 0);
+19617:                    r861_out("[stg-zero] staging head cleared at CHANNEL F (was %08X - stale boot stamp satisfying the module data-ready gate)\n", was);
+19618:                }
+19619:                r[4] = 1u;                                             
+19620:                r[31] = 0x8001A34Cu;                             
+19621:                g_guest_depth++, xenolift_dispatch(0x800199CCu), g_guest_depth--;
+19622:                r861_out("[minput] CHANNEL F returned: cur-state(92C0)=%08X req(8088)=%u idx(FAEC)=%08X latch(92BC)=%08X\n",
+19623:                        xenolift_mem_read32(0x800592C0u), xenolift_mem_read32(0x80018088u),
+19624:                        xenolift_mem_read32(0x8005FAECu), xenolift_mem_read32(0x800592BCu));
+19625:            }
+19626:        }
+19629:        if (a >= 0x8001A350u && a < 0x8001A4C0u) {
+19630:            static int blk_n;
+19631:            if (blk_n < 12) { blk_n++;
+19632:                r861_out("[minput] BLOCK-RANGE dispatch a=%06X frame=%u pstate=%u r2=%08X r4=%08X\n",
+19633:                        a, g_menu_frames, g_menu_press_state, r[2], r[4]);
+19634:            }
+19635:        }
+19644:        {
+19645:            static int fsk_budget = 400;
+19646:            if (fsk_budget > 0
+19647:                && cd_last_cmd == 0x02u && cd_pending == 0u
+19648:                && cd_resp_n < 3u && cd_seek_lba != 0u
+19649:                && xenolift_mem[0x4FE1Cu] == 1u
+19650:                && xenolift_mem_read32(0x8004FE04u) == cd_seek_lba
+19651:                && cd_data_pos >= cd_data_n && !cd_read_active) {
+19652:                fsk_budget--;
+19653:                cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
+19654:                cd_resp_n = 3; cd_resp_pos = 0;
+19655:                memcpy(cd_last_full, cd_resp, sizeof cd_resp); cd_last_full_n = 3;
+19656:                cd_pending = 3u;                                                                      
+19657:                r861_out("[cd] FIELD-SEEK assist v4 (menu-frame ctx): 3-byte SetLoc answer + INT1 armed (LBA %u, FE1C=%u)\n",
+19658:                        cd_seek_lba, xenolift_mem[0x4FE1Cu]);
+19659:            }
+19660:        }
+19672:        {
+
+===CLEANUP===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=stale CD state discarded for SetLoc serve MATCHES=1
+EXCERPT 3248..3313 (not a guaranteed complete function)
+3248:                         fe08_dir, fdf8_dir, r1268_budget);
+3249:            }
+3250:        }
+3251:        if (cd_read_active && !cd_data_loaded)
+3252:            cd_data_load();                      
+3277:                if (cd_last_cmd == 0x02u) {
+3287:                    {
+3288:                        uint32_t fe1c_p = ((uint32_t)xenolift_mem[0x4FE1Cu]) | ((uint32_t)xenolift_mem[0x4FE1Du] << 8);
+3289:                        if (fe1c_p == 1u && !cd_read_active
+3290:                            && (cd_pending != 0u || cd_data_n != 0u)) {
+3291:                            static int r1341_n;
+3292:                            if (r1341_n++ < 8u)
+3293:                                r861_out("[stalecd] R1341 stale CD state discarded for SetLoc serve: pending=%u data_n=%u resp_n=%u seek=%u FE04=%08X\n",
+3294:                                        cd_pending, cd_data_n, cd_resp_n, cd_seek_lba,
+3295:                                        xenolift_mem_read32(0x8004FE04u));
+3296:                            cd_pending = 0u;
+3297:                            cd_data_pos = 0u; cd_data_n = 0u; cd_data_loaded = 0u;
+3298:                        }
+3299:                    }
+3305:                                {
+3306:                                    uint32_t fe1c_q = ((uint32_t)xenolift_mem[0x4FE1Cu]) | ((uint32_t)xenolift_mem[0x4FE1Du] << 8);
+3307:                                    if (fe1c_q == 1u && cd_last_cmd == 0x02u) {
+3308:                                        static int r1345_n, have_last;
+3309:                                        static uint32_t l_p, l_d, l_r, l_s, l_f;
+3310:                                        uint32_t vp = cd_pending, vd = cd_data_n;
+3311:                                        uint32_t vr = (uint32_t)cd_read_active, vs = cd_seek_lba;
+3312:                                        uint32_t vf = xenolift_mem_read32(0x8004FE04u);
+3313:                                        if (r1345_n < 40 && vr == 0u && (!have_last || vp != l_p || vd != l_d
+
+===WRITER_CANDIDATES===
+Syntactic candidates only; alias and macro writes require subsequent inspection.
+1962:cd_last_cmd = cmd;
+2144:r861_out("[cdw02] Setloc issue: FE04=%u FE1C=%u FE20=%u pending=%u resp_n=%u read_active=%u motor=%u sched=%u seek(before)=%u\n",
+2256:cd_read_active = 1;
+2259:cd_read_active = 0;
+2263:cd_read_active = 0;
+2279:cd_pending = 0;
+2280:cd_scheduled = 1;
+2330:cd_pending = 1; cd_pending_stamp(1u, 1u);
+2360:cd_pending = 0;
+2405:cd_pending = 2; cd_pending_stamp(2u, 2u);
+2583:cd_scheduled = 0;
+2585:cd_pending = 3; cd_pending_stamp(3u, 3u);
+2779:cd_scheduled = 0;
+2781:cd_pending = 3; cd_pending_stamp(3u, 4u);
+3149:cd_read_active = 1; cd_data_loaded = 0;
+3183:cd_read_active = 1; cd_data_loaded = 0;
+3184:if (cd_scheduled) cd_scheduled = 0;
+3236:cd_scheduled = 0;
+3241:cd_read_active = 1; cd_data_loaded = 0;
+3296:cd_pending = 0u;
+3317:r861_out("[stalecd-near] R1345 SetLoc-wait state (idle, changed): pending=%u data_n=%u read_active=%u resp_n=%u seek=%u FE04=%08X seekmism=%u\n",
+3335:cd_pending = 3u;
+3375:cd_read_active = 0;
+3553:cd_read_active = 1;
+3608:cd_read_active = 1;
+3781:cd_pending = 1;
+3818:cd_pending = 1;
+3852:r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%u arm1=%u sched=%u seek=%u FDF8=%u poll803=%u\n",
+3917:cd_pending = 1;
+3932:cd_pending = 1;
+4000:cd_pending = 1; cd_pending_stamp(1u, 8u);
+4016:cd_pending = 1;
+4224:cd_pending = 1;
+4270:cd_pending = 1;
+4317:cd_pending = 1;
+4359:cd_read_active = 1;
+4361:r861_out("[fldseed] FIELD file-14 seed v2: FE04=108933 FDF8=125304 + CD layer WOKEN (read_active=1 fifo->reload; R105 re-anchor will engage on next poll)\n");
+4410:cd_pending = 1;
+4913:cd_pending = 1;
+4934:cd_pending = 1;
+5557:cd_read_active = 1; cd_data_loaded = 0;
+5558:if (cd_scheduled) cd_scheduled = 0;
+5564:cd_pending = 1;
+5619:cd_read_active = 1;
+5863:cd_pending = 3u;
+5900:cd_pending = 1;
+7003:cd_read_active = 1; cd_data_loaded = 0;
+7004:if (cd_scheduled) cd_scheduled = 0;
+7005:cd_pending = 1;
+7303:else if (w == 1) cd_read_active = s ? 1 : 0;
+7304:else if (w == 2) cd_scheduled = s ? 1 : 0;
+7683:cd_pending = 0;
+7704:cd_pending = 0;
+7760:cd_pending = 0;
+8006:cd_pending = 0;
+8027:cd_pending = 0;
+8083:cd_pending = 0;
+11520:if (cd_pending == 0u) cd_pending = 1u;
+11759:cd_pending = 1;
+11793:cd_pending = 1;
+11903:cd_read_active = 0;
+12056:cd_pending = 1u;
+12085:cd_pending = 1u;
+12138:cd_pending = 1;
+12164:cd_pending = 1u;
+12207:cd_read_active = 0;
+12208:cd_pending = 1;
+12267:cd_read_active = 0;
+12268:cd_scheduled = 0;
+12270:cd_pending = 1;
+12311:cd_pending = 1;
+12341:cd_pending = 1u;
+12366:cd_pending = 1;
+12547:r861_out("[cdstate] last_cmd=0x%02X read_active=%u data_loaded=%u pending=%u sched=%u\n",
+12994:cd_pending = 0u;
+13004:cd_pending = 3u;
+15304:cd_read_active = 1; cd_pending = 1; g_cd_irq_force = 1;
+15359:cd_read_active = 1;
+15362:cd_pending = 1;
+15775:cd_pending = 0;
+15785:cd_read_active = 0;
+15793:cd_scheduled = 0;
+15795:r861_out("[fldfin3] R541: scheduler request cleared (cd_scheduled=0) at end-of-read\n");
+15876:cd_pending = 1u;
+15965:cd_pending = 1;
+15996:cd_pending = 1; r465_fires++;
+19656:cd_pending = 3u;
+19686:cd_pending = 3u;
+19716:cd_pending = 3u;
+20160:cd_scheduled = 0;
+20162:cd_pending = 3; cd_pending_stamp(3u, 5u);
+20219:cd_scheduled = 0;
+20220:cd_pending = 3; cd_pending_stamp(3u, 5u);
+20277:cd_pending = 1u;
+21907:if (cd_pending == 0u) cd_pending = 1u;
+22158:cd_scheduled = 0;
+22160:cd_pending = 3; cd_pending_stamp(3u, 6u);
+22356:cd_pending = 1;
+22380:cd_pending = 1;
+22614:cd_pending = 1;
+22751:cd_pending = 1;
+22802:cd_read_active = 1; cd_data_loaded = 0;
+22803:if (cd_scheduled) cd_scheduled = 0;
+22805:cd_pending = 1;
+22881:cd_read_active = 1; cd_data_loaded = 0;
+22882:if (cd_scheduled) cd_scheduled = 0;
+22884:cd_pending = 1;
+23157:cd_pending = 1;
+23198:cd_scheduled = 0;
+23200:cd_pending = 3; cd_pending_stamp(3u, 7u);
+26226:r861_out("[xenolift] runtime build R1291v4 - THE MOVIE-QUEUE DELIVERY CAMERA + THE SEQUENCE-ID/DELIVERY-DECISION TRACER, PLACEMENT CORRECTED (c193v2, cameras only). JOS c193 CORRECTIONS APPLIED: the [schdd] receipt now sits AFTER ALL RELEASE BRANCHES DECLINE (post-ladder observation, not entry state); the [movsite] UNCONDITIONAL SITE-ENTRY COUNTER now distinguishes site-cold from gate-declined for the movq camera; the 8-BYTE DELTA (14360 requested vs 14352 shelved) REMAINS OPEN - a re-shelve receipt does not establish a complete correct destination; the 0x82 call at 80031DC8 is the latch-clear NORMAL resident-loop entry, not by itself validation failure. (v2: THE MOVIE-QUEUE DELIVERY CAMERA + THE SCHEDULER-DECISION TRACER (c192, cameras only). JOS c192 REFINEMENT APPLIED: capture the FIRST TRANSITION INTO the stalled posture, with (1) the writer and caller that set FE04=109158 and sched=1 - the [hook] FE04 writer trail already names the game ftab reader fn 800288EC r16=0x12, and the [cd] set-site print already names every command->INT3-scheduled event (the ONE set site, first 40 + 1/65536); (2) the request expected byte count and destination - the [movq] wedge print dumps the FE04/FE08 pair, the file-table member and its size, so FDF8=0 at that stage is either PROVEN legitimate (the request completed and the flag is stale) or PROVEN premature (the queue never armed); (3) THE SCHEDULER DECISION - the NEW [schdw] tracer prints FIRST-EVAL at EVERY ONE of the 11 cd_scheduled CLEAR SITES with full context (pend/act/FDF8/FE04/fe1c/last_cmd): if NO clear site runs during the wedge era, the scheduled response was never delivered and the missing transition is the delivery path itself; (4) completion-vs-cleanup: the [cd] set prints + [schdw] clears + the [movq] dest dump decide Jos key distinction - a QUEUED REQUEST THAT NEVER STARTED (dest empty, no clear ran) vs a COMPLETED REQUEST WHOSE SCHEDULING FLAG NEVER CLEARED (dest held, a clear path ran but left sched=1) - DIFFERENT FIXES, and the cameras name which. R1290 UNCHANGED (zrfG2 stays armed for its posture, no behavior change anywhere - cameras only). THE c191 WEDGE, receipted: FE04=109158 (file#18 re-stamp by the game own ftab reader), FDF8=0, act=0, pend=0, stale sched=1, FE1C=10, A22C=5, drive parked at seek=3, the game polling GetStat in the movie-loader family - and the set-site decode narrows it: cd_scheduled is the runtime RESPONSE-SCHEDULED marker (set at every command arrival, delivered when the kernel event-flag check fn 0x8004B894 next runs), so sched=1 held + pend=0 at the wedge = the scheduled response NEVER CONVERTED - the delivery path ran cold. PASS = receipts only: the transition chain FE04-restamp -> set -> (clear or no clear) -> wedge, the dest held/empty answer, the scheduler named. THE c193 FIX then patches the DEMONSTRATED missing transition and verifies sustained delivery, movie-loop exit, then visible controller response (Jos endgame ladder). (R1291 = THE MOVIE-QUEUE DELIVERY CAMERA (c192, cameras only - the c191 verdict printed). THE c191 RUN WENT DEEPER THAN EVER: no boot restarts until the very end, member 18 (the MOVIE MODULE) installed with gdisp=6 (dest 801EF300), asciiart fired, the screen held real structured content across all four witnesses (308K nonzero pixels, 803B shots), 2.19 BILLION vram writes, 51 screen snaps, the sync band served (239324), the field band 108801-108877, file#18 stalled load COMPLETED by the defib6 carry (fire #1), zrfB fired 8 (its band), 0x0D answered again (1 arrival, 8 pops, game advanced) - and the game wedged ALIVE at THE MOVIE RE-REQUEST POSTURE: FE04=0x1AA66 (109158 = file#18, stamped by the game own ftab reader), FDF8=0, act=0, pend=0, stale sched=1, FE1C=10, A22C=5, drive parked at seek=3, the game polling GetStat in the movie-loader family. THE TWO DECLINING DOORS, both named: zrfB matches every term except the command byte (band 09, this poll is 01); the R496 never-armed arm matches file-table members against cd_seek_lba (the parked directory position) instead of FE04 (the queued request LBA). THE OPEN QUESTION the c193 fix hangs on: does the movie dest buffer ALREADY HOLD the shelved file#18 data (the FE1C=10 wait is then the movie PLAY protocol) or is it EMPTY (a delivery fault - the re-request wants the data again)? R1291 prints the answer AT the wedge: stuck-confirmed posture -> the FE04/FE08 request pair, the file-table member for FE04, the shelved state, and the first 8 words + 4KB nonzero count at the request dst. PASS = receipts only: dest-held -> decode the play-protocol wait next; dest-empty -> the porter/delivery fix (or the R496-arm FE04 widen). CAMERAS ONLY, no behavior change. (R1290 = THE FILE-BAND A22C-SITE SERVE (zrfG2, c191 - the c190 verdict applied: right composite, RIGHT SITE). THE c190 VERDICT: the disambiguation cameras answered 0x0D (11 pops receipted, FE1C 8->1 then through its read states 0A/0B/6/7->0, the game advanced - our stat-ack protocol is adequate, no fix needed) AND the trajectory swung to THE DEEPEST STATE EVER: STATE 1 REACHED AND HELD (g_CurGameState=1, coordinator 80077E88 active with overlay loaded hasOverlay=1 at BOTH census points), member 14 installed (dest 801DD680), real dispatches fn_80019ACC(0) idx=6 idx_work=96 and fn_80019ACC(131) idx=1, the SCREEN PAINTED 100 PERCENT AGAIN (all four regions nonzero, snaps 8-12, structured final render with real pixels), and the final epoch wedged - ALIVE in state 1 - at THE FILE#14 ARMED-IDLE POSTURE: seek=108997, FDF8=125304 armed, FE04=0x1A985 (== seek: the game own LBA stamp, R350 provenance - the arm belongs to the CURRENT request), cmd 01, act=0, pend=0, A22C=4, data=0/0, held w50->fuse. THE DIAGNOSIS (the c174 lesson verbatim): zrfG (R1285) IS IN-TREE AT THE STATUS-REGISTER SITE with the exact c184-approved composite for this posture and fired ZERO - because the game polls A22C DIRECTLY and the status site runs cold; zrfB fired 8x at the A22C site in its own band (seek<150), proving the site. THE FIX: zrfG2 = the zrfG composite UNCHANGED (same-poll cd_data_load + cd_read_active=1 so 0x40 computes true on THIS poll, no INT forge, no dispatch, 65536-poll stuck confirm, budget 12) at the A22C SITE with one partition guard (cd_data_n<2048, never clobber an in-flight load). PASS per the c184 criteria: the fire serves the sector, the game drain consumes FDF8 below 125304, forward execution (new LBA, state activity, screen change); REVERT if fire with zero consumption. (R1289 = THE 0x0D DISAMBIGUATION CAMERAS (c190, cameras only). THE c188 VERDICT, RECEIPTED: THE R502 RETRACTION WORKED - the 47964-call 400/sec rerun loop is DEAD (fn_80019ACC(130) count = ZERO, down from 47964; [latchw]/[latchfix] = ZERO, the heal is out; the latch protocol is now purely game-driven - 86 [latchhw] lines, all game fns: 19524/19548 boot init, 19908/19A2C arms with r16=module idx, 19A90/19B4C/288EC clears; idx_work ran 11 dispatch rounds vs 5 in c187). The boot now lives or dies by its own protocol, and the receipts name the next first fault. THE c188 TRAJECTORY (a new one): directory re-read LBA 0 AND LBA 4 consumed (fldsec #336/#344 - the system band walked deeper than ever), field sectors 108850-108891 consumed, file#18 completed via the defib6 carry (fire #1, 8 sectors), a NEW archive bulk fetch chain at seeks 108957-108961 (FDF8 61816->53624, dst 801ECE80+), module installs members 2-7 (incl. the archive dest 8007EBF0), GPU drew 142K rects + 2K polys (142M vram writes) - but the live VRAM dump is ALL ZERO (the bootmain restarts clear it: 3 restarts with Module-6 validation spikes 12->12->1->0, declining - the boot retry protocol converging), and the final epoch wedges at THE NEW FIRST FAULT: seek=0 cmd 0x0D FE1C=8 FDF8=2048-armed A22C=0 pend=0 sched=0, frozen across the entire w50-w95 window. THE [chg] TRAIL: the game completed the Setmode/0x0E step (FE1C=12) and its own fn 8002AC0C set FE1C=8 after issuing cmd 0x0D - the next ladder step. 0x0D IS IN NO HANDLER: the answer builder primes only the bare stat byte. HYPOTHESIS PAIR (the c149-151 decode named this era GetTN + ReadN at LBA 0): either 0x0D is the game ReadN encoding and the armed 2048B at seek=0 is a DATA request the machinery never serves (A22C never sets - the wedge is the c127 class at a new command), or the bare stat is malformed (the R262 GetTN lesson) or never popped. R1289 SHIPS THE DISAMBIGUATION: the [cmd0d] arrival camera (full drive state, 16-cap) + the [rspop0d] pop camera (UNWINDOWED, 16-cap). PASS = the receipts pick the c191 fix: pops-and-FE1C-still-8 -> 0x0D is a READ, serve the sector with the zrf0 composite; no-pops -> deliver and complete the ack. CAMERAS ONLY, no behavior change, all R1288/R1287/R1286 machinery stays. THE R502 RETRACTION STORY (c188): (R1288 = the R502 RETRACTION, the first-fault fix per Jos find-the-first-fault direction. THE c187 DECODE THAT SETTLED IT: the step-walker trail (idxw watcher, 5 writes all through fn 80019984 in EARLY boot - 0->96, ->0, ->16, ->0, the set-dispatch-clear protocol around real fn_80019ACC(0) calls with idx 6 and idx 1) plus the STATIC branch decode (disc1.c L_80031DA8: r6==0 skips, latch=*(gp+0x1C0), latch!=0 -> fn_80031F58 a 4-line iterator advance, latch==0 -> r4=0x82; fn_80019ACC) - and the decompilation NAMES fn_80019ACC: xenolift_fn_80019ACC_RunResidentGameLoop___game_core. THE 130-CALL IS NOT A FAULT VERDICT: it is the NORMAL designed entry of the game resident main loop with mode arg 0x82, taken exactly when the latch is CLEAR. R502 (c68-era) had the protocol inverted: at every 0x82 call it forced the latch to 1 (so the next pass took the iterator branch instead of running the game) and rewrote the game argument 0x82 -> 0 (arg 0 = the early-boot dispatch mode that reads idx_work - which the c187 trail receipts as 0 at every loop-era call, so the resident loop NEVER RAN IN ITS OWN MODE). THE 47,964-CALL 400/SEC LOOP IS R502 MANUFACTURING AN ERROR PASS EVERY ITERATION. THE FIX: R502 fully RETRACTED - the block is now a PASSIVE CAMERA ([rlgl], 64+1/4096 cadence, touches NOTHING: no arm, no arg rewrite); the game own protocol is restored exactly: latch==0 -> RunResidentGameLoop(0x82) runs the game; the game arms/clears its own latch (the c187 trail: 19A2C arms r16=module idx, 19A90/19B4C clear, 19908 arms - all legitimate). PASS per Jos: the rerun loop DIES (the fn_80019ACC(130) cadence collapses from 47K-class to game-natural), the resident loop runs in mode 0x82, and whatever IT blocks on next is the NEXT first fault - fixed the same way, one at a time. If the game arms the latch itself and takes a real fault path, the receipts SHOW it and we fix that data fault - never the protocol (no heal scaffolding, Jos milestone). All R1287 cameras stay (idxw/latchhw watchers, the per-tag print governor: raw log 52.4MB -> 9.7MB this run, storm tamed), zrfG/zrfF stay parked guards, the base R1287 tree. THE STEP-WALKER RECEIPT CYCLE STORY (c187, all receipts landed) (the bridge ran the v1 directive: patch 771e2209, tree 0d516bd4 - the v2 priority channel never executed, but the latch cameras printed uncapped and the FULL LOOP DECODED). THE c186 LOOP, receipted 47964 times: fn_80019ACC(130 = 0x82 the fault-verdict call) idx=0 idx_work=0 -> latch 0x80059330 reads 0 at the verdict -> R502 heals (re-arm 1, verdict 0x82->0) -> boot main reruns -> repeat, ~400 loops/sec, NO GPU reinit per iteration (c185 was 43 slow full-reinit loops - the fast loop is new). THE WRITER TRAIL (24-cap, burned pre-loop, but decisive): the game own boot manages 0x80059330 as a PER-CHECK ARM/CLEAR FLAG - fn 80019A2C ARMS (r16=00000006, 00000001 = module indexes), fn 80019A90 CLEARS, fn 80019B4C CLEARS, fn 80019908 ARMS - set/check/clear pairs through the early boot = the c68 wipe theory is DEAD: the reset is the game OWN legitimate protocol. THE FIRST FAULT (per Jos find-the-first-fault direction): idx_work (0x80028088, the cell R1232 proved the dispatcher reads) is ZERO at ALL 47964 verdicts - the boot step-walker NEVER ADVANCES PAST STEP 0, so the step that would re-arm the latch and advance the index never runs - Jos case 2/case 3 both root here. THE ONE MISSING RECEIPT: the WRITER of idx_work - nothing writes it during the loop (step-0 completion never runs, case 3) vs something resets it per rerun (case 2). R1287 SHIPS THAT CAMERA: the hc watcher gains cell 0x28088 printing on the [idxw] PRIORITY tag (resize-together 116->117, sweep bound 115->117 - which ALSO fixes the v2 latent dead-camera: the v2 bound was 115 with 116 elements, the latch cell would have been dead, the R1101 class) + the per-tag print governor (first 2048 lines per tag, then 1/4096, one notice per tag - print policy only) + the latch/idx/verdict family stays budget-exempt. PASS = receipts only: the idx_work writer trail through the loop era, the latch arm/clear order at full cadence, the storm tamed. NO behavior change: no latch forcing, no verdict skip, zrfG/zrfF parked, R502 untouched. THE FIX CYCLE (c188) patches exactly what the writer trail proves: no writer -> fix the missing step-0 completion transition; a reset writer -> fix the init/ordering that should follow; then verify boot exits the rerun loop, enters the first scene, responds to input. R1286 v1/v2 story (the c186 base): (v1 ran) - R1286 = CAMERA-ONLY RECEIPT CYCLE for the c185 verdict: the 0x82 fault-verdict loop + the latch wipe writer + the log-storm source. THE c185 STORY: zrfG fired ZERO times - the c184 armed-idle posture never occurred on this trajectory (the receipted nondeterminism, third consecutive swing), so zrfG stays parked as a guard. The run went DEEP in a new direction: one continuous epoch (NO reboot), the ftab walked files #15-18 (LBA 108995/109041/109123/109158 - deeper than ever), the system+field band walks reached LBA 1 and 239324, file#18 completed via the defib6 rescue (8 sectors, seek=109166), the loading screen DREW (w50 shot 1725B structured) then FADED to a flat 852B image - the transition machinery works. THE NEW FIRST-BREAK: fn_80019ACC(130 = 0x82 - THE HARDCODED FAULT-VERDICT CALL) fired 43 times from r31=0x80031DC8 (adjacent to the L_80031DA8 verdict branch), the R502 latch rescue re-arming each time, yet EVERY verdict moment receipts latch=0 - the boot error-latch gp+0x1C0 (0x80059330) is wiped between the pad_fill re-arm and the verdict (the c68 class at a new call site). GPU corroboration: fills 28914 -> 92678 = 43 x ~1546 reinit fills - the loop is fault -> rescue -> healthy rerun (GPU reinit) -> fault again. SECOND BLOCKER, MATERIAL: the R971 50MB receipt budget EXHAUSTED at ~t=50s - every print after that is silent, so 70 seconds of the run are unreceipted and the visible window is all pre-exhaustion. THE FIX IS CAMERAS ONLY: (1) the hc watcher gains cell 0x59330 (resize-together 115->116, the R516 assert enforced) - every latch writer named, 24-line cap, the tblw standing spec; (2) the fn_80019ACC camera now prints idx_work (the 0x80028088 working cell R1232 proved the dispatcher reads) alongside the old no-op mirror idx - settles whether the 0x82 loop walks the table; (3) the SCRIPT adds the by-tag byte census of run.log.raw - the full raw stream run.sh preserves - so the 50MB storm source is NAMED next digest and the cycle after throttles its print (the R1276 precedent, print-throttle only, never behavior). PASS for this cycle = receipts only: the latch writer trail, the idx_work values, the storm tag table. NO behavior change anywhere; zrfG and zrfF stay parked guards; the R502 rescue is untouched. NEXT: if the writer trail shows the game own kernel clearing the latch legitimately, the fix is at the VERDICT input (what the walker actually checks), not the latch. R1286 AMENDMENT (Jos c186 direction, same cycle): the LATCH-PRIORITY RECEIPT CHANNEL - the R971 budget gate is bypassed for the [latchw]/[latchfix]/[latchhw]/[boot] fn_80019ACC prefixes (uncounted, ungated; each has its own per-camera cap) so the re-arm -> intervening writes -> verdict order is receipted BEYOND the 50MB cutoff to the fuse; the [hook] watcher print for cell 0x59330 moves to the dedicated [latchhw] tag on that channel. Print policy ONLY - the latch is NOT forced nonzero and the verdict is NOT skipped (that could hide an actual loading failure). The by-tag byte census of run.log.raw runs in the script and NAMES the storm source; the cycle after throttles that print (R1276 precedent) and patches exactly what the receipted loop sequence proves: an incorrect write -> fix the writer; a legitimate reset -> fix the init/ordering that should follow; never armed for this attempt -> fix the missing transition. THE c184 STORY - THE BIGGEST SINGLE-RUN ADVANCE OF THE PROJECT: zrfB fired at the receipted fe1c=1 posture (8 arms, 3 fires, stale-FIFO flush + FDF8 heal + same-poll serve + INT1 deliver each), the system-band walk advanced LBA 0->1->3, and behind it the game advanced FURTHER THAN EVER: STATE 0->1 (the coordinator 80077E88 entered NORMALLY with overlay loaded, pMemStart=800AF5E4 pHeapStart=800C426C), member 14 installed (dest=801DD680), the working game table installed (R1232), file#18 RE-ISSUED NATIVELY (ftab READ ISSUED LBA cell=0x1AA66 FDF8=14360), the fn_80019ACC retry spike fell 43->16 with NEW callers (idx=1 r31=80019C14/8001993C - real dispatches, not the retry loop), and the SCREEN PAINTED 100 PERCENT - all four display regions nonzero, first time in project history (c183: 3 percent, A/B only). THE PAD RECEIPT FLIPPED: ReadControllerButtons entry #245760, btn=BFFF START-HELD (BFFF4000) - the game polls input a quarter-million times and SEES our injected press. THE NEW FIRST-BREAK, receipted by pumpcam x3 + mvloop x3 + ftab: file#14 read sits ARMED BUT IDLE - seek=108997, FDF8=125304 armed (the game stamped BOTH the LBA cell and the size cell), cmd 01 GetStat, act=0, pend=0, data=0/0, A22C=4 - the game polls status bit 0x40 which can NEVER set while the drive is idle (the c179/R1246 class). zrfF is the right composite but the wrong band (seek<150 FE04=0 FDF8==2048). zrfG swaps ONLY the band terms for the receipted posture: seek>=100000, FE04==cd_seek_lba (the game own LBA stamp = current-request provenance, R350), FDF8>0 <300000; the composite stays EXACTLY zrfF: same-poll cd_data_load + cd_read_active=1 so 0x40 computes true on THIS poll, no INT forge, no dispatch, 65536-poll stuck confirm, budget 12. PASS = the drain consumes FDF8 below 125304 + forward execution. REVERT if fire with zero consumption. BASE R1284 = the zrfB FE1C=1 widen (PASSED). BASE R1283 = decline cameras. THE c183 STORY - THE GAME IS ALIVE AND RENDERING: the decline cameras came back EMPTY because the c182 file#2-tail wedge never recurred - trajectory nondeterminism swung to the BEST RUN EVER: the game entered a LIVE menu/render loop - 2.7 BILLION vram writes, 8.6M rects, 120K fills, double-buffer display flipping at (0,0)/(0,240), vram_nz=144939/524288 = 27 percent of VRAM filled, the pad polled (padcell cycling FFF74100/FFFF4000 with our injected START presses), 215 mvloop prints across MANY loop sites (80036760/80036BE0/800317E0/80044E9C - the menu family cycling, not a single spin), four epochs, wall dead. THE STICK, receipted twice: the CD wait posture seek=0 cmd 09 FDF8=0 pend=0 A22C=3 sched=1 FE1C=1 held frozen across every poll print w50-fuse, and the [chg] writer trail names FE1C 0006->0001 at fn 0x80040FCC. zrfB (R1280, the door that served this exact seek=0 family in c175) is in-tree but silent: its FE1C ladder (0/6/7/10/11) never covered state 1. THE FIX: add fe1cA==1u to the ladder - ONE term, receipted, nothing else changes; the two-poll arm confirmation, the 40-fire budget, the stale-FIFO flush, the FDF8 heal, the same-poll cd_data_load, the stale-sched clear, and the INT1 force-deliver all stay exactly as the c175-proven set. PASS = zrfB fires at fe1c=1, FDF8 2048->0, the menu advances - new request at a different LBA, new state-table activity, new screen content, or the fn_80019ACC retry spike (43 calls this run, up from 10) stops. REVERT if zrfB fires and nothing advances. BASE R1283 = decline cameras (silent: no file-band FDF8 freeze occurred). BASE R1282 = zrfF (0 fires, parked guard). (camera-only, no behavior change; zrfF stays parked as a guard - 0 fires in c182 because its 80042AA8 wedge class never appeared on that trajectory). THE c182 STORY: the R1282 tree ran end-to-end (fresh binary, exit clean at the fuse) and the trajectory went DEEPER THAN ANY PRIOR RUN - the file#2 archive bulk fetch chain ran (fetchcam #391-400, FDF8 53488 -> 45296 counting), movie file#18 sectors consumed (109159/109167), member 18 installed (gdisp=6), and the GPU drew REAL CONTENT for the first time (273 rects + 5 polys + 1.28M vram writes, screen.png 1727B with structure). THE NEW TERMINAL WEDGE (R967 STUCK x6): the file#2 TAIL - FDF8=0x20 = 32 bytes remaining, seek=108754, cmd 06, sched=1, FDFC=1 uncleared, FE1C=2, FE04=00808080 (taint-class garbage), spin at the archive loader 800286CC. The R477 stalled-load rescue fits this shape on every term EXCEPT its cd_read_active && cd_data_loaded requirement - which no camera receipts. R1283 closes that: the R967 wedge print now carries the DRV line (act/loaded/pos/n/sched/pend/cmd) and a self-contained decline camera at the defib6 chain prints the full drive posture once per 30s when a file-band FDF8 sits frozen. NEXT CYCLE: widen the R477 gate by exactly the receipted failing term (the sgarm precedent). Secondary thread to census: epoch-4 reboot showed 10 fn_80019ACC error-dispatcher calls (Module-6 validation failing spike). BASE: R1282 = zrfF LEGACY-FETCH CONSUMER DOOR (c179 verdict, the terminal wedge): the c179 harvest receipted the run END TO END - the file#3 archive transfer RESOLVED (defib6 carry passes drained FDF8 155120 -> 126448+ at 2048/pass; the c178 frozen-transfer read was an early-window artifact), the game advanced PAST the archive spin to the post-archive directory RE-READ (seek=0, FDF8=2048 armed, dst FE08=800AFEB0, fetchcam #332), then wedged in LegacyCdSectorFetch (fn 0x80042AA8) 50s+ to the fuse, ALIVE, polling status bit 0x40 with the drive idle - R967 STUCK x4 (FDF8=800 A22C=1 flag578A6=0 identical across 30s), mvdoor-near x6, alarmguard x6, all cur_fn=80042AA8. The R1246 c103 comment named the class: the fetch PsyQ-table command sequence never engages our read machinery, the drive stays idle, and the 0x40 bit (computed from cd_read_active && data-in-FIFO) can NEVER set. NO existing door covers it (zrf0/zrfY need FDF8==0, R1267 needs FDF8==0, R96 needs cmd 06/09+read_active, mvdoor needs cmd 02/06 and is on_alarm-starved in spins, C97). THE FIX: door at case 0x1F801800 - the status read the fetch itself polls (the hottest spin-reached site, 14.4M+ polls receipted) - gated on the EXACT receipted posture (act=0 pend=0 cmd=01 seek<150 FE04=0 FDF8==2048) with 65536-poll stuck confirmation; action = the c139-141 secserve composite: same-poll cd_data_load + cd_read_active=1 so the 0x40 bit computes true, the fetch own DMA drains the sector, FDF8 2048 -> 0, the fetch completes natively. No INT forge, no guest dispatch (R350-safe). Budget 12. PASS = fetch consumes, FDF8 drives to 0, forward execution past 80042AA8 (new state-table activity, first non-boot GPU activity). REVERT if the fetch consumes but the game does not advance. SHIPPING NOTE c181->c182: the c181 patch placed this door INSIDE the three-line status return expression - the Mac compile refused (expected ; after return statement), run.sh correctly refused a stale binary, zero R1282 evidence. c182 places the door BEFORE the complete return statement and sandbox-PARSES the patched file (gcc -fsyntax-only against the baseline error set) before shipping. Base R1281 parked (zero fires in c178, kept in tree): the ONE failing gate term of the c348-class stuck-read arm, receipted by the c176 census, removed. THE c176 DECODE: the c175 state-1 line was NOT game progress - it was the game own REBOOT pass (bootmain entered, epoch=1, garbage cells mid-boot) after the file#3 spin failed, and exit 99 was the crash-kit converting a confirmed LZSS runaway (op src=0x00000000, 1M+ suppressed reads, frontier marching 0x8028F358..0x805FF358 - the c335 class; serve the file and neither happens). The real blocker, receipted end-to-end: at t~50s the game armed file#3 (seek=108785, FDF8=155120 = exact ftab size, dst=8007F2F8) via its own stab chain - read_act=1, loaded=0, cmd 06 - and the R1163 sgarm gate declined it because cd_scheduled=1 (the sgdecline first-eval #3 receipted EVERY gate input true EXCEPT scheduled; stale or fresh-queued from the movie/state-6 teardown - either way the serve completes the request and the proven R541 fldfin end-of-read chain clears scheduled at FDF8=0). The game spun 91M polls at the archive loader 800286CC, gave up at t=85s, rebooted, and the reboot LZSS runaway took it down via R1151 crash-kit recovery. THE FIX: remove the scheduled==0 term from the sgarm outer gate - the arm still requires the shape to persist across TWO 2s observations with FDF8 UNCHANGED (a live scheduler serve would be decreasing FDF8), all other terms still gate, the 96-delivery burst still checks FDF8 progress, and the receipt now prints scheduled. PASS = sgarm fires with scheduled=1, FDF8 drives to 0, the archive walk resumes (file#3 then onward - the boot-era chain receipts the stab/stepper path works), the game does NOT reach the reboot, exit code not 99. REVERT if sgarm fires and the archive walk does not resume. Base R1280 = zrfB A22C-site system-band serve (12+ fires, PASSED). Base R1275 = the state-6 heap seed (TRAP=0 ABRT=0).\n" );
+
+===SCHEDULER_SITES===
+815:static uint8_t cd_scheduled;
+1230:&& cd_scheduled == 0u && cd_pending == 0u
+1369:&& cd_scheduled != 0u
+1377:(unsigned)cd_pending, (unsigned)cd_scheduled,
+1765:cd_resp_n, cd_resp_pos, cd_pending, cd_scheduled,
+2066:xenolift_mem_read32(0x8004FDFCu), cd_pending, cd_scheduled,
+2146:cd_pending, cd_resp_n, cd_read_active, cd_motor_on, cd_scheduled, cd_seek_lba);
+2463:uint8_t r1294_ent = cd_scheduled;
+2568:if (cd_scheduled && cd_pending == 0u
+2587:if (cd_scheduled && cd_pending == 0u
+2876:if (cd_scheduled && cd_pending == 0u && cd_last_cmd == 0x06u
+2884:xenolift_mem_read32(0x8004FE1Cu), cd_scheduled, cd_pending,
+2896:if (cd_scheduled && cd_pending == 0u) {
+2928:if (r1294_ent && !cd_scheduled) {
+2958:if (cd_scheduled && cd_pending == 0u && cd_last_cmd == 0x01u
+3011:int r = cd_scheduled == 0u && cd_pending == 0u && cd_last_cmd == 0x06u
+3057:if (cd_scheduled && cd_pending == 0u
+3088:cd_read_active, cd_scheduled, cd_pending,
+3140:if (!cd_read_active && !cd_scheduled && !cd_pending
+3234:if (cd_scheduled) {
+3405:if (cd_last_cmd == 0x01u && cd_scheduled
+3443:fe04k, cd_seek_lba, xenolift_mem[0x56788], cd_pending, cd_scheduled, cd_arm_int1_pending);
+3448:&& cd_pending == 0u && cd_scheduled == 0u
+3848:&& cd_scheduled == 0u && cd_pending == 0u
+3855:cd_scheduled, cd_seek_lba,
+3913:if (cd_scheduled == 1u && cd_pending == 0u && cd_arm_int1_pending == 0u
+3927:if (cd_scheduled == 0u && cd_pending == 0u && cd_read_active
+3992:&& cd_scheduled == 0u
+5332:if (cd_scheduled && !cd_pending && !cd_read_active && !cd_arm_int1_pending) {
+5539:cd_scheduled ? 1u : 0u);
+5703:cd_scheduled ? 1u : 0u, (unsigned)cd_pending,
+5807:if (a == 0x8004FE1Cu && cd_scheduled && !g_r402_in_hook) {
+5865:fe1c_d, cd_scheduled, r1266_budget);
+5890:if (a == 0x8004FE1Cu && cd_scheduled == 0u && cd_pending == 0u
+7360:(unsigned)cd_pending, (unsigned)cd_scheduled,
+7742:&& cd_pending <= 1u && cd_scheduled == 0u
+8065:&& cd_pending <= 1u && cd_scheduled == 0u
+9340:cd_read_active, cd_scheduled);
+10130:fk_el, cd_seek_lba, cd_scheduled, cd_pending, cd_arm_int1_pending, cd_last_cmd, cd_data_n,
+10866:cd_scheduled ? 1 : 0, (unsigned)cd_pending,
+11073:(unsigned)cd_pending, (unsigned)cd_scheduled, (unsigned)cd_resp_n, (unsigned)(sizeof(cd_resp)),
+11105:cd_pending, cd_scheduled, cd_arm_int1_pending, cd_last_cmd,
+11124:if (cd_scheduled && cd_pending == 0u
+11236:if (cd_scheduled && cd_pending == 0u
+11686:fp_fe1c, fp_fe08, cd_seek_lba, cd_pending, cd_scheduled);
+11894:&& cd_scheduled == 0u
+11929:&& !cd_read_active && !cd_scheduled) {
+11980:if (cd_seek_lba >= 108754u && (cd_scheduled || cd_read_active)) fld3_era = 1u;
+11994:cd_seek_lba, cd_pending, cd_scheduled, cd_read_active,
+12100:cd_scheduled, cd_seek_lba, cd_pending, cd_arm_int1_pending,
+12189:if ((cd_scheduled == 1u || cd_read_active == 1u)
+12249:&& (cd_scheduled == 1u || cd_read_active == 1u)
+12284:if (fld3_era && cd_scheduled
+12302:if ((cd_scheduled == 1u || cd_read_active == 1u)
+12359:if ((cd_scheduled == 1u || cd_read_active == 1u)
+12398:cd_data_pos, cd_data_n, cd_pending, cd_scheduled, cd_arm_int1_pending,
+12436:int alive = (ffe04 != last_ff) || (frtry != last_rtry) || (ffdf8 != last_fdf8) || (fzseek != last_zs) || (cd_scheduled && fzseek >= 108933u && fzseek <= 108995u);
+12437:if (!over_budget && ((g_fld_stream && ffdf8 > 0u) || (cd_scheduled && fzseek >= 108933u && fzseek <= 108995u)) && alive && fdefers < 120) {
+12548:cd_last_cmd, cd_read_active, cd_data_loaded, cd_pending, cd_scheduled);
+12586:cd_pending, cd_scheduled, cd_arm_int1_pending, cd_last_cmd, cd_resp_n, cd_resp_pos, cd_data_n, cd_seek_lba);
+14590:r1246_n, r[4], r[5], cd_seek_lba, cd_read_active, cd_scheduled, cd_pending,
+15273:cd_scheduled ? 1u : 0u,
+15316:r1383_n, r1381_fe08, cd_seek_lba, cd_read_active?1u:0u, (unsigned)cd_pending, cd_scheduled?1u:0u,
+15350:&& !cd_scheduled && cd_pending == 0u
+15388:cd_scheduled ? 1 : 0, (unsigned)cd_pending,
+15878:sg_arms, (long)(xl_wall() - g_boot_wall_t0), cd_seek_lba, fdf8v, cd_last_cmd, cd_scheduled);
+15929:cd_arm_int1_pending, cd_pending, cd_scheduled,
+15936:cd_last_cmd, cd_pending, cd_scheduled,
+15995:&& (cd_scheduled || cd_read_active)) {
+20157:if (g_movie_live && (mv_n & 0xFFu) == 0x80u && cd_scheduled && cd_pending == 0u) {
+20207:} else if (cd_scheduled && cd_pending == 0u
+20270:&& cd_pending == 0u && cd_scheduled == 0u
+20409:r861_out("[mvloop] pre-movie polling n=%u (mod6=%d player=%d rs0=%08X lim=%u | R870 loop-id fn=%08X r31=%08X padcell=%08X FE1C=%08X | R874 DOOR: FDFC=%08X FE48=%08X FE30=%08X | R878 CD-STATE: seek=%u last_cmd=%02X pend=%u sched=%u FE04=%08X FDF8=%08X A22C=%08X A228=%08X - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=%08X cnt=%08X | R894 ARCH-REQ: FDF0=%08X FDF4=%08X FE14=%08X)\n", mv_n, g_mod6_live, g_movie_live, rs0, lim, xenolift_cur_fn, r[31], xenolift_mem_read32(0x800625FCu), xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8005FDFCu), xenolift_mem_read32(0x8005FE48u), xenolift_mem_read32(0x8005FE30u), cd_seek_lba, cd_last_cmd, cd_pending, cd_scheduled, xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8006A22Cu), xenolift_mem_read32(0x8006A228u),
+22135:if ((a == 0x8004B894u || a == 0x8004293Cu) && cd_scheduled) {
+22202:static int cd_tick_busy = 0;
+22207:&& cd_pending == 0u && cd_scheduled == 0u
+22219:&& cd_pending == 0u && cd_scheduled == 0u
+22235:&& cd_pending <= 1u && cd_scheduled == 0u
+22271:if (!cd_tick_busy && (cd_pending != 0u || kick_wanted || kick2_wanted || kick3_wanted || (cd_scheduled != 0u && a == 0x800286CCu && g_r1351_genuine_answer)                                                                                                                                                                                                                                                                                                                                                                                                  || (xenolift_mem_read32(0x8004FE1Cu) == 6u && xenolift_mem_read32(0x8004FDF8u) == 0u && !cd_read_active && !cd_scheduled && !cd_pending))
+22276:cd_tick_busy = 1;
+22277:{ static uint32_t r1365_n; if (r1365_n < 24u) { r1365_n++; r861_out("[fsent] R1365 field-spin scheduled-read entry #%u: a=%08X sched=%u act=%u loaded=%u pend=%u arm1=%u cmd=%02X FDF8=%u FE1C=%u seek=%u\n", r1365_n, a, cd_scheduled, cd_read_active, cd_data_loaded, cd_pending, cd_arm_int1_pending, cd_last_cmd, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE1Cu), cd_seek_lba); } }
+22279:{ static uint32_t r1369_n; if (r1369_n < 8u && !cd_read_active && !cd_scheduled && !cd_pending && xenolift_mem_read32(0x8004FDF8u) == 0u) { r1369_n++;
+22338:(cd_scheduled == 1u && cd_pending == 0u && cd_arm_int1_pending == 0
+22341:cd_scheduled, cd_data_loaded,
+22352:if (cd_scheduled == 1u && cd_pending == 0u && cd_arm_int1_pending == 0
+22375:if ((cd_scheduled == 1u || cd_read_active == 1u)
+22402:cd_seek_lba, cd_pending, cd_scheduled, cd_read_active,
+22608:int zrf_win_now = (cd_scheduled && fe04 >= 108933u && fe04 < 108995u);
+22659:if (cd_seek_lba >= 108933u && fe04_now >= 108933u && fe04_now < 108995u && cd_scheduled) {
+22960:&& cd_pending <= 1u && cd_scheduled == 0u
+23182:cd_tick_busy = 0;
+23192:if (a == 0x800286CCu && cd_scheduled && cd_pending == 0u
+
+===FETCH_POLICY===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=[fetchcam] R1247 fetch entry MATCHES=1
+EXCERPT 14571..14597 (not a guaranteed complete function)
+14571:                        xenolift_mem_read32(0x8004FE08u), xenolift_mem_read32(0x8004FE1Cu),
+14572:                        (r[4] >= 0x80000000u && r[4] < 0x80800000u) ? xenolift_mem_read32(r[4]) : 0xDEADFA11u,
+14573:                        (r[4] >= 0x80000000u && r[4] < 0x80800000u) ? xenolift_mem_read32(r[4] + 4) : 0xDEADFA11u);
+14574:            }
+14575:        }
+14576:        {                                                                
+14586:            static int r1246_n;
+14587:            if (a == 0x80042AA8u && r1246_n < 400) { r1246_n++;
+14588:                uint32_t mi;
+14589:                r861_out("[fetchcam] R1247 fetch entry #%d r4=%08X r5=%08X seek=%u act=%d sched=%d pend=%u FE04=%u FDF8=%u FE1C=%u FE08=%08X req59EF8=%08X %08X %08X %08X\n",
+14590:                        r1246_n, r[4], r[5], cd_seek_lba, cd_read_active, cd_scheduled, cd_pending,
+14591:                        xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FDF8u),
+14592:                        xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE08u),
+14593:                        xenolift_mem_read32(0x80059EF8u), xenolift_mem_read32(0x80059EFCu),
+14594:                        xenolift_mem_read32(0x80059F00u), xenolift_mem_read32(0x80059F04u));
+14595:                if (r1246_n <= 3) {
+14596:                    r861_out("[fetchcam] mirror tbl:");
+14597:                    for (mi = 0u; mi < 20u; mi++)
+
+===FDW_POLICY===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=FDF8 ARM-CONTEXT MATCHES=1
+EXCERPT 18166..18192 (not a guaranteed complete function)
+18169:                        memcpy(&flg, xenolift_mem + 0xFBFFCu, 4);
+18170:                        if ((flg & 0x00200000u) == 0u) {
+18171:                            xenolift_mem_write32(0x801FBFFCu, flg | 0x00200000u);
+18172:                            r861_out("[rectguard] R702 terminator flag 0x801FBFFC 0x%08X -> 0x%08X (0x200000 bit ARMED - walk concludes at heap-top)\n", flg, flg | 0x00200000u);
+18173:                        }
+18174:                        r861_out("[rectguard] R700 terminator-node 0x801FBFF8 next 0x%08X out of RAM -> capped at heap-top 0x801FC000 (writer fn 0x%08X)\n", v, a);
+18175:                    }
+18176:                    if (hc_n[k] < hc_cap) {
+18177:                    if (hc_addr[k] == 0x59330u)                                                                                                                                                                                 
+18178:                        r861_out("[latchhw] R1286 latch write 0x%08X: %08X -> %08X at fn 0x%08X sw_line=%u sp=%08X r16=%08X\n",
+18179:                                0x80000000u + hc_addr[k], hc_prev[k], v, a, xenolift_sw_line_last, r[29], r[16]);
+18180:                    else if (hc_addr[k] == 0x28088u)                                                                                                                             
+18181:                        r861_out("[idxw] R1287 idx_work write 0x%08X: %08X -> %08X at fn 0x%08X sw_line=%u sp=%08X r16=%08X\n",
+18182:                                0x80000000u + hc_addr[k], hc_prev[k], v, a, xenolift_sw_line_last, r[29], r[16]);
+18183:                    else if (hc_addr[k] == 0x4FDF8u)                                                                                                                                                                                                                                                                                                                                                           
+18184:                        r861_out("[fdw] R1299 FDF8 ARM-CONTEXT: 0x%08X: %08X -> %08X at fn 0x%08X sw_line=%u sp=%08X | request context: FE04=%08X FE08=%08X seek=%u last_cmd=%02X stream_live=%d act=%d loaded=%d pos=%u/%u - WHO armed this count and for WHICH LBA\n",
+18185:                                0x80000000u + hc_addr[k], hc_prev[k], v, a, xenolift_sw_line_last, r[29],
+18186:                                xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE08u),
+18187:                                cd_seek_lba, (unsigned)cd_last_cmd, cd_stream_live ? 1 : 0,
+18188:                                cd_read_active ? 1 : 0, cd_data_loaded ? 1 : 0,
+18189:                                (unsigned)cd_data_pos, (unsigned)cd_data_n);
+18190:                    else
+18191:                        r861_out("[hook] 0x%08X: %08X -> %08X at fn 0x%08X sw_line=%u sp=%08X r16=%08X\n",
+18192:                                0x80000000u + hc_addr[k], hc_prev[k], v, a, xenolift_sw_line_last, r[29], r[16]);
+
+===FSTAMP_POLICY===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=[finstamp] MATCHES=1
+EXCERPT 9319..9345 (not a guaranteed complete function)
+9333:    if (a == 0x8004FDF8u || a == 0x8004FE04u || a == 0x8004FE1Cu) {
+9334:        static uint32_t r1248_n;
+9335:        r1248_n++;
+9336:        if (r1248_n <= 1000u || (r1248_n & 65535u) == 0u) {
+9337:            r861_out("[finstamp] R1248 #%u ea=%08X %u -> %u cur_fn=%08X w=%u act=%d sched=%d\n",
+9338:                    r1248_n, a, xenolift_mem_read32(a), v,
+9339:                    (unsigned)xenolift_cur_fn, xenolift_sw_width,
+9340:                    cd_read_active, cd_scheduled);
+9341:        }
+9342:    }
+9343:    if (a == 0x800564ACu || a == 0x800564A8u || a == 0x80056770u) {
+9344:        static uint32_t r1204_n;
+9345:        r1204_n++;
+
+===CMD_POLICY===
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=[cmdtl] MATCHES=2
+EXCERPT 1735..1761 (not a guaranteed complete function)
+1737:static int cd_flag_suppressed(uint8_t c)
+1738:{
+1739:    (void)c;
+1740:    return 0;                                                          
+1741:}
+1743:int cd_getstat_spins = 0;                                            
+1746:int cd_motor_on = 1;                                                   
+1751:static void cd_cmd(uint8_t cmd)
+1752:{
+1758:    {
+1759:        static int ct_n;
+1760:        if (cd_seek_lba >= 108900u && ct_n < 80u) {
+1761:            ct_n++;
+EXCERPT 1744..1770 (not a guaranteed complete function)
+1762:            r861_out("[cmdtl] R533 #%d cmd %02x->%02x seek=%u FE1C=%u FE20=%u resp=%u/%u pend=%u sched=%u data=%u/%u FDF8=%u FE04=%08x\n",
+1763:                    ct_n, cd_last_cmd, cmd, cd_seek_lba,
+1764:                    xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE20u),
+1765:                    cd_resp_n, cd_resp_pos, cd_pending, cd_scheduled,
+1766:                    cd_data_pos, cd_data_n,
+1767:                    xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u));
+1768:        }
+1769:    }
+
+===LOOKUP_SOURCE===
+FILE=prev_run/runtime_last.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=[stab] req MATCHES=5
+EXCERPT 5206..5254 (not a guaranteed complete function)
+5241:    if (a == 0x8004FDF0u) {
+5242:        uint32_t r1100_v;
+5243:        memcpy(&r1100_v, xenolift_mem + 0x4FDF0u, 4);
+5254:        if (r1100_v == 0u || (r1100_v < 0x80000000u)) {
+EXCERPT 16820..16868 (not a guaranteed complete function)
+16820: 0x59F28u                            ,
+16821: 0x59F2Cu                            ,
+16822:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+16829:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+16832:                                                          0x4FDF8u,
+16833:                            0x4FE08u,                                                                                                                                                              
+16834:                            0x59F10u                                                                                                                                            ,
+16835:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+16836:                0x69394u,                                                                                                                          
+16837:                0x68934u,                                                                                                               
+16838:                0x68938u,                                                                   
+16839:                0x568C8u                                                                                                                                                                                                                                                         ,
+16840:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+16841:                0x68964u                                                                                                                           ,
+16842: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+16843:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+16844:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16845:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+16846:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16847:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+16848:                0x1D3008u, 0x1D3010u,                                          
+16862:                0x56788u, 0x56789u                                           
+EXCERPT 18099..18147 (not a guaranteed complete function)
+18099:                if (hc_addr[k] == 0x10000u && v != 0xFFFFFFFFu) {
+18101:                    uint32_t r1065_v; memcpy(&r1065_v, xenolift_mem + 0x10000u, 4);
+18102:                    if (r1065_v != 0xFFFFFFFFu) {
+18103:                        r1065_v = 0xFFFFFFFFu;
+18104:                        memcpy(xenolift_mem + 0x10000u, &r1065_v, 4);
+18105:                        static int r1065_n;
+18106:                        if (r1065_n < 8) {
+18107:                            r1065_n++;
+18108:                            xenolift_receipt("[exeguard] R1065 #%d D_80010000 restored 0x%08X -> 0xFFFFFFFF (pristine exe value; FieldMain beq -1 skip contract, c229 addr=0x6 fault; decomp: read-only flag)\n", r1065_n, v);
+18109:                        }
+18110:                    }
+18111:                }
+18112:                if (!hc_seen[k] || v != hc_prev[k]) {
+18132:                    if (hc_addr[k] == 0x4FDF0u && v == 0x80090000u && hc_prev[k] != 0x80090000u) {
+18133:                        uint32_t r1062_core = xenolift_mem_read32(0x80010004u);
+18134:                        if (r1062_core != 0u && r1062_core != xenolift_mem_read32(0x80090000u)) {
+18135:                            memcpy(xenolift_mem + 0x90000u, xenolift_mem + 0x10004u, 8192u);
+18136:                            static int r1062_n;
+18137:                            if (r1062_n < 8) {
+18138:                                r1062_n++;
+18139:                                xenolift_receipt("[archheal] R1062 #%d field archive table delivered: 8KB copy 0x80010004 -> 0x80090000 (libarchive.c ArchiveInitialize reads LBA 0x18 into BOTH tables; field-side read lost — c224 R1061 writer receipt, [stab] garbage LBA=12237515)\n", r1062_n);
+18140:                            }
+18141:                        }
+18142:                    }
+EXCERPT 19360..19408 (not a guaranteed complete function)
+19360:                      const uint32_t spots[3] = {0x80077E68u, 0x80077E88u, 0x80077EC8u};
+19361:                      for (int s = 0; s < 3; s++) {
+19362:                          uint32_t w[8]; char buf[9*8+1]; int q = 0; buf[0]=0;
+19363:                          for (int i = 0; i < 8; i++) {
+19364:                              w[i] = xenolift_mem_read32(spots[s] + 4u*(uint32_t)i);
+19365:                              q += snprintf(buf+q, sizeof(buf)-(size_t)q, "%08X ", w[i]);
+19366:                          }
+19367:                          r861_out("[coordb3] R685 window-0 @%08X: %s\n", spots[s], buf);
+19368:                      }
+19369:                  } }
+19370:                  {                                                      
+19377:                      uint32_t cbp = 0x80077E88u, mbp = 0x801D9724u;
+19378:                      r861_out("[coordb] R683 descriptor block @0x80077E88:");
+19379:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(cbp + 4u*q));
+19380:                      r861_out("\n[coordb] R683 field-module base @0x801D9724:");
+19381:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(mbp + 4u*q));
+19382:                      r861_out("\n[coordb] R683 module table @0x8004EAA0:");
+19383:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(0x8004EAA0u + 4u*q));
+19384:                      r861_out(" | relay cells: 92B8=%08X 92BC=%08X 92C4=%08X 92C8=%08X 18098=%08X | R1099 arch chain: 4FDF0(base)=%08X FE14(off)=%08X FE1C(member)=%08X FDF8=%08X FDFC=%08X (R1061 decode: garbage [stab] requests decode from base=0x80090000 overlay window while real table=0x80010004; healthy base receipted at install passes; c272 R1063 clobber-watch silent - this door dump settles clobber-vs-stale)\n",
+19385:                              xenolift_mem_read32(0x800592B8u), xenolift_mem_read32(0x800592BCu),
+19386:                              xenolift_mem_read32(0x800592C4u), xenolift_mem_read32(0x800592C8u),
+19387:                              xenolift_mem_read32(0x80018098u),
+19388:                              xenolift_mem_read32(0x8004FDF0u), xenolift_mem_read32(0x8004FE14u),
+19389:                              xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FDF8u),
+19390:                              xenolift_mem_read32(0x8004FDFCu));
+19391:                {                                                            
+19398:                    int qi;
+19399:                    r861_out("[coordb2] R684 queue descriptors 18088..180AC:");
+19400:                    for (qi = 0; qi < 10; qi++)
+19401:                        r861_out(" %08X", xenolift_mem_read32(0x80018088u + 4u * (uint32_t)qi));
+19402:                    r861_out("\n");
+19403:                    r861_out("[coordb2] R684 staged-module header @801D9724 (32w):");
+19404:                    for (qi = 0; qi < 32; qi++)
+19405:                        r861_out(" %08X", xenolift_mem_read32(0x801D9724u + 4u * (uint32_t)qi));
+19406:                    r861_out("\n");
+19407:                    r861_out("[coordb2] R684 field-coordinator candidate @801E1AB4 (offset 8390, 8w):");
+19408:                    for (qi = 0; qi < 8; qi++)
+EXCERPT 19959..20007 (not a guaranteed complete function)
+19959:        static int b = 60;
+19960:        if (b-- > 0)
+19961:            r861_out("[slot] h2 STARTER fn_8002A68C(a0=0x%08X) caller=0x%08X FE04(LBA)=0x%08X FE1C(state)=%u FE20(sub)=%u FDF8=%u FDFC=%u gate(r5=%08X)&0x10=%u gdisp=%u\n",
+19962:                    r[4], r[31], xenolift_mem_read32(0x8004FE04u),
+19963:                    xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE20u), xenolift_mem_read32(0x8004FDF8u),
+19964:                    xenolift_mem_read32(0x8004FDFCu), r[5],
+19965:                    (r[5] >= 0x80000000u && r[5] < 0x80200000u) ? (xenolift_mem_read32(r[5]) & 0x10u) >> 4 : 0xFFFFu, xenolift_mem_read32(0x80018088u));
+19969:            {
+19970:                static int st_fab;
+19971:                if (st_fab < 400) {
+19972:                    uint32_t mid = xenolift_mem_read32(0x8004FE1Cu);
+19973:                    uint32_t tb  = xenolift_mem_read32(0x8004FDF0u);
+19974:                    uint32_t of2 = xenolift_mem_read32(0x8004FE14u);
+19975:                    if (mid != 0u && tb >= 0x80000000u) {
+19976:                        uint32_t ep = tb + (mid + of2 - 1u) * 7u;
+19977:                        uint32_t pp = ep & 0x1FFFFFFFu;
+19978:                        if (pp + 7u < XENOLIFT_RAM_SIZE) {
+19979:                            const uint8_t *e2 = xenolift_mem + pp;
+19980:                            uint32_t lb = e2[0] | (e2[1] << 8) | (e2[2] << 16);
+19981:                            uint32_t sz = e2[3] | (e2[4] << 8) | (e2[5] << 16) | ((uint32_t)e2[6] << 24);
+19982:                            st_fab++;
+19983:                            r861_out("[stab] req member=%u base=0x%08X off=%u entry=0x%08X LBA=%u size=%u gdisp=%u\n",
+19984:                                    mid, tb, of2, ep, lb, sz, xenolift_mem_read32(0x80018088u));
+19985:                        }
+19986:                    }
+19987:                }
+19988:            }
+19989:    }
+19990:    if (a == 0x8003A68Cu || a == 0x8003B084u) {
+19991:        static int b = 12;
+19992:        if (b-- > 0)
+19993:            r861_out("[slot] CD callback 0x%08X(a0=0x%08X) caller=0x%08X FE1C(file#)=%u\n",
+19994:                    a, r[4], r[31], xenolift_mem_read32(0x8004FE1Cu));
+19995:    }
+19999:    if (a == 0x800737ECu) {
+20000:        g_mod6_live = 1;                                          
+20001:        static int b = 10;
+20002:        if (b-- > 0) {
+FILE=prev_run/runtime_last.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=ArchiveDecodeSizeAbsolute MATCHES=3
+EXCERPT 16822..16870 (not a guaranteed complete function)
+16822:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+16829:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+16832:                                                          0x4FDF8u,
+16833:                            0x4FE08u,                                                                                                                                                              
+16834:                            0x59F10u                                                                                                                                            ,
+16835:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+16836:                0x69394u,                                                                                                                          
+16837:                0x68934u,                                                                                                               
+16838:                0x68938u,                                                                   
+16839:                0x568C8u                                                                                                                                                                                                                                                         ,
+16840:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+16841:                0x68964u                                                                                                                           ,
+16842: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+16843:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+16844:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16845:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+16846:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16847:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+16848:                0x1D3008u, 0x1D3010u,                                          
+16862:                0x56788u, 0x56789u                                           
+EXCERPT 25172..25220 (not a guaranteed complete function)
+25182:            if (xenolift_mem_read32(0x80059410u) == 0u) {
+25185:                xenolift_mem_write32(0x800595E4u, 0x8006BE00u);                                           
+25186:                xenolift_mem_write32(0x80059410u, 0x80065B10u);                      
+25187:                xenolift_mem_write32(0x8005951Cu, 0x000062F0u);                      
+25188:                xenolift_mem_write32(0x80065B10u, (xenolift_mem_read32(0x80065B10u) & 0xFFFF0000u) | 0x00008000u);                          
+25189:                xenolift_mem_write32(0x80065B12u, xenolift_mem_read32(0x80065B12u) & 0xFFFF0000u);                     
+25190:                xenolift_mem_write32(0x80065B14u, 0u);               
+25191:                xenolift_mem_write32(0x80065B18u, 0x80065B20u);                           
+25192:                xenolift_mem_write32(0x80065B1Cu, 0u);                   
+25193:                crash_puts("[sndheal] R1014 sound-heap re-seeded post-restore: head=80065B10 size=62F0 end=8006BE00 (replica of decomp SoundHeapInitialize(80065B0C,6300); c128 receipts: init called but wiped by every restore)\n");
+25194:            }
+25209:            if (xenolift_mem_read32(0x8004FDF0u) == 0u) {
+25210:                xenolift_mem_write32(0x8004FDF0u, 0x80010004u);
+25211:                crash_puts("[archseed] R1109 g_ArchiveTable(4FDF0) re-seeded 0 -> 80010004 post-restore (game's own install value; ArchiveDecodeSizeAbsolute NULL-deref class; c287 receipts)\n");
+25212:            }
+25213:            xenolift_psyqptr_heal("crash-recovery");
+25214:            xenolift_mem_write32(0x80010000u, 0xFFFFFFFFu);                             
+25215:            xenolift_churn_pend = 0x80019524u;                            
+25216:        if (g_firstfault_stop) r1177_door_stop("longjmp-site-L20511");                                                                                                                  
+25217:        longjmp(xenolift_churn_jmp, 1);
+25218:        }
+25219:    }
+EXCERPT 25187..25235 (not a guaranteed complete function)
+25223:    crash_puts("[segvdie] R820 kit exit @ cur_fn=");
+25224:    crash_puth(xenolift_cur_fn);
+25225:    crash_puts(" recoveries=");
+25226:    crash_puth((uint32_t)(r805_mirror));
+25227:    crash_puts("\n");
+25228:    _exit(99);
+25229:}
+25231:static int xenolift_real_main(int argc, char **argv);
+25232:#define XENOLIFT_GUEST_STACK (2048ull << 20)                                   
+25233:struct xl_main_args { int argc; char **argv; int rc; };
+25234:static void *xl_main_thread(void *p)
+25235:{
+FILE=runtime/.z15.c SHA=0f4992ee6c0e0a0d72481a27ab88d146f66f435d7c0ef6c0ed9e2c1ca8cb829e NEEDLE=[stab] req MATCHES=1
+EXCERPT 9706..9754 (not a guaranteed complete function)
+9706:        static int b = 60;
+9707:        if (b-- > 0)
+9708:            fprintf(stderr, "[slot] h2 STARTER fn_8002A68C(a0=0x%08X) caller=0x%08X FE04(LBA)=0x%08X FE1C(state)=%u FE20(sub)=%u FDF8=%u FDFC=%u gate(r5=%08X)&0x10=%u gdisp=%u\n",
+9709:                    r[4], r[31], xenolift_mem_read32(0x8004FE04u),
+9710:                    xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE20u), xenolift_mem_read32(0x8004FDF8u),
+9711:                    xenolift_mem_read32(0x8004FDFCu), r[5],
+9712:                    (r[5] >= 0x80000000u && r[5] < 0x80200000u) ? (xenolift_mem_read32(r[5]) & 0x10u) >> 4 : 0xFFFFu, xenolift_mem_read32(0x80018088u));
+9716:            {
+9717:                static int st_fab;
+9718:                if (st_fab < 400) {
+9719:                    uint32_t mid = xenolift_mem_read32(0x8004FE1Cu);
+9720:                    uint32_t tb  = xenolift_mem_read32(0x8004FDF0u);
+9721:                    uint32_t of2 = xenolift_mem_read32(0x8004FE14u);
+9722:                    if (mid != 0u && tb >= 0x80000000u) {
+9723:                        uint32_t ep = tb + (mid + of2 - 1u) * 7u;
+9724:                        uint32_t pp = ep & 0x1FFFFFFFu;
+9725:                        if (pp + 7u < XENOLIFT_RAM_SIZE) {
+9726:                            const uint8_t *e2 = xenolift_mem + pp;
+9727:                            uint32_t lb = e2[0] | (e2[1] << 8) | (e2[2] << 16);
+9728:                            uint32_t sz = e2[3] | (e2[4] << 8) | (e2[5] << 16) | ((uint32_t)e2[6] << 24);
+9729:                            st_fab++;
+9730:                            fprintf(stderr, "[stab] req member=%u base=0x%08X off=%u entry=0x%08X LBA=%u size=%u gdisp=%u\n",
+9731:                                    mid, tb, of2, ep, lb, sz, xenolift_mem_read32(0x80018088u));
+9732:                        }
+9733:                    }
+9734:                }
+9735:            }
+9736:    }
+9737:    if (a == 0x8003A68Cu || a == 0x8003B084u) {
+9738:        static int b = 12;
+9739:        if (b-- > 0)
+9740:            fprintf(stderr, "[slot] CD callback 0x%08X(a0=0x%08X) caller=0x%08X FE1C(file#)=%u\n",
+9741:                    a, r[4], r[31], xenolift_mem_read32(0x8004FE1Cu));
+9742:    }
+9746:    if (a == 0x800737ECu) {
+9747:        g_mod6_live = 1;                                          
+9748:        static int b = 10;
+9749:        if (b-- > 0) {
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=[stab] req MATCHES=5
+EXCERPT 5206..5254 (not a guaranteed complete function)
+5241:    if (a == 0x8004FDF0u) {
+5242:        uint32_t r1100_v;
+5243:        memcpy(&r1100_v, xenolift_mem + 0x4FDF0u, 4);
+5254:        if (r1100_v == 0u || (r1100_v < 0x80000000u)) {
+EXCERPT 16820..16868 (not a guaranteed complete function)
+16820: 0x59F28u                            ,
+16821: 0x59F2Cu                            ,
+16822:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+16829:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+16832:                                                          0x4FDF8u,
+16833:                            0x4FE08u,                                                                                                                                                              
+16834:                            0x59F10u                                                                                                                                            ,
+16835:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+16836:                0x69394u,                                                                                                                          
+16837:                0x68934u,                                                                                                               
+16838:                0x68938u,                                                                   
+16839:                0x568C8u                                                                                                                                                                                                                                                         ,
+16840:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+16841:                0x68964u                                                                                                                           ,
+16842: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+16843:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+16844:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16845:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+16846:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16847:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+16848:                0x1D3008u, 0x1D3010u,                                          
+16862:                0x56788u, 0x56789u                                           
+EXCERPT 18099..18147 (not a guaranteed complete function)
+18099:                if (hc_addr[k] == 0x10000u && v != 0xFFFFFFFFu) {
+18101:                    uint32_t r1065_v; memcpy(&r1065_v, xenolift_mem + 0x10000u, 4);
+18102:                    if (r1065_v != 0xFFFFFFFFu) {
+18103:                        r1065_v = 0xFFFFFFFFu;
+18104:                        memcpy(xenolift_mem + 0x10000u, &r1065_v, 4);
+18105:                        static int r1065_n;
+18106:                        if (r1065_n < 8) {
+18107:                            r1065_n++;
+18108:                            xenolift_receipt("[exeguard] R1065 #%d D_80010000 restored 0x%08X -> 0xFFFFFFFF (pristine exe value; FieldMain beq -1 skip contract, c229 addr=0x6 fault; decomp: read-only flag)\n", r1065_n, v);
+18109:                        }
+18110:                    }
+18111:                }
+18112:                if (!hc_seen[k] || v != hc_prev[k]) {
+18132:                    if (hc_addr[k] == 0x4FDF0u && v == 0x80090000u && hc_prev[k] != 0x80090000u) {
+18133:                        uint32_t r1062_core = xenolift_mem_read32(0x80010004u);
+18134:                        if (r1062_core != 0u && r1062_core != xenolift_mem_read32(0x80090000u)) {
+18135:                            memcpy(xenolift_mem + 0x90000u, xenolift_mem + 0x10004u, 8192u);
+18136:                            static int r1062_n;
+18137:                            if (r1062_n < 8) {
+18138:                                r1062_n++;
+18139:                                xenolift_receipt("[archheal] R1062 #%d field archive table delivered: 8KB copy 0x80010004 -> 0x80090000 (libarchive.c ArchiveInitialize reads LBA 0x18 into BOTH tables; field-side read lost — c224 R1061 writer receipt, [stab] garbage LBA=12237515)\n", r1062_n);
+18140:                            }
+18141:                        }
+18142:                    }
+EXCERPT 19360..19408 (not a guaranteed complete function)
+19360:                      const uint32_t spots[3] = {0x80077E68u, 0x80077E88u, 0x80077EC8u};
+19361:                      for (int s = 0; s < 3; s++) {
+19362:                          uint32_t w[8]; char buf[9*8+1]; int q = 0; buf[0]=0;
+19363:                          for (int i = 0; i < 8; i++) {
+19364:                              w[i] = xenolift_mem_read32(spots[s] + 4u*(uint32_t)i);
+19365:                              q += snprintf(buf+q, sizeof(buf)-(size_t)q, "%08X ", w[i]);
+19366:                          }
+19367:                          r861_out("[coordb3] R685 window-0 @%08X: %s\n", spots[s], buf);
+19368:                      }
+19369:                  } }
+19370:                  {                                                      
+19377:                      uint32_t cbp = 0x80077E88u, mbp = 0x801D9724u;
+19378:                      r861_out("[coordb] R683 descriptor block @0x80077E88:");
+19379:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(cbp + 4u*q));
+19380:                      r861_out("\n[coordb] R683 field-module base @0x801D9724:");
+19381:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(mbp + 4u*q));
+19382:                      r861_out("\n[coordb] R683 module table @0x8004EAA0:");
+19383:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(0x8004EAA0u + 4u*q));
+19384:                      r861_out(" | relay cells: 92B8=%08X 92BC=%08X 92C4=%08X 92C8=%08X 18098=%08X | R1099 arch chain: 4FDF0(base)=%08X FE14(off)=%08X FE1C(member)=%08X FDF8=%08X FDFC=%08X (R1061 decode: garbage [stab] requests decode from base=0x80090000 overlay window while real table=0x80010004; healthy base receipted at install passes; c272 R1063 clobber-watch silent - this door dump settles clobber-vs-stale)\n",
+19385:                              xenolift_mem_read32(0x800592B8u), xenolift_mem_read32(0x800592BCu),
+19386:                              xenolift_mem_read32(0x800592C4u), xenolift_mem_read32(0x800592C8u),
+19387:                              xenolift_mem_read32(0x80018098u),
+19388:                              xenolift_mem_read32(0x8004FDF0u), xenolift_mem_read32(0x8004FE14u),
+19389:                              xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FDF8u),
+19390:                              xenolift_mem_read32(0x8004FDFCu));
+19391:                {                                                            
+19398:                    int qi;
+19399:                    r861_out("[coordb2] R684 queue descriptors 18088..180AC:");
+19400:                    for (qi = 0; qi < 10; qi++)
+19401:                        r861_out(" %08X", xenolift_mem_read32(0x80018088u + 4u * (uint32_t)qi));
+19402:                    r861_out("\n");
+19403:                    r861_out("[coordb2] R684 staged-module header @801D9724 (32w):");
+19404:                    for (qi = 0; qi < 32; qi++)
+19405:                        r861_out(" %08X", xenolift_mem_read32(0x801D9724u + 4u * (uint32_t)qi));
+19406:                    r861_out("\n");
+19407:                    r861_out("[coordb2] R684 field-coordinator candidate @801E1AB4 (offset 8390, 8w):");
+19408:                    for (qi = 0; qi < 8; qi++)
+EXCERPT 19959..20007 (not a guaranteed complete function)
+19959:        static int b = 60;
+19960:        if (b-- > 0)
+19961:            r861_out("[slot] h2 STARTER fn_8002A68C(a0=0x%08X) caller=0x%08X FE04(LBA)=0x%08X FE1C(state)=%u FE20(sub)=%u FDF8=%u FDFC=%u gate(r5=%08X)&0x10=%u gdisp=%u\n",
+19962:                    r[4], r[31], xenolift_mem_read32(0x8004FE04u),
+19963:                    xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE20u), xenolift_mem_read32(0x8004FDF8u),
+19964:                    xenolift_mem_read32(0x8004FDFCu), r[5],
+19965:                    (r[5] >= 0x80000000u && r[5] < 0x80200000u) ? (xenolift_mem_read32(r[5]) & 0x10u) >> 4 : 0xFFFFu, xenolift_mem_read32(0x80018088u));
+19969:            {
+19970:                static int st_fab;
+19971:                if (st_fab < 400) {
+19972:                    uint32_t mid = xenolift_mem_read32(0x8004FE1Cu);
+19973:                    uint32_t tb  = xenolift_mem_read32(0x8004FDF0u);
+19974:                    uint32_t of2 = xenolift_mem_read32(0x8004FE14u);
+19975:                    if (mid != 0u && tb >= 0x80000000u) {
+19976:                        uint32_t ep = tb + (mid + of2 - 1u) * 7u;
+19977:                        uint32_t pp = ep & 0x1FFFFFFFu;
+19978:                        if (pp + 7u < XENOLIFT_RAM_SIZE) {
+19979:                            const uint8_t *e2 = xenolift_mem + pp;
+19980:                            uint32_t lb = e2[0] | (e2[1] << 8) | (e2[2] << 16);
+19981:                            uint32_t sz = e2[3] | (e2[4] << 8) | (e2[5] << 16) | ((uint32_t)e2[6] << 24);
+19982:                            st_fab++;
+19983:                            r861_out("[stab] req member=%u base=0x%08X off=%u entry=0x%08X LBA=%u size=%u gdisp=%u\n",
+19984:                                    mid, tb, of2, ep, lb, sz, xenolift_mem_read32(0x80018088u));
+19985:                        }
+19986:                    }
+19987:                }
+19988:            }
+19989:    }
+19990:    if (a == 0x8003A68Cu || a == 0x8003B084u) {
+19991:        static int b = 12;
+19992:        if (b-- > 0)
+19993:            r861_out("[slot] CD callback 0x%08X(a0=0x%08X) caller=0x%08X FE1C(file#)=%u\n",
+19994:                    a, r[4], r[31], xenolift_mem_read32(0x8004FE1Cu));
+19995:    }
+19999:    if (a == 0x800737ECu) {
+20000:        g_mod6_live = 1;                                          
+20001:        static int b = 10;
+20002:        if (b-- > 0) {
+FILE=runtime/runtime.c SHA=cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602 NEEDLE=ArchiveDecodeSizeAbsolute MATCHES=3
+EXCERPT 16822..16870 (not a guaranteed complete function)
+16822:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+16829:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+16832:                                                          0x4FDF8u,
+16833:                            0x4FE08u,                                                                                                                                                              
+16834:                            0x59F10u                                                                                                                                            ,
+16835:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+16836:                0x69394u,                                                                                                                          
+16837:                0x68934u,                                                                                                               
+16838:                0x68938u,                                                                   
+16839:                0x568C8u                                                                                                                                                                                                                                                         ,
+16840:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+16841:                0x68964u                                                                                                                           ,
+16842: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+16843:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+16844:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16845:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+16846:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+16847:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+16848:                0x1D3008u, 0x1D3010u,                                          
+16862:                0x56788u, 0x56789u                                           
+EXCERPT 25172..25220 (not a guaranteed complete function)
+25182:            if (xenolift_mem_read32(0x80059410u) == 0u) {
+25185:                xenolift_mem_write32(0x800595E4u, 0x8006BE00u);                                           
+25186:                xenolift_mem_write32(0x80059410u, 0x80065B10u);                      
+25187:                xenolift_mem_write32(0x8005951Cu, 0x000062F0u);                      
+25188:                xenolift_mem_write32(0x80065B10u, (xenolift_mem_read32(0x80065B10u) & 0xFFFF0000u) | 0x00008000u);                          
+25189:                xenolift_mem_write32(0x80065B12u, xenolift_mem_read32(0x80065B12u) & 0xFFFF0000u);                     
+25190:                xenolift_mem_write32(0x80065B14u, 0u);               
+25191:                xenolift_mem_write32(0x80065B18u, 0x80065B20u);                           
+25192:                xenolift_mem_write32(0x80065B1Cu, 0u);                   
+25193:                crash_puts("[sndheal] R1014 sound-heap re-seeded post-restore: head=80065B10 size=62F0 end=8006BE00 (replica of decomp SoundHeapInitialize(80065B0C,6300); c128 receipts: init called but wiped by every restore)\n");
+25194:            }
+25209:            if (xenolift_mem_read32(0x8004FDF0u) == 0u) {
+25210:                xenolift_mem_write32(0x8004FDF0u, 0x80010004u);
+25211:                crash_puts("[archseed] R1109 g_ArchiveTable(4FDF0) re-seeded 0 -> 80010004 post-restore (game's own install value; ArchiveDecodeSizeAbsolute NULL-deref class; c287 receipts)\n");
+25212:            }
+25213:            xenolift_psyqptr_heal("crash-recovery");
+25214:            xenolift_mem_write32(0x80010000u, 0xFFFFFFFFu);                             
+25215:            xenolift_churn_pend = 0x80019524u;                            
+25216:        if (g_firstfault_stop) r1177_door_stop("longjmp-site-L20511");                                                                                                                  
+25217:        longjmp(xenolift_churn_jmp, 1);
+25218:        }
+25219:    }
+EXCERPT 25187..25235 (not a guaranteed complete function)
+25223:    crash_puts("[segvdie] R820 kit exit @ cur_fn=");
+25224:    crash_puth(xenolift_cur_fn);
+25225:    crash_puts(" recoveries=");
+25226:    crash_puth((uint32_t)(r805_mirror));
+25227:    crash_puts("\n");
+25228:    _exit(99);
+25229:}
+25231:static int xenolift_real_main(int argc, char **argv);
+25232:#define XENOLIFT_GUEST_STACK (2048ull << 20)                                   
+25233:struct xl_main_args { int argc; char **argv; int rc; };
+25234:static void *xl_main_thread(void *p)
+25235:{
+FILE=worktrees/firstfault-manager/runtime-before.c SHA=1cdc7520e2df3fd4f3a8b57ae689f87d744e5bc94c225e5a64090c1a5515d701 NEEDLE=[stab] req MATCHES=5
+EXCERPT 3608..3656 (not a guaranteed complete function)
+3643:    if (a == 0x8004FDF0u) {
+3644:        uint32_t r1100_v;
+3645:        memcpy(&r1100_v, xenolift_mem + 0x4FDF0u, 4);
+3656:        if (r1100_v == 0u || (r1100_v < 0x80000000u)) {
+EXCERPT 12800..12848 (not a guaranteed complete function)
+12800: 0x59F28u                            ,
+12801: 0x59F2Cu                            ,
+12802:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+12809:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+12812:                                                          0x4FDF8u,
+12813:                            0x4FE08u,                                                                                                                                                              
+12814:                            0x59F10u                                                                                                                                            ,
+12815:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+12816:                0x69394u,                                                                                                                          
+12817:                0x68934u,                                                                                                               
+12818:                0x68938u,                                                                   
+12819:                0x568C8u                                                                                                                                                                                                                                                         ,
+12820:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+12821:                0x68964u                                                                                                                           ,
+12822: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+12823:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+12824:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+12825:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+12826:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+12827:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+12828:                0x1D3008u, 0x1D3010u,                                          
+12842:                0x56788u, 0x56789u                                           
+EXCERPT 14025..14073 (not a guaranteed complete function)
+14025:                if (hc_addr[k] == 0x10000u && v != 0xFFFFFFFFu) {
+14027:                    uint32_t r1065_v; memcpy(&r1065_v, xenolift_mem + 0x10000u, 4);
+14028:                    if (r1065_v != 0xFFFFFFFFu) {
+14029:                        r1065_v = 0xFFFFFFFFu;
+14030:                        memcpy(xenolift_mem + 0x10000u, &r1065_v, 4);
+14031:                        static int r1065_n;
+14032:                        if (r1065_n < 8) {
+14033:                            r1065_n++;
+14034:                            xenolift_receipt("[exeguard] R1065 #%d D_80010000 restored 0x%08X -> 0xFFFFFFFF (pristine exe value; FieldMain beq -1 skip contract, c229 addr=0x6 fault; decomp: read-only flag)\n", r1065_n, v);
+14035:                        }
+14036:                    }
+14037:                }
+14038:                if (!hc_seen[k] || v != hc_prev[k]) {
+14058:                    if (hc_addr[k] == 0x4FDF0u && v == 0x80090000u && hc_prev[k] != 0x80090000u) {
+14059:                        uint32_t r1062_core = xenolift_mem_read32(0x80010004u);
+14060:                        if (r1062_core != 0u && r1062_core != xenolift_mem_read32(0x80090000u)) {
+14061:                            memcpy(xenolift_mem + 0x90000u, xenolift_mem + 0x10004u, 8192u);
+14062:                            static int r1062_n;
+14063:                            if (r1062_n < 8) {
+14064:                                r1062_n++;
+14065:                                xenolift_receipt("[archheal] R1062 #%d field archive table delivered: 8KB copy 0x80010004 -> 0x80090000 (libarchive.c ArchiveInitialize reads LBA 0x18 into BOTH tables; field-side read lost — c224 R1061 writer receipt, [stab] garbage LBA=12237515)\n", r1062_n);
+14066:                            }
+14067:                        }
+14068:                    }
+EXCERPT 15210..15258 (not a guaranteed complete function)
+15210:                      const uint32_t spots[3] = {0x80077E68u, 0x80077E88u, 0x80077EC8u};
+15211:                      for (int s = 0; s < 3; s++) {
+15212:                          uint32_t w[8]; char buf[9*8+1]; int q = 0; buf[0]=0;
+15213:                          for (int i = 0; i < 8; i++) {
+15214:                              w[i] = xenolift_mem_read32(spots[s] + 4u*(uint32_t)i);
+15215:                              q += snprintf(buf+q, sizeof(buf)-(size_t)q, "%08X ", w[i]);
+15216:                          }
+15217:                          r861_out("[coordb3] R685 window-0 @%08X: %s\n", spots[s], buf);
+15218:                      }
+15219:                  } }
+15220:                  {                                                      
+15227:                      uint32_t cbp = 0x80077E88u, mbp = 0x801D9724u;
+15228:                      r861_out("[coordb] R683 descriptor block @0x80077E88:");
+15229:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(cbp + 4u*q));
+15230:                      r861_out("\n[coordb] R683 field-module base @0x801D9724:");
+15231:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(mbp + 4u*q));
+15232:                      r861_out("\n[coordb] R683 module table @0x8004EAA0:");
+15233:                      for (int q = 0; q < 8; q++) r861_out(" %08X", xenolift_mem_read32(0x8004EAA0u + 4u*q));
+15234:                      r861_out(" | relay cells: 92B8=%08X 92BC=%08X 92C4=%08X 92C8=%08X 18098=%08X | R1099 arch chain: 4FDF0(base)=%08X FE14(off)=%08X FE1C(member)=%08X FDF8=%08X FDFC=%08X (R1061 decode: garbage [stab] requests decode from base=0x80090000 overlay window while real table=0x80010004; healthy base receipted at install passes; c272 R1063 clobber-watch silent - this door dump settles clobber-vs-stale)\n",
+15235:                              xenolift_mem_read32(0x800592B8u), xenolift_mem_read32(0x800592BCu),
+15236:                              xenolift_mem_read32(0x800592C4u), xenolift_mem_read32(0x800592C8u),
+15237:                              xenolift_mem_read32(0x80018098u),
+15238:                              xenolift_mem_read32(0x8004FDF0u), xenolift_mem_read32(0x8004FE14u),
+15239:                              xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FDF8u),
+15240:                              xenolift_mem_read32(0x8004FDFCu));
+15241:                {                                                            
+15248:                    int qi;
+15249:                    r861_out("[coordb2] R684 queue descriptors 18088..180AC:");
+15250:                    for (qi = 0; qi < 10; qi++)
+15251:                        r861_out(" %08X", xenolift_mem_read32(0x80018088u + 4u * (uint32_t)qi));
+15252:                    r861_out("\n");
+15253:                    r861_out("[coordb2] R684 staged-module header @801D9724 (32w):");
+15254:                    for (qi = 0; qi < 32; qi++)
+15255:                        r861_out(" %08X", xenolift_mem_read32(0x801D9724u + 4u * (uint32_t)qi));
+15256:                    r861_out("\n");
+15257:                    r861_out("[coordb2] R684 field-coordinator candidate @801E1AB4 (offset 8390, 8w):");
+15258:                    for (qi = 0; qi < 8; qi++)
+EXCERPT 15788..15836 (not a guaranteed complete function)
+15788:        static int b = 60;
+15789:        if (b-- > 0)
+15790:            r861_out("[slot] h2 STARTER fn_8002A68C(a0=0x%08X) caller=0x%08X FE04(LBA)=0x%08X FE1C(state)=%u FE20(sub)=%u FDF8=%u FDFC=%u gate(r5=%08X)&0x10=%u gdisp=%u\n",
+15791:                    r[4], r[31], xenolift_mem_read32(0x8004FE04u),
+15792:                    xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE20u), xenolift_mem_read32(0x8004FDF8u),
+15793:                    xenolift_mem_read32(0x8004FDFCu), r[5],
+15794:                    (r[5] >= 0x80000000u && r[5] < 0x80200000u) ? (xenolift_mem_read32(r[5]) & 0x10u) >> 4 : 0xFFFFu, xenolift_mem_read32(0x80018088u));
+15798:            {
+15799:                static int st_fab;
+15800:                if (st_fab < 400) {
+15801:                    uint32_t mid = xenolift_mem_read32(0x8004FE1Cu);
+15802:                    uint32_t tb  = xenolift_mem_read32(0x8004FDF0u);
+15803:                    uint32_t of2 = xenolift_mem_read32(0x8004FE14u);
+15804:                    if (mid != 0u && tb >= 0x80000000u) {
+15805:                        uint32_t ep = tb + (mid + of2 - 1u) * 7u;
+15806:                        uint32_t pp = ep & 0x1FFFFFFFu;
+15807:                        if (pp + 7u < XENOLIFT_RAM_SIZE) {
+15808:                            const uint8_t *e2 = xenolift_mem + pp;
+15809:                            uint32_t lb = e2[0] | (e2[1] << 8) | (e2[2] << 16);
+15810:                            uint32_t sz = e2[3] | (e2[4] << 8) | (e2[5] << 16) | ((uint32_t)e2[6] << 24);
+15811:                            st_fab++;
+15812:                            r861_out("[stab] req member=%u base=0x%08X off=%u entry=0x%08X LBA=%u size=%u gdisp=%u\n",
+15813:                                    mid, tb, of2, ep, lb, sz, xenolift_mem_read32(0x80018088u));
+15814:                        }
+15815:                    }
+15816:                }
+15817:            }
+15818:    }
+15819:    if (a == 0x8003A68Cu || a == 0x8003B084u) {
+15820:        static int b = 12;
+15821:        if (b-- > 0)
+15822:            r861_out("[slot] CD callback 0x%08X(a0=0x%08X) caller=0x%08X FE1C(file#)=%u\n",
+15823:                    a, r[4], r[31], xenolift_mem_read32(0x8004FE1Cu));
+15824:    }
+15828:    if (a == 0x800737ECu) {
+15829:        g_mod6_live = 1;                                          
+15830:        static int b = 10;
+15831:        if (b-- > 0) {
+FILE=worktrees/firstfault-manager/runtime-before.c SHA=1cdc7520e2df3fd4f3a8b57ae689f87d744e5bc94c225e5a64090c1a5515d701 NEEDLE=ArchiveDecodeSizeAbsolute MATCHES=3
+EXCERPT 12802..12850 (not a guaranteed complete function)
+12802:                0x77014u                                                                                                                                                                                                                                       , 0x704E0u                                                                                                                     , 0x59EFCu, 0x59F0Cu, 0x59F14u                                                                                                                                                        , 0x6A488u, 0x6A494u, 0x6A498u, 0x6A4A8u, 0x6A4B4u,
+12809:    0x692C0u,                                                   0x692BCu,                              0x18088u,                            0x692D0u,                          0x6FAECu,                                                 0xAFC98u,                                                                              0x50594u, 0x59394u                                                                                                      , 0x50594u                                                                                                                                                                                             , 0x59F08u                                                                                                                                     ,                                                                                                  
+12812:                                                          0x4FDF8u,
+12813:                            0x4FE08u,                                                                                                                                                              
+12814:                            0x59F10u                                                                                                                                            ,
+12815:                            0x64ACu, 0x1FBFF8u                                                                                                                                                                                                                                                                                                                                                                                                                                   ,
+12816:                0x69394u,                                                                                                                          
+12817:                0x68934u,                                                                                                               
+12818:                0x68938u,                                                                   
+12819:                0x568C8u                                                                                                                                                                                                                                                         ,
+12820:                0x68960u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+12821:                0x68964u                                                                                                                           ,
+12822: 0x57838u, 0x5783Cu, 0x57840u, 0x57844u, 0x57848u                                                                                                                                                                                                                                                                                                                                                                                             ,
+12823:            0x4FDF0u,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+12824:            0x90000u, 0x9003Fu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+12825:            0x10000u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ,
+12826:            0x59394u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ,
+12827:            0x5783Cu, 0x57840u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,
+12828:                0x1D3008u, 0x1D3010u,                                          
+12842:                0x56788u, 0x56789u                                           
+EXCERPT 20390..20438 (not a guaranteed complete function)
+20400:            if (xenolift_mem_read32(0x80059410u) == 0u) {
+20403:                xenolift_mem_write32(0x800595E4u, 0x8006BE00u);                                           
+20404:                xenolift_mem_write32(0x80059410u, 0x80065B10u);                      
+20405:                xenolift_mem_write32(0x8005951Cu, 0x000062F0u);                      
+20406:                xenolift_mem_write32(0x80065B10u, (xenolift_mem_read32(0x80065B10u) & 0xFFFF0000u) | 0x00008000u);                          
+20407:                xenolift_mem_write32(0x80065B12u, xenolift_mem_read32(0x80065B12u) & 0xFFFF0000u);                     
+20408:                xenolift_mem_write32(0x80065B14u, 0u);               
+20409:                xenolift_mem_write32(0x80065B18u, 0x80065B20u);                           
+20410:                xenolift_mem_write32(0x80065B1Cu, 0u);                   
+20411:                crash_puts("[sndheal] R1014 sound-heap re-seeded post-restore: head=80065B10 size=62F0 end=8006BE00 (replica of decomp SoundHeapInitialize(80065B0C,6300); c128 receipts: init called but wiped by every restore)\n");
+20412:            }
+20427:            if (xenolift_mem_read32(0x8004FDF0u) == 0u) {
+20428:                xenolift_mem_write32(0x8004FDF0u, 0x80010004u);
+20429:                crash_puts("[archseed] R1109 g_ArchiveTable(4FDF0) re-seeded 0 -> 80010004 post-restore (game's own install value; ArchiveDecodeSizeAbsolute NULL-deref class; c287 receipts)\n");
+20430:            }
+20431:            xenolift_psyqptr_heal("crash-recovery");
+20432:            xenolift_mem_write32(0x80010000u, 0xFFFFFFFFu);                             
+20433:            xenolift_churn_pend = 0x80019524u;                            
+20434:        longjmp(xenolift_churn_jmp, 1);
+20435:        }
+20436:    }
+EXCERPT 20405..20453 (not a guaranteed complete function)
+20440:    crash_puts("[segvdie] R820 kit exit @ cur_fn=");
+20441:    crash_puth(xenolift_cur_fn);
+20442:    crash_puts(" recoveries=");
+20443:    crash_puth((uint32_t)(r805_mirror));
+20444:    crash_puts("\n");
+20445:    _exit(99);
+20446:}
+20448:static int xenolift_real_main(int argc, char **argv);
+20449:#define XENOLIFT_GUEST_STACK (2048ull << 20)                                   
+20450:struct xl_main_args { int argc; char **argv; int rc; };
+20451:static void *xl_main_thread(void *p)
+20452:{
+20453:    struct xl_main_args *a = (struct xl_main_args *)p;
+
+===CELL_AND_LOOP_SITES===
+1052:&& xenolift_mem_read32(0x8005FDFCu) == 0u
+1094:xenolift_mem_read32(0x8005FDFCu),
+1095:xenolift_mem_read32(0x8004FDFCu),
+1100:xenolift_mem_read32(0x8006A22Cu),
+1118:xenolift_mem_write32(0x8006A22Cu,
+1119:xenolift_mem_read32(0x8006A22Cu) + 1u);
+1126:(unsigned)xenolift_mem_read32(0x8006A22Cu),
+1237:&& xenolift_mem_read32(0x8006A22Cu) == 0u
+1244:xenolift_mem_write32(0x8006A22Cu,
+1245:xenolift_mem_read32(0x8006A22Cu) + 1u);
+1254:(unsigned)xenolift_mem_read32(0x8006A22Cu),
+1852:xenolift_mem_write32(0x8006A22Cu,
+1853:xenolift_mem_read32(0x8006A22Cu) + 1u);
+1858:xenolift_mem_write32(0x8005FDFCu, 0u);
+2065:xenolift_mem_read32(0x8006A22Cu), xenolift_mem_read32(0x8006A228u),
+2066:xenolift_mem_read32(0x8004FDFCu), cd_pending, cd_scheduled,
+2196:xenolift_mem_write32(0x8006A22Cu,
+2197:xenolift_mem_read32(0x8006A22Cu) + 1u);
+2203:xenolift_mem_write32(0x8005FDFCu, 0u);
+2908:uint32_t g_fdfc = xenolift_mem_read32(0x8004FDFCu), g_fe08 = xenolift_mem_read32(0x8004FE08u);
+2909:uint32_t g_rp = cd_resp_pos, g_rn = cd_resp_n, g_a22c = xenolift_mem_read32(0x8006A22Cu);
+3556:xenolift_mem_read32(0x8006A22Cu), cd_data_pos, cd_data_n);
+3613:xenolift_mem_read32(0x8006A22Cu), cd_data_pos, cd_data_n);
+5328:if (a == 0x8006A22Cu) {
+5420:if (a == 0x8006A22Cu) {
+5425:if (a == 0x8006A22Cu && !hb_active) {
+5464:if (a == 0x8006A22Cu && !hb_active) {
+5574:if (a == 0x8006A22Cu && !hb_active) {
+5624:xenolift_mem_read32(0x8006A22Cu), cd_data_pos, cd_data_n);
+5631:if (a == 0x8006A22Cu && !hb_active) {
+5704:xenolift_mem_read32(0x8006A22Cu), cd_seek_lba,
+5713:if (a == 0x8006A22Cu && !hb_active) {
+5735:memcpy(&c22c, xenolift_mem + xenolift_phys(0x8006A22Cu), 4);
+5765:if (a == 0x8006A22Cu && !hb_active) {
+6115:sv[2] = xenolift_mem_read32(0x8005A22Cu);
+6134:av[2] = xenolift_mem_read32(0x8005FDFCu);
+6146:if (av[2] == 0u || (av[2] >= 0x80000000u && av[2] < 0x80200000u)) { xenolift_mem_write32(0x8005FDFCu, av[2]); n_ok++; }
+6164:xenolift_mem_write32(0x8005A22Cu, sv[2]);
+6286:wv[1] = xenolift_mem_read32(0x8006A22Cu);
+6300:xenolift_mem_write32(0x8006A22Cu, wv[1]);
+6971:xenolift_mem_read32(0x8004FE08u), xenolift_mem_read32(0x80059EF8u), xenolift_mem_read32(0x80059EFCu), xenolift_mem_read32(0x8004A22Cu),
+7019:xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8004A22Cu),
+7334:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+7361:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+7724:|| xenolift_mem_read32(0x8004FDFCu) == 1u) {
+7740:|| xenolift_mem_read32(0x8004FDFCu) == 1u)
+8047:|| xenolift_mem_read32(0x8004FDFCu) == 1u) {
+8063:|| xenolift_mem_read32(0x8004FDFCu) == 1u)
+9583:xenolift_mem_write32(0x8004FDFCu, 0u);
+10862:xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8006A22Cu),
+11074:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+11367:xenolift_mem_write32(0x8004FDFCu, 1u);
+11430:xenolift_mem_write32(0x8004FDFCu, 0u);
+11949:xenolift_mem_write32(0x8006A22Cu,
+11950:xenolift_mem_read32(0x8006A22Cu) + 1u);
+11955:xenolift_mem_write32(0x8005FDFCu, 0u);
+12553:xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8004FDF8u),
+12615:xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8004FE1Cu),
+12856:xenolift_mem_write32(0x8004FDFCu, 0u);
+14725:xenolift_mem_read32(0x8004FDFCu),
+14729:xenolift_mem_read32(0x8006A22Cu),
+14781:xenolift_mem_read32(0x8006A22Cu),
+14797:xenolift_mem_read32(0x8006A22Cu),
+14802:if (a == 0x800286CCu) {
+14807:xenolift_mem_read32(0x8004FDFCu),
+14809:xenolift_mem_read32(0x8005A22Cu),
+15416:xenolift_mem_read32(0x8006A22Cu), d_fe04, d_fe04);
+15756:*(uint32_t *)(xenolift_mem + 0x4FDFCu) = 0u;
+15814:xenolift_mem_read32(0x8004FDFCu),
+16080:xenolift_mem_read32(0x8004FDFCu),
+16146:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+16169:&& xenolift_mem_read32(0x8004FDFCu) == 0u) {
+16186:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+16201:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+16372:xenolift_mem_read32(0x8006A228u), xenolift_mem_read32(0x8006A22Cu), xenolift_mem_read32(0x8006A230u),
+17633:if (a == 0x800286CCu) {
+17643:xenolift_mem_read32(0x8006A22Cu));
+18036:static const uint32_t ar_cells[8] = {0x8005FDF0u, 0x8005FDF4u, 0x8005FDF8u, 0x8005FDFCu, 0x8005FE14u, 0x8006A22Cu, 0x8006A228u, 0x80056770u};
+19099:xenolift_mem_write32(0x8004FDFCu, 0);
+19390:xenolift_mem_read32(0x8004FDFCu));
+19964:xenolift_mem_read32(0x8004FDFCu), r[5],
+20409:r861_out("[mvloop] pre-movie polling n=%u (mod6=%d player=%d rs0=%08X lim=%u | R870 loop-id fn=%08X r31=%08X padcell=%08X FE1C=%08X | R874 DOOR: FDFC=%08X FE48=%08X FE30=%08X | R878 CD-STATE: seek=%u last_cmd=%02X pend=%u sched=%u FE04=%08X FDF8=%08X A22C=%08X A228=%08X - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=%08X cnt=%08X | R894 ARCH-REQ: FDF0=%08X FDF4=%08X FE14=%08X)\n", mv_n, g_mod6_live, g_movie_live, rs0, lim, xenolift_cur_fn, r[31], xenolift_mem_read32(0x800625FCu), xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8005FDFCu), xenolift_mem_read32(0x8005FE48u), xenolift_mem_read32(0x8005FE30u), cd_seek_lba, cd_last_cmd, cd_pending, cd_scheduled, xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8006A22Cu), xenolift_mem_read32(0x8006A228u),
+20417:xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
+20423:xenolift_mem_write32(0x8005FDFCu, 0u);
+20426:(unsigned)xenolift_mem_read32(0x8006A22Cu));
+20673:r[31], xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8004FE10u));
+21465:xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FDFCu),
+22271:if (!cd_tick_busy && (cd_pending != 0u || kick_wanted || kick2_wanted || kick3_wanted || (cd_scheduled != 0u && a == 0x800286CCu && g_r1351_genuine_answer)                                                                                                                                                                                                                                                                                                                                                                                                  || (xenolift_mem_read32(0x8004FE1Cu) == 6u && xenolift_mem_read32(0x8004FDF8u) == 0u && !cd_read_active && !cd_scheduled && !cd_pending))
+22275:|| (a == 0x800286CCu && g_r1351_genuine_answer))) {
+22334:xenolift_mem_read32(0x8004FDFCu),
+23011:{ static int r1361_n; if (r1361_n++ < 16u) r861_out("[cdcol] R1361 collector-complete inputs: pend=%u resp=%u/%u fdfc=%08X s2=%08X s3=%08X seek=%u\n", (unsigned)cd_pending, (unsigned)cd_resp_pos, (unsigned)cd_resp_n, xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x80056788u), xenolift_mem_read32(0x80056789u), cd_seek_lba); }
+23192:if (a == 0x800286CCu && cd_scheduled && cd_pending == 0u
+23196:memcpy(&fdfc, xenolift_mem + (0x8004FDFCu & 0x1FFFFFFFu), 4);
+23204:memcpy(xenolift_mem + (0x8004FDFCu & 0x1FFFFFFFu), &zero, 4);
+23238:xenolift_mem_read32(0x8005FDFCu),
+23239:xenolift_mem_read32(0x8006A22Cu));
+23250:xenolift_mem_read32(0x8005FDFCu),
+23251:xenolift_mem_read32(0x8006A22Cu),
+23390:xenolift_mem_read32(0x8005FDFCu),
+23394:xenolift_mem_read32(0x8006A22Cu),
+25450:0x8004FDF8u, 0x8004FDFCu, 0x8004FE04u,
+26226:r861_out("[xenolift] runtime build R1291v4 - THE MOVIE-QUEUE DELIVERY CAMERA + THE SEQUENCE-ID/DELIVERY-DECISION TRACER, PLACEMENT CORRECTED (c193v2, cameras only). JOS c193 CORRECTIONS APPLIED: the [schdd] receipt now sits AFTER ALL RELEASE BRANCHES DECLINE (post-ladder observation, not entry state); the [movsite] UNCONDITIONAL SITE-ENTRY COUNTER now distinguishes site-cold from gate-declined for the movq camera; the 8-BYTE DELTA (14360 requested vs 14352 shelved) REMAINS OPEN - a re-shelve receipt does not establish a complete correct destination; the 0x82 call at 80031DC8 is the latch-clear NORMAL resident-loop entry, not by itself validation failure. (v2: THE MOVIE-QUEUE DELIVERY CAMERA + THE SCHEDULER-DECISION TRACER (c192, cameras only). JOS c192 REFINEMENT APPLIED: capture the FIRST TRANSITION INTO the stalled posture, with (1) the writer and caller that set FE04=109158 and sched=1 - the [hook] FE04 writer trail already names the game ftab reader fn 800288EC r16=0x12, and the [cd] set-site print already names every command->INT3-scheduled event (the ONE set site, first 40 + 1/65536); (2) the request expected byte count and destination - the [movq] wedge print dumps the FE04/FE08 pair, the file-table member and its size, so FDF8=0 at that stage is either PROVEN legitimate (the request completed and the flag is stale) or PROVEN premature (the queue never armed); (3) THE SCHEDULER DECISION - the NEW [schdw] tracer prints FIRST-EVAL at EVERY ONE of the 11 cd_scheduled CLEAR SITES with full context (pend/act/FDF8/FE04/fe1c/last_cmd): if NO clear site runs during the wedge era, the scheduled response was never delivered and the missing transition is the delivery path itself; (4) completion-vs-cleanup: the [cd] set prints + [schdw] clears + the [movq] dest dump decide Jos key distinction - a QUEUED REQUEST THAT NEVER STARTED (dest empty, no clear ran) vs a COMPLETED REQUEST WHOSE SCHEDULING FLAG NEVER CLEARED (dest held, a clear path ran but left sched=1) - DIFFERENT FIXES, and the cameras name which. R1290 UNCHANGED (zrfG2 stays armed for its posture, no behavior change anywhere - cameras only). THE c191 WEDGE, receipted: FE04=109158 (file#18 re-stamp by the game own ftab reader), FDF8=0, act=0, pend=0, stale sched=1, FE1C=10, A22C=5, drive parked at seek=3, the game polling GetStat in the movie-loader family - and the set-site decode narrows it: cd_scheduled is the runtime RESPONSE-SCHEDULED marker (set at every command arrival, delivered when the kernel event-flag check fn 0x8004B894 next runs), so sched=1 held + pend=0 at the wedge = the scheduled response NEVER CONVERTED - the delivery path ran cold. PASS = receipts only: the transition chain FE04-restamp -> set -> (clear or no clear) -> wedge, the dest held/empty answer, the scheduler named. THE c193 FIX then patches the DEMONSTRATED missing transition and verifies sustained delivery, movie-loop exit, then visible controller response (Jos endgame ladder). (R1291 = THE MOVIE-QUEUE DELIVERY CAMERA (c192, cameras only - the c191 verdict printed). THE c191 RUN WENT DEEPER THAN EVER: no boot restarts until the very end, member 18 (the MOVIE MODULE) installed with gdisp=6 (dest 801EF300), asciiart fired, the screen held real structured content across all four witnesses (308K nonzero pixels, 803B shots), 2.19 BILLION vram writes, 51 screen snaps, the sync band served (239324), the field band 108801-108877, file#18 stalled load COMPLETED by the defib6 carry (fire #1), zrfB fired 8 (its band), 0x0D answered again (1 arrival, 8 pops, game advanced) - and the game wedged ALIVE at THE MOVIE RE-REQUEST POSTURE: FE04=0x1AA66 (109158 = file#18, stamped by the game own ftab reader), FDF8=0, act=0, pend=0, stale sched=1, FE1C=10, A22C=5, drive parked at seek=3, the game polling GetStat in the movie-loader family. THE TWO DECLINING DOORS, both named: zrfB matches every term except the command byte (band 09, this poll is 01); the R496 never-armed arm matches file-table members against cd_seek_lba (the parked directory position) instead of FE04 (the queued request LBA). THE OPEN QUESTION the c193 fix hangs on: does the movie dest buffer ALREADY HOLD the shelved file#18 data (the FE1C=10 wait is then the movie PLAY protocol) or is it EMPTY (a delivery fault - the re-request wants the data again)? R1291 prints the answer AT the wedge: stuck-confirmed posture -> the FE04/FE08 request pair, the file-table member for FE04, the shelved state, and the first 8 words + 4KB nonzero count at the request dst. PASS = receipts only: dest-held -> decode the play-protocol wait next; dest-empty -> the porter/delivery fix (or the R496-arm FE04 widen). CAMERAS ONLY, no behavior change. (R1290 = THE FILE-BAND A22C-SITE SERVE (zrfG2, c191 - the c190 verdict applied: right composite, RIGHT SITE). THE c190 VERDICT: the disambiguation cameras answered 0x0D (11 pops receipted, FE1C 8->1 then through its read states 0A/0B/6/7->0, the game advanced - our stat-ack protocol is adequate, no fix needed) AND the trajectory swung to THE DEEPEST STATE EVER: STATE 1 REACHED AND HELD (g_CurGameState=1, coordinator 80077E88 active with overlay loaded hasOverlay=1 at BOTH census points), member 14 installed (dest 801DD680), real dispatches fn_80019ACC(0) idx=6 idx_work=96 and fn_80019ACC(131) idx=1, the SCREEN PAINTED 100 PERCENT AGAIN (all four regions nonzero, snaps 8-12, structured final render with real pixels), and the final epoch wedged - ALIVE in state 1 - at THE FILE#14 ARMED-IDLE POSTURE: seek=108997, FDF8=125304 armed, FE04=0x1A985 (== seek: the game own LBA stamp, R350 provenance - the arm belongs to the CURRENT request), cmd 01, act=0, pend=0, A22C=4, data=0/0, held w50->fuse. THE DIAGNOSIS (the c174 lesson verbatim): zrfG (R1285) IS IN-TREE AT THE STATUS-REGISTER SITE with the exact c184-approved composite for this posture and fired ZERO - because the game polls A22C DIRECTLY and the status site runs cold; zrfB fired 8x at the A22C site in its own band (seek<150), proving the site. THE FIX: zrfG2 = the zrfG composite UNCHANGED (same-poll cd_data_load + cd_read_active=1 so 0x40 computes true on THIS poll, no INT forge, no dispatch, 65536-poll stuck confirm, budget 12) at the A22C SITE with one partition guard (cd_data_n<2048, never clobber an in-flight load). PASS per the c184 criteria: the fire serves the sector, the game drain consumes FDF8 below 125304, forward execution (new LBA, state activity, screen change); REVERT if fire with zero consumption. (R1289 = THE 0x0D DISAMBIGUATION CAMERAS (c190, cameras only). THE c188 VERDICT, RECEIPTED: THE R502 RETRACTION WORKED - the 47964-call 400/sec rerun loop is DEAD (fn_80019ACC(130) count = ZERO, down from 47964; [latchw]/[latchfix] = ZERO, the heal is out; the latch protocol is now purely game-driven - 86 [latchhw] lines, all game fns: 19524/19548 boot init, 19908/19A2C arms with r16=module idx, 19A90/19B4C/288EC clears; idx_work ran 11 dispatch rounds vs 5 in c187). The boot now lives or dies by its own protocol, and the receipts name the next first fault. THE c188 TRAJECTORY (a new one): directory re-read LBA 0 AND LBA 4 consumed (fldsec #336/#344 - the system band walked deeper than ever), field sectors 108850-108891 consumed, file#18 completed via the defib6 carry (fire #1, 8 sectors), a NEW archive bulk fetch chain at seeks 108957-108961 (FDF8 61816->53624, dst 801ECE80+), module installs members 2-7 (incl. the archive dest 8007EBF0), GPU drew 142K rects + 2K polys (142M vram writes) - but the live VRAM dump is ALL ZERO (the bootmain restarts clear it: 3 restarts with Module-6 validation spikes 12->12->1->0, declining - the boot retry protocol converging), and the final epoch wedges at THE NEW FIRST FAULT: seek=0 cmd 0x0D FE1C=8 FDF8=2048-armed A22C=0 pend=0 sched=0, frozen across the entire w50-w95 window. THE [chg] TRAIL: the game completed the Setmode/0x0E step (FE1C=12) and its own fn 8002AC0C set FE1C=8 after issuing cmd 0x0D - the next ladder step. 0x0D IS IN NO HANDLER: the answer builder primes only the bare stat byte. HYPOTHESIS PAIR (the c149-151 decode named this era GetTN + ReadN at LBA 0): either 0x0D is the game ReadN encoding and the armed 2048B at seek=0 is a DATA request the machinery never serves (A22C never sets - the wedge is the c127 class at a new command), or the bare stat is malformed (the R262 GetTN lesson) or never popped. R1289 SHIPS THE DISAMBIGUATION: the [cmd0d] arrival camera (full drive state, 16-cap) + the [rspop0d] pop camera (UNWINDOWED, 16-cap). PASS = the receipts pick the c191 fix: pops-and-FE1C-still-8 -> 0x0D is a READ, serve the sector with the zrf0 composite; no-pops -> deliver and complete the ack. CAMERAS ONLY, no behavior change, all R1288/R1287/R1286 machinery stays. THE R502 RETRACTION STORY (c188): (R1288 = the R502 RETRACTION, the first-fault fix per Jos find-the-first-fault direction. THE c187 DECODE THAT SETTLED IT: the step-walker trail (idxw watcher, 5 writes all through fn 80019984 in EARLY boot - 0->96, ->0, ->16, ->0, the set-dispatch-clear protocol around real fn_80019ACC(0) calls with idx 6 and idx 1) plus the STATIC branch decode (disc1.c L_80031DA8: r6==0 skips, latch=*(gp+0x1C0), latch!=0 -> fn_80031F58 a 4-line iterator advance, latch==0 -> r4=0x82; fn_80019ACC) - and the decompilation NAMES fn_80019ACC: xenolift_fn_80019ACC_RunResidentGameLoop___game_core. THE 130-CALL IS NOT A FAULT VERDICT: it is the NORMAL designed entry of the game resident main loop with mode arg 0x82, taken exactly when the latch is CLEAR. R502 (c68-era) had the protocol inverted: at every 0x82 call it forced the latch to 1 (so the next pass took the iterator branch instead of running the game) and rewrote the game argument 0x82 -> 0 (arg 0 = the early-boot dispatch mode that reads idx_work - which the c187 trail receipts as 0 at every loop-era call, so the resident loop NEVER RAN IN ITS OWN MODE). THE 47,964-CALL 400/SEC LOOP IS R502 MANUFACTURING AN ERROR PASS EVERY ITERATION. THE FIX: R502 fully RETRACTED - the block is now a PASSIVE CAMERA ([rlgl], 64+1/4096 cadence, touches NOTHING: no arm, no arg rewrite); the game own protocol is restored exactly: latch==0 -> RunResidentGameLoop(0x82) runs the game; the game arms/clears its own latch (the c187 trail: 19A2C arms r16=module idx, 19A90/19B4C clear, 19908 arms - all legitimate). PASS per Jos: the rerun loop DIES (the fn_80019ACC(130) cadence collapses from 47K-class to game-natural), the resident loop runs in mode 0x82, and whatever IT blocks on next is the NEXT first fault - fixed the same way, one at a time. If the game arms the latch itself and takes a real fault path, the receipts SHOW it and we fix that data fault - never the protocol (no heal scaffolding, Jos milestone). All R1287 cameras stay (idxw/latchhw watchers, the per-tag print governor: raw log 52.4MB -> 9.7MB this run, storm tamed), zrfG/zrfF stay parked guards, the base R1287 tree. THE STEP-WALKER RECEIPT CYCLE STORY (c187, all receipts landed) (the bridge ran the v1 directive: patch 771e2209, tree 0d516bd4 - the v2 priority channel never executed, but the latch cameras printed uncapped and the FULL LOOP DECODED). THE c186 LOOP, receipted 47964 times: fn_80019ACC(130 = 0x82 the fault-verdict call) idx=0 idx_work=0 -> latch 0x80059330 reads 0 at the verdict -> R502 heals (re-arm 1, verdict 0x82->0) -> boot main reruns -> repeat, ~400 loops/sec, NO GPU reinit per iteration (c185 was 43 slow full-reinit loops - the fast loop is new). THE WRITER TRAIL (24-cap, burned pre-loop, but decisive): the game own boot manages 0x80059330 as a PER-CHECK ARM/CLEAR FLAG - fn 80019A2C ARMS (r16=00000006, 00000001 = module indexes), fn 80019A90 CLEARS, fn 80019B4C CLEARS, fn 80019908 ARMS - set/check/clear pairs through the early boot = the c68 wipe theory is DEAD: the reset is the game OWN legitimate protocol. THE FIRST FAULT (per Jos find-the-first-fault direction): idx_work (0x80028088, the cell R1232 proved the dispatcher reads) is ZERO at ALL 47964 verdicts - the boot step-walker NEVER ADVANCES PAST STEP 0, so the step that would re-arm the latch and advance the index never runs - Jos case 2/case 3 both root here. THE ONE MISSING RECEIPT: the WRITER of idx_work - nothing writes it during the loop (step-0 completion never runs, case 3) vs something resets it per rerun (case 2). R1287 SHIPS THAT CAMERA: the hc watcher gains cell 0x28088 printing on the [idxw] PRIORITY tag (resize-together 116->117, sweep bound 115->117 - which ALSO fixes the v2 latent dead-camera: the v2 bound was 115 with 116 elements, the latch cell would have been dead, the R1101 class) + the per-tag print governor (first 2048 lines per tag, then 1/4096, one notice per tag - print policy only) + the latch/idx/verdict family stays budget-exempt. PASS = receipts only: the idx_work writer trail through the loop era, the latch arm/clear order at full cadence, the storm tamed. NO behavior change: no latch forcing, no verdict skip, zrfG/zrfF parked, R502 untouched. THE FIX CYCLE (c188) patches exactly what the writer trail proves: no writer -> fix the missing step-0 completion transition; a reset writer -> fix the init/ordering that should follow; then verify boot exits the rerun loop, enters the first scene, responds to input. R1286 v1/v2 story (the c186 base): (v1 ran) - R1286 = CAMERA-ONLY RECEIPT CYCLE for the c185 verdict: the 0x82 fault-verdict loop + the latch wipe writer + the log-storm source. THE c185 STORY: zrfG fired ZERO times - the c184 armed-idle posture never occurred on this trajectory (the receipted nondeterminism, third consecutive swing), so zrfG stays parked as a guard. The run went DEEP in a new direction: one continuous epoch (NO reboot), the ftab walked files #15-18 (LBA 108995/109041/109123/109158 - deeper than ever), the system+field band walks reached LBA 1 and 239324, file#18 completed via the defib6 rescue (8 sectors, seek=109166), the loading screen DREW (w50 shot 1725B structured) then FADED to a flat 852B image - the transition machinery works. THE NEW FIRST-BREAK: fn_80019ACC(130 = 0x82 - THE HARDCODED FAULT-VERDICT CALL) fired 43 times from r31=0x80031DC8 (adjacent to the L_80031DA8 verdict branch), the R502 latch rescue re-arming each time, yet EVERY verdict moment receipts latch=0 - the boot error-latch gp+0x1C0 (0x80059330) is wiped between the pad_fill re-arm and the verdict (the c68 class at a new call site). GPU corroboration: fills 28914 -> 92678 = 43 x ~1546 reinit fills - the loop is fault -> rescue -> healthy rerun (GPU reinit) -> fault again. SECOND BLOCKER, MATERIAL: the R971 50MB receipt budget EXHAUSTED at ~t=50s - every print after that is silent, so 70 seconds of the run are unreceipted and the visible window is all pre-exhaustion. THE FIX IS CAMERAS ONLY: (1) the hc watcher gains cell 0x59330 (resize-together 115->116, the R516 assert enforced) - every latch writer named, 24-line cap, the tblw standing spec; (2) the fn_80019ACC camera now prints idx_work (the 0x80028088 working cell R1232 proved the dispatcher reads) alongside the old no-op mirror idx - settles whether the 0x82 loop walks the table; (3) the SCRIPT adds the by-tag byte census of run.log.raw - the full raw stream run.sh preserves - so the 50MB storm source is NAMED next digest and the cycle after throttles its print (the R1276 precedent, print-throttle only, never behavior). PASS for this cycle = receipts only: the latch writer trail, the idx_work values, the storm tag table. NO behavior change anywhere; zrfG and zrfF stay parked guards; the R502 rescue is untouched. NEXT: if the writer trail shows the game own kernel clearing the latch legitimately, the fix is at the VERDICT input (what the walker actually checks), not the latch. R1286 AMENDMENT (Jos c186 direction, same cycle): the LATCH-PRIORITY RECEIPT CHANNEL - the R971 budget gate is bypassed for the [latchw]/[latchfix]/[latchhw]/[boot] fn_80019ACC prefixes (uncounted, ungated; each has its own per-camera cap) so the re-arm -> intervening writes -> verdict order is receipted BEYOND the 50MB cutoff to the fuse; the [hook] watcher print for cell 0x59330 moves to the dedicated [latchhw] tag on that channel. Print policy ONLY - the latch is NOT forced nonzero and the verdict is NOT skipped (that could hide an actual loading failure). The by-tag byte census of run.log.raw runs in the script and NAMES the storm source; the cycle after throttles that print (R1276 precedent) and patches exactly what the receipted loop sequence proves: an incorrect write -> fix the writer; a legitimate reset -> fix the init/ordering that should follow; never armed for this attempt -> fix the missing transition. THE c184 STORY - THE BIGGEST SINGLE-RUN ADVANCE OF THE PROJECT: zrfB fired at the receipted fe1c=1 posture (8 arms, 3 fires, stale-FIFO flush + FDF8 heal + same-poll serve + INT1 deliver each), the system-band walk advanced LBA 0->1->3, and behind it the game advanced FURTHER THAN EVER: STATE 0->1 (the coordinator 80077E88 entered NORMALLY with overlay loaded, pMemStart=800AF5E4 pHeapStart=800C426C), member 14 installed (dest=801DD680), the working game table installed (R1232), file#18 RE-ISSUED NATIVELY (ftab READ ISSUED LBA cell=0x1AA66 FDF8=14360), the fn_80019ACC retry spike fell 43->16 with NEW callers (idx=1 r31=80019C14/8001993C - real dispatches, not the retry loop), and the SCREEN PAINTED 100 PERCENT - all four display regions nonzero, first time in project history (c183: 3 percent, A/B only). THE PAD RECEIPT FLIPPED: ReadControllerButtons entry #245760, btn=BFFF START-HELD (BFFF4000) - the game polls input a quarter-million times and SEES our injected press. THE NEW FIRST-BREAK, receipted by pumpcam x3 + mvloop x3 + ftab: file#14 read sits ARMED BUT IDLE - seek=108997, FDF8=125304 armed (the game stamped BOTH the LBA cell and the size cell), cmd 01 GetStat, act=0, pend=0, data=0/0, A22C=4 - the game polls status bit 0x40 which can NEVER set while the drive is idle (the c179/R1246 class). zrfF is the right composite but the wrong band (seek<150 FE04=0 FDF8==2048). zrfG swaps ONLY the band terms for the receipted posture: seek>=100000, FE04==cd_seek_lba (the game own LBA stamp = current-request provenance, R350), FDF8>0 <300000; the composite stays EXACTLY zrfF: same-poll cd_data_load + cd_read_active=1 so 0x40 computes true on THIS poll, no INT forge, no dispatch, 65536-poll stuck confirm, budget 12. PASS = the drain consumes FDF8 below 125304 + forward execution. REVERT if fire with zero consumption. BASE R1284 = the zrfB FE1C=1 widen (PASSED). BASE R1283 = decline cameras. THE c183 STORY - THE GAME IS ALIVE AND RENDERING: the decline cameras came back EMPTY because the c182 file#2-tail wedge never recurred - trajectory nondeterminism swung to the BEST RUN EVER: the game entered a LIVE menu/render loop - 2.7 BILLION vram writes, 8.6M rects, 120K fills, double-buffer display flipping at (0,0)/(0,240), vram_nz=144939/524288 = 27 percent of VRAM filled, the pad polled (padcell cycling FFF74100/FFFF4000 with our injected START presses), 215 mvloop prints across MANY loop sites (80036760/80036BE0/800317E0/80044E9C - the menu family cycling, not a single spin), four epochs, wall dead. THE STICK, receipted twice: the CD wait posture seek=0 cmd 09 FDF8=0 pend=0 A22C=3 sched=1 FE1C=1 held frozen across every poll print w50-fuse, and the [chg] writer trail names FE1C 0006->0001 at fn 0x80040FCC. zrfB (R1280, the door that served this exact seek=0 family in c175) is in-tree but silent: its FE1C ladder (0/6/7/10/11) never covered state 1. THE FIX: add fe1cA==1u to the ladder - ONE term, receipted, nothing else changes; the two-poll arm confirmation, the 40-fire budget, the stale-FIFO flush, the FDF8 heal, the same-poll cd_data_load, the stale-sched clear, and the INT1 force-deliver all stay exactly as the c175-proven set. PASS = zrfB fires at fe1c=1, FDF8 2048->0, the menu advances - new request at a different LBA, new state-table activity, new screen content, or the fn_80019ACC retry spike (43 calls this run, up from 10) stops. REVERT if zrfB fires and nothing advances. BASE R1283 = decline cameras (silent: no file-band FDF8 freeze occurred). BASE R1282 = zrfF (0 fires, parked guard). (camera-only, no behavior change; zrfF stays parked as a guard - 0 fires in c182 because its 80042AA8 wedge class never appeared on that trajectory). THE c182 STORY: the R1282 tree ran end-to-end (fresh binary, exit clean at the fuse) and the trajectory went DEEPER THAN ANY PRIOR RUN - the file#2 archive bulk fetch chain ran (fetchcam #391-400, FDF8 53488 -> 45296 counting), movie file#18 sectors consumed (109159/109167), member 18 installed (gdisp=6), and the GPU drew REAL CONTENT for the first time (273 rects + 5 polys + 1.28M vram writes, screen.png 1727B with structure). THE NEW TERMINAL WEDGE (R967 STUCK x6): the file#2 TAIL - FDF8=0x20 = 32 bytes remaining, seek=108754, cmd 06, sched=1, FDFC=1 uncleared, FE1C=2, FE04=00808080 (taint-class garbage), spin at the archive loader 800286CC. The R477 stalled-load rescue fits this shape on every term EXCEPT its cd_read_active && cd_data_loaded requirement - which no camera receipts. R1283 closes that: the R967 wedge print now carries the DRV line (act/loaded/pos/n/sched/pend/cmd) and a self-contained decline camera at the defib6 chain prints the full drive posture once per 30s when a file-band FDF8 sits frozen. NEXT CYCLE: widen the R477 gate by exactly the receipted failing term (the sgarm precedent). Secondary thread to census: epoch-4 reboot showed 10 fn_80019ACC error-dispatcher calls (Module-6 validation failing spike). BASE: R1282 = zrfF LEGACY-FETCH CONSUMER DOOR (c179 verdict, the terminal wedge): the c179 harvest receipted the run END TO END - the file#3 archive transfer RESOLVED (defib6 carry passes drained FDF8 155120 -> 126448+ at 2048/pass; the c178 frozen-transfer read was an early-window artifact), the game advanced PAST the archive spin to the post-archive directory RE-READ (seek=0, FDF8=2048 armed, dst FE08=800AFEB0, fetchcam #332), then wedged in LegacyCdSectorFetch (fn 0x80042AA8) 50s+ to the fuse, ALIVE, polling status bit 0x40 with the drive idle - R967 STUCK x4 (FDF8=800 A22C=1 flag578A6=0 identical across 30s), mvdoor-near x6, alarmguard x6, all cur_fn=80042AA8. The R1246 c103 comment named the class: the fetch PsyQ-table command sequence never engages our read machinery, the drive stays idle, and the 0x40 bit (computed from cd_read_active && data-in-FIFO) can NEVER set. NO existing door covers it (zrf0/zrfY need FDF8==0, R1267 needs FDF8==0, R96 needs cmd 06/09+read_active, mvdoor needs cmd 02/06 and is on_alarm-starved in spins, C97). THE FIX: door at case 0x1F801800 - the status read the fetch itself polls (the hottest spin-reached site, 14.4M+ polls receipted) - gated on the EXACT receipted posture (act=0 pend=0 cmd=01 seek<150 FE04=0 FDF8==2048) with 65536-poll stuck confirmation; action = the c139-141 secserve composite: same-poll cd_data_load + cd_read_active=1 so the 0x40 bit computes true, the fetch own DMA drains the sector, FDF8 2048 -> 0, the fetch completes natively. No INT forge, no guest dispatch (R350-safe). Budget 12. PASS = fetch consumes, FDF8 drives to 0, forward execution past 80042AA8 (new state-table activity, first non-boot GPU activity). REVERT if the fetch consumes but the game does not advance. SHIPPING NOTE c181->c182: the c181 patch placed this door INSIDE the three-line status return expression - the Mac compile refused (expected ; after return statement), run.sh correctly refused a stale binary, zero R1282 evidence. c182 places the door BEFORE the complete return statement and sandbox-PARSES the patched file (gcc -fsyntax-only against the baseline error set) before shipping. Base R1281 parked (zero fires in c178, kept in tree): the ONE failing gate term of the c348-class stuck-read arm, receipted by the c176 census, removed. THE c176 DECODE: the c175 state-1 line was NOT game progress - it was the game own REBOOT pass (bootmain entered, epoch=1, garbage cells mid-boot) after the file#3 spin failed, and exit 99 was the crash-kit converting a confirmed LZSS runaway (op src=0x00000000, 1M+ suppressed reads, frontier marching 0x8028F358..0x805FF358 - the c335 class; serve the file and neither happens). The real blocker, receipted end-to-end: at t~50s the game armed file#3 (seek=108785, FDF8=155120 = exact ftab size, dst=8007F2F8) via its own stab chain - read_act=1, loaded=0, cmd 06 - and the R1163 sgarm gate declined it because cd_scheduled=1 (the sgdecline first-eval #3 receipted EVERY gate input true EXCEPT scheduled; stale or fresh-queued from the movie/state-6 teardown - either way the serve completes the request and the proven R541 fldfin end-of-read chain clears scheduled at FDF8=0). The game spun 91M polls at the archive loader 800286CC, gave up at t=85s, rebooted, and the reboot LZSS runaway took it down via R1151 crash-kit recovery. THE FIX: remove the scheduled==0 term from the sgarm outer gate - the arm still requires the shape to persist across TWO 2s observations with FDF8 UNCHANGED (a live scheduler serve would be decreasing FDF8), all other terms still gate, the 96-delivery burst still checks FDF8 progress, and the receipt now prints scheduled. PASS = sgarm fires with scheduled=1, FDF8 drives to 0, the archive walk resumes (file#3 then onward - the boot-era chain receipts the stab/stepper path works), the game does NOT reach the reboot, exit code not 99. REVERT if sgarm fires and the archive walk does not resume. Base R1280 = zrfB A22C-site system-band serve (12+ fires, PASSED). Base R1275 = the state-6 heap seed (TRAP=0 ABRT=0).\n" );
+
+===PRIMARY_LOG===
+30824:[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+30825:[newmod] fn_800295D8 member=2 dest=8006FAF8 a2=00000000 r31=800196F0 | slots[3]=1 slots[6]=1 FE04=00000000 gdisp=0
+30826:[stress] read-order member=2: ring=00000000 00000000 00000000 00000000 00000000 00000000 | 77448=00000000 7711C=00000000 7398=00000000 739C=00000000 77014=00000000 76F04=00000000
+30827:[req] FE04 00000000->0001A8D2 at fn 0x800288EC
+30828:[req] FDF8 00000000->0000F0F0 at fn 0x80029690
+30829:[ringw] #400 0x8004FE08: 0x801D7800 -> 0x8006FAF8 r31=80029670 r16=00000001 @t=5s
+30830:[req] FE08 801D7800->8006FAF8 at fn 0x80041430
+30831:[smq] fn_800413EC entry a0=00000000 a1=00000024 FE1C=1 FE20=3 caller=80029A90
+30832:[cbreg] SetCdSectorCallback(a0=00000000) caller=80029A90 FE1C=1 FE04=0001A8D2
+30833:[chg] FE1C 0000->0001 at fn 0x800413EC
+30834:[bp] probe(a0=2 a1=-2147115248) slot=2 flag=0 type=2 devcnt=0 tbl=00000003
+30835:[bp] pump(a0=0 a1=0) slot=2 flag=0 h2=8002A68C h4=8002B084
+30836:[cd] Setloc BCD 24:12:04 -> LBA 108754
+30837:[cd] FIELD-SEEK assist v4 (menu-frame ctx): 3-byte SetLoc answer + INT1 armed (LBA 108754, FE1C=1)
+30838:[ovlread] module file read: file#=3 a1=0x8007EBF0 caller=0x80019704
+30839:[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+30840:[newmod] fn_800295D8 member=3 dest=8007EBF0 a2=00000000 r31=80019704 | slots[3]=1 slots[6]=1 FE04=0001A8D2 gdisp=0
+30841:[stress] read-order member=3: ring=00000000 00000000 00000000 00000000 00000000 00000000 | 77448=00000000 7711C=00000000 7398=00000000 739C=00000000 77014=00000000 76F04=00000000
+30842:[cd] fd-collector tick (r31=0x80028A74)
+30843:[cd] fd-tick: converting stuck INT1 (pending=3) via handler pair
+30844:[defib5] R471 stacked-pending drain pass #1 (pending=3)
+30845:[defib5] R471 stacked-pending drain pass #2 (pending=3)
+30846:[defib5] R471 stacked-pending drain pass #3 (pending=3)
+30847:[stalecd] R1341 stale CD state discarded for SetLoc serve: pending=3 data_n=0 resp_n=3 seek=108754 FE04=0001A8D2
+30848:[stalecd-near] R1345 SetLoc-wait state (idle, changed): pending=0 data_n=0 read_active=0 resp_n=3 seek=108754 FE04=0001A8D2 seekmism=0
+30849:[rspop] byte#1 val=0x02 (pos=1 n=3 last_cmd=0x02 FE1C=1)
+30850:[rspop] byte#2 val=0x01 (pos=2 n=3 last_cmd=0x02 FE1C=1)
+30851:[rspop] byte#3 val=0x01 (pos=3 n=3 last_cmd=0x02 FE1C=1)
+30852:[cd] response consumed — op flag cleared
+30853:[cd] re-primed response FIFO (status 0x02, last_cmd=0x02)
+30854:[rspop] byte#1 val=0x02 (pos=1 n=3 last_cmd=0x02 FE1C=1)
+30855:[rspop] byte#2 val=0x01 (pos=2 n=3 last_cmd=0x02 FE1C=1)
+30856:[rspop] byte#3 val=0x01 (pos=3 n=3 last_cmd=0x02 FE1C=1)
+30857:[cd] response consumed — op flag cleared
+30858:[cd] re-primed response FIFO (status 0x02, last_cmd=0x02)
+30859:[rspop] byte#1 val=0x02 (pos=1 n=3 last_cmd=0x02 FE1C=1)
+30860:[rspop] byte#2 val=0x01 (pos=2 n=3 last_cmd=0x02 FE1C=1)
+30861:[cd] interrupt acknowledged
+30862:[cd] interrupt acknowledged
+30863:[cd] FIELD-SEEK assist v4 (menu-frame ctx): 3-byte SetLoc answer + INT1 armed (LBA 108754, FE1C=1)
+30864:[stab] req member=1 base=0x80010004 off=23 entry=0x800100A5 LBA=108754 size=4294967290 gdisp=0
+30865:[chg] FE1C 0001->0002 at fn 0x8002AC0C
+30866:[bp] probe(a0=6 a1=0) slot=2 flag=0 type=2 devcnt=0 tbl=00000000
+30867:[bp] pump(a0=0 a1=0) slot=2 flag=0 h2=8002A68C h4=8002B084
+30868:[cd] wait-loop tick: pending=0 last_cmd=0x06 arm1=0
+30869:[wdrop] garbage write 0x0059FAEC val=00000001 dropped (r31=80028A74 r17=8007EBF0 cur_fn=800286CC) — continuing
+30870:[stompcam] R1144 #8 STOMP write 800592C0 <- FFFFFFFF writer_fn=800286CC sw_line=0 (the -1/0x02 fill class across the walk/archive state cells; healthy file#7 posture F0C=7 F10=00611324 FE04=0001A956 receipted same era) | guest r29(sp)=801FFF88 r31=80028A74 r4=00000000 r5=00005D00 r16=00000003
+30871:[bandhist] R1240 w32 CONFIRMED ea=0x80059320 v=800592B8 landed=800592B8 fn=0x800286CC
+30872:[statestamp] R814 FULL HANDOFF STAMPED #3: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+
+===PROVENANCE_LOG===
+2:[bldprov] R1307 build provenance: compiled Sep 18 2026 04:04:51 (compiler-evaluated at build time) source-markers R1305+R1306+R1307+R1308 present - a fresh timestamp = fresh compile of the patched source; unchanged across runs = STALE binary
+12350:[fwrestart] R772 pristine exe image restored @fault-walk restart (0x80010000..0x8006F000)
+12352:[fwrestart] R765 fault-walk EXIT converted to guest restart #1 (churn anchor re-dispatches boot entry 0x80019524; window keeps exploring)
+19438:[fwrestart] R772 pristine exe image restored @fault-walk restart (0x80010000..0x8006F000)
+19440:[fwrestart] R765 fault-walk EXIT converted to guest restart #1 (churn anchor re-dispatches boot entry 0x80019524; window keeps exploring)
+25670:[fwrestart] R772 pristine exe image restored @fault-walk restart (0x80010000..0x8006F000)
+25672:[fwrestart] R765 fault-walk EXIT converted to guest restart #2 (churn anchor re-dispatches boot entry 0x80019524; window keeps exploring)
+31016:[wedge] R1195 image load: base=0x10ab0a000 slide=0xab0a000 name=/Users/joshuaghoreishi/Downloads/xenolift/xenogears_boot_040456
+31150:[wedge] R1195 image load: base=0x10ab0a000 slide=0xab0a000 name=/Users/joshuaghoreishi/Downloads/xenolift/xenogears_boot_040456
+31999:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)

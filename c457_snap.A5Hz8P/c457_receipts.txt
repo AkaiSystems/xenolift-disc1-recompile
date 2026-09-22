@@ -1,0 +1,30 @@
+SRC_SHA=77a9b4fc989d9e287ba1149a9f813a6e12b33fe9d3b68bb0a521c256b6442bed
+BASELINE_VERIFIED (the R1382 tree)
+===PREGATE457=== pre-existence gates (fail-closed)
+arm-gate sites: 1 (expect 1)
+freeze-5s lines: 1 (expect 1)
+R1383 marker: 0 (expect 0)
+f15near marker: 0 (expect 0)
+g_cd_irq_force refs: 19 (expect >0 - the bell variable must exist)
+===APPLY457=== strict shape gate + apply
+arm-gate sites: 1 (expect 1)
+anchors: freeze=15194 write=15196 print=15197 comment=15172 elseif=15199
+APPLIED: R1383 arm+bell + freeze 2s + near-miss camera
+===POSTGATE457=== post-apply marker gates (explicit, full patterns)
+R1383 marker: 1 (expect 1)
+f15near markers: 1 (expect 1)
+bell line: 1 (expect 1)
+freeze-2s line: 1 (expect 1)
+freeze-5s line: 0 (expect 0)
+arm-gate intact: 1 (expect 1)
+PATCHED_TREE_SHA=ef5508cecdb61e35bf5307cf7b887fa59b776932a71df5896d2d7189bd631e13
+===BUILD457=== compile the patched runtime (NO RUN - the run-only cycle follows)
+BUILD OK
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)
+--- tree shas:
+baseline=77a9b4fc989d9e287ba1149a9f813a6e12b33fe9d3b68bb0a521c256b6442bed
+patched=ef5508cecdb61e35bf5307cf7b887fa59b776932a71df5896d2d7189bd631e13
+ef5508cecdb61e35bf5307cf7b887fa59b776932a71df5896d2d7189bd631e13
+===PRESERVE457=== the receipts + build output

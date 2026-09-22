@@ -1,0 +1,74 @@
+[
+  {
+    "path": "runtime/runtime.c",
+    "sha256": "cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602",
+    "size": 1768714,
+    "mtime_ns": 1789722289680451995
+  },
+  {
+    "path": "run.log",
+    "sha256": "8c0d56b8398035df83d937cae10e4f041833c2035732a0e39823afb615d5a2e4",
+    "size": 2636010,
+    "mtime_ns": 1789722493252763075
+  },
+  {
+    "path": "disc1.c",
+    "sha256": "8317391acefc8fd706e0ac69bc3a2bffd60cb2a80372425669877979e9ba7308",
+    "size": 15425236,
+    "mtime_ns": 1789714969472764207
+  },
+  {
+    "path": "run.sh",
+    "sha256": "d36d4e7d7d8014fa687fee60ef34f50ddff50cb31ec2bc9648bd19427341cbc7",
+    "size": 146535,
+    "mtime_ns": 1789714969491597893
+  },
+  {
+    "path": "run.log.d",
+    "sha256": "8c0d56b8398035df83d937cae10e4f041833c2035732a0e39823afb615d5a2e4",
+    "size": 2636010,
+    "mtime_ns": 1789722493246116913
+  },
+  {
+    "path": "overlay_region.bin",
+    "sha256": "9caece145b4c5ed2d464b28a881b4c933b8c8913b4870e9d91db2c8841157726",
+    "size": 135168,
+    "mtime_ns": 1789608393443269968
+  },
+  {
+    "path": "overlay_fault.bin",
+    "sha256": "dbf6940df7d290a1b58905357ebb6a4d8bff6b5a66917a1d47531d20a34657df",
+    "size": 135168,
+    "mtime_ns": 1789405040705312677
+  },
+  {
+    "path": "stage2_region.bin",
+    "sha256": "fd1bcc713c2a33fa31e04a30e8c41adc843de5f7f8e9a0fcaa597eba563d4451",
+    "size": 135168,
+    "mtime_ns": 1789722302488089641
+  },
+  {
+    "path": "xenogears_boot_040456",
+    "sha256": "6b60f2de982a1815d7aa2535edcb9eb23da6ba5ad56462f69a77ce51d8906016",
+    "size": 4215024,
+    "mtime_ns": 1789722296709216023
+  },
+  {
+    "path": "prev_run/runtime_last.c",
+    "sha256": "cc637bfb05891064a87390bd8918bf7a1742c45f458a2796bcece5cab02b1602",
+    "size": 1768714,
+    "mtime_ns": 1789722296792960937
+  },
+  {
+    "path": "runtime/.z15.c",
+    "sha256": "0f4992ee6c0e0a0d72481a27ab88d146f66f435d7c0ef6c0ed9e2c1ca8cb829e",
+    "size": 754393,
+    "mtime_ns": 1789391406000000000
+  },
+  {
+    "path": "worktrees/firstfault-manager/runtime-before.c",
+    "sha256": "1cdc7520e2df3fd4f3a8b57ae689f87d744e5bc94c225e5a64090c1a5515d701",
+    "size": 1360909,
+    "mtime_ns": 1789577830000000000
+  }
+]

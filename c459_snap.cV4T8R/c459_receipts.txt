@@ -1,0 +1,30 @@
+SRC_SHA=ef5508cecdb61e35bf5307cf7b887fa59b776932a71df5896d2d7189bd631e13
+BASELINE_VERIFIED (the R1383 tree)
+===PREGATE459=== pre-existence gates (fail-closed)
+arm-gate sites: 1 (expect 1)
+freeze-2s lines: 1 (expect 1)
+R1384 marker: 0 (expect 0)
+f15arm-R1384 marker: 0 (expect 0)
+===APPLY459=== strict shape gate + apply
+arm-gate sites: 1 (expect 1)
+anchors: freeze-open=15192 freeze-2s=15194
+APPLIED: R1384 immediate fire
+===POSTGATE459=== post-apply marker gates (explicit, full patterns)
+R1384 marker: 2 (expect 2 - the block opener + the comment)
+f15arm-R1384 print: 1 (expect 1)
+freeze-2s line: 0 (expect 0)
+freeze-open line: 0 (expect 0)
+arm-gate intact: 1 (expect 1)
+bell line: 1 (expect 1)
+f15near total: 2 (expect 2 - camera comment + print)
+PATCHED_TREE_SHA=06e7abc1114ec13b231b5a58621c90732c0c2ed62a27e4502bebe96197e6870b
+===BUILD459=== compile the patched runtime (NO RUN - the run-only cycle follows)
+BUILD OK
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)
+--- tree shas:
+baseline=ef5508cecdb61e35bf5307cf7b887fa59b776932a71df5896d2d7189bd631e13
+patched=06e7abc1114ec13b231b5a58621c90732c0c2ed62a27e4502bebe96197e6870b
+06e7abc1114ec13b231b5a58621c90732c0c2ed62a27e4502bebe96197e6870b
+===PRESERVE459=== the receipts + build output

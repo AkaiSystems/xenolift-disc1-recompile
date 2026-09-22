@@ -1,0 +1,1 @@
+                            && xenolift_mem_read32(0x80077E88u) == 0x27BDFFC8u /* R845C (c621): door-content identity - the c618 receipts: the re-request fires ring-stuff repurposed the module window (CE1E0003 at the door, fn 8004299C); NEVER re-dispatch a door holding non-module data - the module prologue word (FieldMain 27BDFFC8) must be present; the game install re-arms it */

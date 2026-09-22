@@ -1,0 +1,502 @@
+[disc] R1236 disc path resolved: /Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin
+[disc] BIN=/Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin (found)
+--- build ---
+run.sh build R1024
+tool health: exec rc=1 magic=cffaedfe out=[usage: xenolift <psx-exe> [out.c]        xenolift --ftab <psx-exe> [--disc <disc-image>] ]
+cargo: SKIPPED (Rust source content unchanged — md5 gate)
+[timing] cargo build: 0s (cycle total: 0s)
+emit: SKIPPED (capture hash stable — matched emit hash; R1020 gate)
+[emit] R224 guard already present
+[emit] R873 spuerr body stub already present
+[emit] R902 walk terminator guard already present
+[emit] R903 widened guard already present
+[emit] R904 exact-fit guard already present
+[emit] R1202 null-block free guard already present
+[emit] R323 dispatch already pristine
+[emit] R752 no-churn: R758 gated bypass present and healthy - disc1.c untouched (compile cache stays valid)
+overlay module: 135168 bytes mapped at 0x8006F000 (32450 nonzero words)
+overlay fault-capture mapped OVER pre-menu snapshot: 135168 bytes, 31763 nonzero words (R681 real field coordinator)
+overlay coordinator entry 0x80077E88 first words: 8E020050 3C04800A 2484A3F0 00021303 (R682 proof - zeros = blank-page crash recurs)
+overlay stage-2 module: 135168 bytes mapped at 0x801D3000 (33285 nonzero words)
+coverage: 1823516 bytes natively translated total; 453280 within the 512KB exe image (86.5%); 1370236 overlay/extra bytes; 3826 functions
+reference ingest: +943 decomp symbols merged (xenogears-decomp SLUS-006.64; decomp names authoritative)
+symbol map file: disc1.map (1481 named entries)
+symbol map: 1481 named functions
+symbol map file: disc1.map (1481 named entries)
+seams: 210 hardware-touch sites across 44 functions (seams.txt - the HLE contract list v1)
+wrote disc1.c
+coverage: 1823516 bytes natively translated total; 453280 within the 512KB exe image (86.5%); 1370236 overlay/extra bytes; 3826 functions
+seams: 210 hardware-touch sites across 44 functions (seams.txt - the HLE contract list v1)
+[timing] emit: 1s (cycle total: 1s)
+[emit] R923 walk cursor guard already present
+[emit] R925 lzss op-count abort already present (R1011: marker now keyed to the guard CODE text - R1010 checked a string that never matched the emitted comment form R925/R926/R927, my own marker-mismatch repeat of the original bug; the guard code substring g_lzss_overrun_reads > 4096u is form-independent)
+[emit] R926 signature-based abort already present (R1011 code-keyed marker)
+[emit] R927 telemetry already present
+[emit] R928 heap-band guards already present
+[emit] R929 Vsync recursion cap already present
+[emit] R933 CD callback slot heal already present
+[emit] R935 freelist head heal already present
+[emit] R936 DrawPrim camera already present
+[emit] R1051 bodycam 8003342C already present
+[emit] R1051 bodycam 800320A4 already present
+[emit] R1051 bodycam 801D002C already present
+[emit] R1051 bodycam 801D2FE8 already present
+[emit] R1057 archlistcam 80028AC8 already present
+[emit] R1106 menuchain 8001A4B4 already present
+[emit] R1106 menuchain 8001A250 already present
+[emit] R1106 menupunch 8001A344 already present
+[emit] R1111 vsyncguard 57848 already present
+[emit] R1111 vsyncguard 57844 already present
+[emit] R1108 chaincam 80031B10 already present
+[emit] R1108 chaincam 80031A30 already present
+[emit] R1108 chaincam 80035DB0 already present
+[emit] R1108 chaincam 8001996C already present
+[emit] R1115 chaincam 8004293C already present
+[emit] R1060 datacam 800392EC already present
+[emit] R1060 datacam 80039120 already present
+[emit] R1052 bodycam 80077E88 already present
+[emit] R1052 bodycam 80076858 already present
+[emit] R1056 taintheal 801D002C already present
+[emit] R1056 taintheal 801D2FE8 already present
+[ccache] R1157 compile: SKIPPED (disc1.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (runtime/runtime.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gpu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gte.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_spu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_mdec.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_memcard.c content hash unchanged - cached .o reused)
+link: SKIPPED (no source changed since last build)
+banner check: OK (runtime build R1291 in binary)
+[shieldcheck] dmashield PRESENT in binary
+[shieldcheck] mangleguard PRESENT in binary
+[shieldcheck] ringw PRESENT in binary
+[shieldcheck] reqres PRESENT in binary
+[shieldcheck] carve2 PRESENT in binary
+[shieldcheck] frclash PRESENT in binary
+[shieldcheck] descw PRESENT in binary
+[timing] compile+link: 1s (cycle total: 2s)
+--- live viewer ---
+--- run ---
+[prov] R1200 source archived: prev_run/runtime_last.c sha256=77a9b4fc989d9e287ba1149a9f813a6e12b33fe9d3b68bb0a521c256b6442bed
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[fuse] run fuse cleared (R356: 210s hard kill — digest always generates)
+[timing] 15s run: 173s (cycle total: 175s)
+--- digest ---
+[digest] R751 log raw 2262002B -> capped  2722662B, assembling (this line visible = if digest is still empty, the block stalled, NOT the log)
+=IRQW=
+run.log:[hook] 0x80068960: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068964: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068960: 00000000 -> 00010001 at fn 0x800195A4 sw_line=135652 sp=801FFFC8 r16=00000000
+run.log:[hook] 0x80068960: 00010001 -> 00020002 at fn 0x80046EFC sw_line=141394 sp=801FFF78 r16=801FFFD8
+run.log:[hook] 0x80068960: 00020002 -> 00030003 at fn 0x800404D4 sw_line=126772 sp=801FFF88 r16=800625FC
+run.log:[hook] 0x80068960: 00030003 -> 00040004 at fn 0x800404D4 sw_line=160098 sp=801FFFB0 r16=00000001
+run.log:[hook] 0x80068960: 00040004 -> 00050005 at fn 0x8004B8D8 sw_line=151679 sp=801FFF80 r16=00000000
+run.log:[hook] 0x80068960: 00050005 -> 00060006 at fn 0x80019658 sw_line=154159 sp=801FFFC8 r16=800592B8
+run.log:[hook] 0x80068960: 00060006 -> 00070007 at fn 0x800428AC sw_line=131529 sp=801FFF58 r16=00000001
+run.log:[hook] 0x80068960: 00070007 -> 00080008 at fn 0x800415B4 sw_line=126286 sp=801FFF10 r16=00000001
+run.log:[hook] 0x80068960: 00080008 -> 00090009 at fn 0x800415B4 sw_line=130502 sp=801FFF10 r16=0000000A
+run.log:[hook] 0x80068960: 00090009 -> 000A000A at fn 0x80041B24 sw_line=128335 sp=801FFEB0 r16=00000005
+=EMITAUDIT=
+[emitaudit] disc1.c printf-family call count: 1
+257380:   R988 (b8-c99): the two fprintf(stderr,...) calls that lived here were THE hidden libc print entry (EMITAUDIT c99: "disc1.c printf-family call count: 2", both this fragment) behind the 10-cycle exit-134 class (macreport: __stack_chk_fail <- __xvprintf <- vfprintf_l <- fprintf attributed to real_main). Now routed through xenolift_receipt (runtime.c, non-static wrapper over xl_format + write(2)) - ZERO libc print machinery reachable from the guest binary. */
+[emitaudit] R926 target present: 0
+=EXITDIAG=
+=COORDERA=
+run.log:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801EF300 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801EF300 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801EF300 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801EF300 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:[mvloop] pre-movie polling n=217055232 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 164s since arm; hits=3338665984 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+run.log.d:[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004B54C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+run.log.d:[mvloop] pre-movie polling n=218103808 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10682368 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+run.log.d:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+run.log.d:[wedge] R1196 executed-binary xenogears_boot_212601 sha256=7f9393d12ffb2c9dd977451ef9f5591087d66207d038a657a327c8bd3f14d140 dSYM=prev_run/last.dSYM
+run.log.d:[logcap] end tail
+=SPXW=
+=SNDREG=
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=1s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=1s
+run.log.d:[sndinit] R966 SoundInitialize entry #3 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=6s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=6s
+run.log.d:[sndinit] R966 SoundInitialize entry #4 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=8s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=8s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=1s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005968C r5=00000000 @t=1s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=1s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=800596E0 r5=00000000 @t=1s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=1s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=1s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=1s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=6s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=6s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=8s
+=GATEMISS=
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=00000000 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=800566F8 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=800566F8 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=1s
+=COORDW=
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80032EB4 r31=80019B98 (old 00000000) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80032EB4 r31=80019B98 (old 00000000) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old EBE10222) @t=1s
+run.log:[coordw] R1000 entry 0x80077E88: 00DCE100 80000000 DD000408 DDDDDDB9 at fn 0x80019524 r31=0000000A (old 27BDFFC8) @t=8s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80041C68 r31=80041BB0 (old 00DCE100) @t=8s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 3FFCCCE1 B142E144 46430232 D0DDE103 at fn 0x800381F4 r31=80037FF4 (old 00000000) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80032EB4 r31=80019B98 (old 00000000) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80032EB4 r31=80019B98 (old 00000000) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old EBE10222) @t=1s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00DCE100 80000000 DD000408 DDDDDDB9 at fn 0x80019524 r31=0000000A (old 27BDFFC8) @t=8s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80041C68 r31=80041BB0 (old 00DCE100) @t=8s
+=UNPACKW=
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=00000001 r31=80019B98 src[0..3]=0003FAFE 01000404 FFFF9C30 0702D0FF dst[0..3]=00000004 00000000 FFFFFF9C 000007D0 @t=1s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00CA00A0 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=1s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F4E80 a2=C6C0CBA5 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=1s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=80029670 a1=00000001 a2=00000001 a3=00800000 r31=0000000A src[0..3]=8FBF0020 8FB3001C 8FB20018 8FB10014 dst[0..3]=00000000 00000000 00000000 00000000 @t=8s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00C00000 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F4E80 a2=00C00000 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=8004EABC a1=801F3634 a2=00200000 a3=FE1FFFFF r31=80019D74 src[0..3]=00000000 000010A0 00040800 8000082C dst[0..3]=00000010 00000008 0000002C 01E00000 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801EF300 a1=8006FAF0 a2=800566F8 a3=00000001 r31=80019B98 src[0..3]=00000000 00000000 00000000 00000000 dst[0..3]=8007EBF0 84000000 000002A0 00000101 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=80050240 a1=8006FAF8 a2=8006FF0C a3=80000000 r31=800375C4 src[0..3]=00000000 09010200 EEEEEC08 FC800004 dst[0..3]=08090102 04EEEEEC 008CFC80 00EFEEFE @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=00000001 r31=80019B98 src[0..3]=0003FAFE 01000404 FFFF9C30 0702D0FF dst[0..3]=00000004 00000000 FFFFFF9C 000007D0 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801EF300 a1=8006FAF0 a2=800566F8 a3=00000001 r31=80019B98 src[0..3]=00000000 00000000 00000000 00000000 dst[0..3]=8007EBF0 84000000 000002A0 00000101 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=80050240 a1=8006FAF8 a2=8006FF0C a3=80000000 r31=800375C4 src[0..3]=00000000 09010200 EEEEEC08 FC800004 dst[0..3]=08090102 04EEEEEC 008CFC80 00EFEEFE @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=00000001 r31=80019B98 src[0..3]=0003FAFE 01000404 FFFF9C30 0702D0FF dst[0..3]=00000004 00000000 FFFFFF9C 000007D0 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00CA00A0 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F4E80 a2=C6C0CBA5 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=1s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=80029670 a1=00000001 a2=00000001 a3=00800000 r31=0000000A src[0..3]=8FBF0020 8FB3001C 8FB20018 8FB10014 dst[0..3]=00000000 00000000 00000000 00000000 @t=8s
+=MODMISS=
+run.log:[fldx] R790 expansion sequence entered (via full-handoff-stamp; coordinator slot 00DCE100 80000000; R1002 staged f14@801D9724=0003FAFE gate=MATCH f15@801F8724=01180118)
+run.log.d:[fldx] R790 expansion sequence entered (via full-handoff-stamp; coordinator slot EBE10222 543DAE66; R1002 staged f14@801D9724=00000000 gate=MISS f15@801F8724=01180118)
+run.log.d:[fldx] R790 expansion sequence entered (via full-handoff-stamp; coordinator slot 27BDFFC8 3C038001; R1002 staged f14@801D9724=A7A20090 gate=MISS f15@801F8724=01180118)
+run.log.d:[fldx] R790 expansion sequence entered (via full-handoff-stamp; coordinator slot 00DCE100 80000000; R1002 staged f14@801D9724=0003FAFE gate=MATCH f15@801F8724[digestcap] R865: digest was   503099B - kept head 16KB + DEATH EVIDENCE + tail 12KB (death receipts must survive the cap - c454's EXITTAIL was cut by the middle-capper and the death went unnamed)
+=WEDGECAM=
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log:[ringw] #1 0x8004FE08: 0x00000000 -> 0x00000800 r31=8002B168 r16=00000000 @t=0s
+run.log:[ringw] #2 0x8004FE08: 0x00000800 -> 0x00001000 r31=8002B168 r16=00000000 @t=0s
+run.log:[ringw] #3 0x8004FE08: 0x00001000 -> 0x00001800 r31=8002B168 r16=80056550 @t=0s
+run.log:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=80041BA8 (r32 hits=967413 wrap-aware | ORIGIN guest=65 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log:[ringw] #4 0x8004FE08: 0x00001800 -> 0x00002000 r31=8002B168 r16=FFFFFFFF @t=0s
+run.log:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8002B084 (r32 hits=1838387 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=8002B084 (r32 hits=2883021 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000002 arg=00000003 after=00000003 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000003 arg=00000004 after=00000004 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=8004B894(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000004 arg=00000005 after=00000005 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=8004B894(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[pollkick] R1196 kick #4 serviced at A22C poll cur_fn=80041BA8 (r32 hits=4689367 wrap-aware | ORIGIN guest=256 host=0 | OUTCOME blocked=0 svc-ent=4 svc-ret=4)
+run.log:[pollkick] R1196 kick #5 serviced at A22C poll cur_fn=80041BA8 (r32 hits=5831346 wrap-aware | ORIGIN guest=320 host=0 | OUTCOME blocked=0 svc-ent=5 svc-ret=5)
+run.log:[pollkick] R1196 kick #4 serviced at A22C poll cur_fn=80041BA8 (r32 hits=4689367 wrap-aware | ORIGIN guest=256 host=0 | OUTCOME blocked=0 svc-ent=4 svc-ret=4)
+run.log:[pollkick] R1196 kick #5 serviced at A22C poll cur_fn=80041BA8 (r32 hits=5831346 wrap-aware | ORIGIN guest=320 host=0 | OUTCOME blocked=0 svc-ent=5 svc-ret=5)
+run.log:[pollkick] R1196 kick #6 serviced at A22C poll cur_fn=8002B084 (r32 hits=6414890 wrap-aware | ORIGIN guest=384 host=0 | OUTCOME blocked=0 svc-ent=6 svc-ret=6)
+run.log:[pollkick] R1196 kick #7 serviced at A22C poll cur_fn=80041BA8 (r32 hits=6962973 wrap-aware | ORIGIN guest=448 host=0 | OUTCOME blocked=0 svc-ent=7 svc-ret=7)
+run.log:[pollkick] R1196 kick #8 serviced at A22C poll cur_fn=80041BA8 (r32 hits=140503387 wrap-aware | ORIGIN guest=512 host=0 | OUTCOME blocked=0 svc-ent=8 svc-ret=8)
+run.log:[pollkick] R1196 kick #9 serviced at A22C poll cur_fn=8002B084 (r32 hits=141234121 wrap-aware | ORIGIN guest=576 host=0 | OUTCOME blocked=0 svc-ent=9 svc-ret=9)
+run.log:[pollkick] R1196 kick #10 serviced at A22C poll cur_fn=8002B084 (r32 hits=181942296 wrap-aware | ORIGIN guest=640 host=0 | OUTCOME blocked=0 svc-ent=10 svc-ret=10)
+run.log:[pollkick] R1196 kick #11 serviced at A22C poll cur_fn=80041BA8 (r32 hits=182152337 wrap-aware | ORIGIN guest=704 host=0 | OUTCOME blocked=0 svc-ent=11 svc-ret=11)
+run.log:[pollkick] R1196 kick #12 serviced at A22C poll cur_fn=80041410 (r32 hits=616602035 wrap-aware | ORIGIN guest=768 host=0 | OUTCOME blocked=0 svc-ent=12 svc-ret=12)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log.d:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log.d:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log.d:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log.d:[ringw] #1 0x8004FE08: 0x00000000 -> 0x00000800 r31=8002B168 r16=00000000 @t=0s
+run.log.d:[ringw] #2 0x8004FE08: 0x00000800 -> 0x00001000 r31=8002B168 r16=00000000 @t=0s
+run.log.d:[ringw] #3 0x8004FE08: 0x00001000 -> 0x00001800 r31=8002B168 r16=80056550 @t=0s
+run.log.d:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=80041BA8 (r32 hits=967413 wrap-aware | ORIGIN guest=65 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log.d:[ringw] #4 0x8004FE08: 0x00001800 -> 0x00002000 r31=8002B168 r16=FFFFFFFF @t=0s
+run.log.d:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8002B084 (r32 hits=1838387 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=8002B084 (r32 hits=2883021 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000002 arg=00000003 after=00000003 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000003 arg=00000004 after=00000004 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=8004B894(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000004 arg=00000005 after=00000005 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=8004B894(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[pollkick] R1196 kick #4 serviced at A22C poll cur_fn=80041BA8 (r32 hits=4689367 wrap-aware | ORIGIN guest=256 host=0 | OUTCOME blocked=0 svc-ent=4 svc-ret=4)
+run.log.d:[pollkick] R1196 kick #5 serviced at A22C poll cur_fn=80041BA8 (r32 hits=5831346 wrap-aware | ORIGIN guest=320 host=0 | OUTCOME blocked=0 svc-ent=5 svc-ret=5)
+run.log.d:[pollkick] R1196 kick #4 serviced at A22C poll cur_fn=80041BA8 (r32 hits=4689367 wrap-aware | ORIGIN guest=256 host=0 | OUTCOME blocked=0 svc-ent=4 svc-ret=4)
+run.log.d:[pollkick] R1196 kick #5 serviced at A22C poll cur_fn=80041BA8 (r32 hits=5831346 wrap-aware | ORIGIN guest=320 host=0 | OUTCOME blocked=0 svc-ent=5 svc-ret=5)
+run.log.d:[pollkick] R1196 kick #6 serviced at A22C poll cur_fn=8002B084 (r32 hits=6414890 wrap-aware | ORIGIN guest=384 host=0 | OUTCOME blocked=0 svc-ent=6 svc-ret=6)
+run.log.d:[pollkick] R1196 kick #7 serviced at A22C poll cur_fn=80041BA8 (r32 hits=6962973 wrap-aware | ORIGIN guest=448 host=0 | OUTCOME blocked=0 svc-ent=7 svc-ret=7)
+run.log.d:[pollkick] R1196 kick #8 serviced at A22C poll cur_fn=80041BA8 (r32 hits=140503387 wrap-aware | ORIGIN guest=512 host=0 | OUTCOME blocked=0 svc-ent=8 svc-ret=8)
+run.log.d:[pollkick] R1196 kick #9 serviced at A22C poll cur_fn=8002B084 (r32 hits=141234121 wrap-aware | ORIGIN guest=576 host=0 | OUTCOME blocked=0 svc-ent=9 svc-ret=9)
+run.log.d:[pollkick] R1196 kick #10 serviced at A22C poll cur_fn=8002B084 (r32 hits=181942296 wrap-aware | ORIGIN guest=640 host=0 | OUTCOME blocked=0 svc-ent=10 svc-ret=10)
+run.log.d:[pollkick] R1196 kick #11 serviced at A22C poll cur_fn=80041BA8 (r32 hits=182152337 wrap-aware | ORIGIN guest=704 host=0 | OUTCOME blocked=0 svc-ent=11 svc-ret=11)
+run.log.d:[pollkick] R1196 kick #12 serviced at A22C poll cur_fn=80041410 (r32 hits=616602035 wrap-aware | ORIGIN guest=768 host=0 | OUTCOME blocked=0 svc-ent=12 svc-ret=12)
+=DEATHREC=
+--- EXITTAIL (run.log last 96) ---
+[mvloop] pre-movie polling n=190840832 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004299C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 143s since arm; hits=2919235584 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004293C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9371648 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[mvloop] pre-movie polling n=191889408 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START press #30 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[lzss-fence] R1169 hit @0x80077180 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 144s since arm; hits=2936012800 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=192937984 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFF74100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[chaincam] R1115 CD_datasync entry #9437184 sp(r29)=801FFEB8 r31caller=80041420 r16=00000000
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9437184 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x800AA6A8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 145s since arm; hits=2952790016 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=193986560 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9502720 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x800AFC90 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 146s since arm; hits=2969567232 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=195035136 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 146s since arm; hits=2986344448 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9568256 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[mvloop] pre-movie polling n=196083712 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 147s since arm; hits=3003121664 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004293C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9633792 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[mvloop] pre-movie polling n=197132288 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80041410 r31=80028704 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START press #31 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[lzss-fence] R1169 hit @0x8004FDF8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 148s since arm; hits=3019898880 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=198180864 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80041410 r31=80028704 padcell=FFF74100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9699328 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x801FFEA4 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 149s since arm; hits=3036676096 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=199229440 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80041410 r31=80028704 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9764864 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x80057844 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 150s since arm; hits=3053453312 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[fldfrz2] R825 HOST watcher t=158s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+[mvloop] pre-movie polling n=200278016 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80041410 r31=80028704 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x80077014 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 151s since arm; hits=3070230528 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9830400 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[mvloop] pre-movie polling n=201326592 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80042A58 r31=800429A4 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x801FFE78 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 152s since arm; hits=3087007744 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=80042A58 | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[mvloop] pre-movie polling n=202375168 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80042A58 r31=800429A4 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9895936 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[padstart] R809 START press #32 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[lzss-fence] R1169 hit @0x8004FDE4 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 152s since arm; hits=3103784960 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=203423744 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80042A58 r31=800429A4 padcell=FFF74100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=9961472 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x8005783C above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 153s since arm; hits=3120562176 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=204472320 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80042A58 r31=800429A4 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10027008 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x80077014 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 154s since arm; hits=3137339392 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=205520896 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=80042A58 r31=800429A4 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 155s since arm; hits=3154116608 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10092544 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[mvloop] pre-movie polling n=206569472 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B55C r31=800429A4 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FDF8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 156s since arm; hits=3170893824 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004B55C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[mvloop] pre-movie polling n=207618048 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B55C r31=800429A4 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10158080 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[padstart] R809 START press #33 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 156s since arm; hits=3187671040 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=208666624 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B55C r31=800429A4 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10223616 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x801FFEB0 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 157s since arm; hits=3204448256 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=209715200 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B55C r31=800429A4 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10289152 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 158s since arm; hits=3221225472 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=210763776 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004299C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10354688 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x800AA6A8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 159s since arm; hits=3238002688 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=211812352 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004299C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x801FFE78 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 160s since arm; hits=3254779904 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004299C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[mvloop] pre-movie polling n=212860928 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004299C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10420224 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[padstart] R809 START press #34 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[lzss-fence] R1169 hit @0x800AA6A8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 161s since arm; hits=3271557120 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=213909504 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004299C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[chaincam] R1115 CD_datasync entry #10485760 sp(r29)=801FFEB8 r31caller=80041420 r16=00000000
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10485760 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x8004FDF8 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 161s since arm; hits=3288334336 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=214958080 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10551296 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 162s since arm; hits=3305111552 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=216006656 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10616832 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[lzss-fence] R1169 hit @0x80077014 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 163s since arm; hits=3321888768 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[mvloop] pre-movie polling n=217055232 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4100 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-fence] R1169 hit @0x8004FE04 above fence 0x0FC19690 (op#9 src=0x80029670 word0=0x8FBF0020, 164s since arm; hits=3338665984 under R1277 run-lifetime throttle first-8-then-1-per-16M; fence = src + EXPANDED size - NOT a validated compressed-input boundary; this hit is a SUSPICION, never a proven input overrun; never retired - the fence stays armed for the rest of the run; hits attribute to the LAST armed op via the [fencelife] arm chain; diagnostic-only, this warning never suppresses the read)
+[parkcam] R1231 cells A228=00000000 A22C=00000000 A230=00000000 cur_fn=8004B54C | disp=(0,0 256x240) on=1 draw=(0,240)e5 | prevyes  (0,0 256x240) on=1 draw=(0,240) | winNZ=0/960 C=0 D=0
+[mvloop] pre-movie polling n=218103808 (mod6=1 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8004B54C r31=80042960 padcell=FFFF4000 FE1C=00000001 | R874 DOOR: FDFC=00000000 FE48=00000000 FE30=00000000 | R878 CD-STATE: seek=265744 last_cmd=02 pend=0 sched=0 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000001 FE04=00040E10 FDF8=0000CDF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=10682368 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[wedge] R1196 executed-binary xenogears_boot_212601 sha256=7f9393d12ffb2c9dd977451ef9f5591087d66207d038a657a327c8bd3f14d140 dSYM=prev_run/last.dSYM
+[logcap] end tail
+--- asan ---
+--- canaryrec ---
+--- abrtrec ---
+--- segvdie ---
+--- segvrec ---
+00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=83s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=98s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=113s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=128s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=143s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+run.log:[fldfrz2] R825 HOST watcher t=158s sectors=360 | seek=265744 | walker: FAEC=00000000 92C0=ffffffff 92BC=00000001 92D0=00000000 F0C=00000004 F10=00190559 FE1C=00000001 FE20=00000000 FDF8=0000cdf0 FE04=00040e10 FDE4=00000000 | q10=00190559 q14=00000001 q18=000000a0
+=FLDFRZ=
+=ABORTMSG=
+run.log:[healwalk] R699 scan for cursor 0x00000001: 16 corrupt record(s) capped - walk retries clean next boot
+run.log.d:[healwalk] R699 scan for cursor 0x00000001: 16 corrupt record(s) capped - walk retries clean next boot
+=STATESTAMP=
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #1: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #3 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #2: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #4 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #3: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log.d:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log.d:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log.d:[statestamp] R814 FULL HANDOFF STAMPED #1: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log.d:[statestamp] R821 EARLY HANDOFF at bootentry #3 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log.d:[statestamp] R814 FULL HANDOFF STAMPED #2: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+=DEV=
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801803 = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801801 = 0x00000001
+run.log:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=13)
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=14)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=24)
+run.log.d:[dev] write 0x1F801800 = 0x00000001
+run.log.d:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log.d:[dev] write 0x1F801800 = 0x00000000
+run.log.d:[dev] write 0x1F801803 = 0x00000000
+run.log.d:[dev] write 0x1F801800 = 0x00000000
+run.log.d:[dev] write 0x1F801801 = 0x00000001
+run.log.d:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F801800 = 0x00000001
+run.log.d:[dev] read  0x1F801803 = 0x00000003 (n=13)
+run.log.d:[dev] read  0x1F801803 = 0x00000003 (n=14)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=24)
+=DIR2=
+=BANKW=
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #1: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #2: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F4E80 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F2B20 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CD0 <- 84000000 writer_fn=800320E8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801EF300 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800C4A6C <- 800CC270 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800C4A6C <- 8006FF0C writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800B3CCC <- 801EF300 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800C4A6C <- 800CC270 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800C4A6C <- 8006FF0C writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #3: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #4: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CD0 <- DC100D25 writer_fn=80031E6C (bank1)
+=FTAB2=
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[ftab] file#=6 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C8 bytes=54A901640A0000 -> LBA=108884 size=2660
+[ftab] file#=7 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100CF bytes=56A901C8350000 -> LBA=108886 size=13768
+[ftab] file#=3 base=0x80010004 off=2593 gate48=0x00000000 entry=0x800146F9 bytes=D5A60358230000 -> LBA=239317 size=9048
+[ftab] size-lookup fn_80028738(file#=18) caller=0x80019A48
+[ftab] file#=18 base=0x80010004 off=23 gate48=0x00000000 entry=0x8001011C bytes=66AA0118380000 -> LBA=109158 size=14360
+[ftab] FAT neighborhood (base=0x80010004 off=23)
+[ftab] file#=1: LBA=108754 size=-6  <== DIRECTORY MARKER
+[ftab] file#=2: LBA=108754 size=61680
+[ftab] file#=3: LBA=108785 size=155120
+[ftab] file#=4: LBA=108861 size=23744
+[ftab] file#=5: LBA=108873 size=21984
+[ftab] file#=6: LBA=108884 size=2660
+[ftab] file#=7: LBA=108886 size=13768
+[ftab] file#=8: LBA=0 size=0
+[ftab] file#=9: LBA=0 size=0
+[ftab] file#=10: LBA=0 size=0
+[ftab] file#=11: LBA=0 size=0
+[ftab] file#=12: LBA=108893 size=-6  <== DIRECTORY MARKER
+[ftab] file#=13: LBA=108893 size=80284
+[ftab] file#=14: LBA=108933 size=125304
+[ftab] file#=15: LBA=108995 size=92180
+[ftab] file#=16: LBA=109041 size=166564
+[ftab] file#=17: LBA=109123 size=70944
+[ftab] file#=18: LBA=109158 size=14360
+[ftab] size-lookup fn_80028738(file#=18) caller=0x8002960C
+[ftab] size-lookup fn_80028738(file#=18) caller=0x800288FC
+[ftab] READ ISSUED fn_80029690(file#=18 dst=0x801EF300 a2=0x00000000 a3=0x00000000) LBA cell FE04=0x0001AA66 size cell FDF8=14360
+[ftab] size-lookup fn_80028738(file#=14) caller=0x80019A48
+[ftab] file#=14 base=0x80010004 off=23 gate48=0x00000000 entry=0x80010100 bytes=85A90178E90100 -> LBA=108933 size=125304
+[ftab] size-lookup fn_80028738(file#=14) caller=0x8002960C
+[ftab] size-lookup fn_80028738(file#=14) caller=0x800288FC
+[ftab] READ ISSUED fn_80029690(file#=14 dst=0x801DD680 a2=0x00000000 a3=0x00000000) LBA cell FE04=0x0001A985 size cell FDF8=125304
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)

@@ -1,0 +1,30 @@
+SRC_SHA=06e7abc1114ec13b231b5a58621c90732c0c2ed62a27e4502bebe96197e6870b
+BASELINE_VERIFIED (the R1384 tree)
+===PREGATE464=== pre-existence gates (fail-closed)
+arm-gate sites: 1 (expect 1)
+R1385 marker: 0 (expect 0)
+r1385 refs: 0 (expect 0)
+re-arm body lines: 1 (expect 1)
+===APPLY464=== strict shape gate + apply
+re-arm sites: 1 (expect 1)
+APPLIED: R1385 completion announcement
+===POSTGATE464=== post-apply marker gates (explicit, full patterns)
+R1385 marker: 1 (expect 1)
+f15post print: 1 (expect 1)
+r1385_announced refs: 4 (expect 4)
+r1385_seen_live refs: 3 (expect 3)
+arm-gate intact: 1 (expect 1)
+bell line: 1 (expect 1)
+f15near total: 2 (expect 2)
+re-arm updated: 1 (expect 1)
+PATCHED_TREE_SHA=92094801fa5c24d4d205da04b5ae313269bcdc55e5af9883f71672ce8ebdddad
+===BUILD464=== compile the patched runtime (NO RUN - the run-only cycle follows)
+BUILD OK
+[ftab] size-lookup fn_80028738(file#=14) caller=0x8002960C
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)
+--- tree shas:
+baseline=06e7abc1114ec13b231b5a58621c90732c0c2ed62a27e4502bebe96197e6870b
+patched=92094801fa5c24d4d205da04b5ae313269bcdc55e5af9883f71672ce8ebdddad
+92094801fa5c24d4d205da04b5ae313269bcdc55e5af9883f71672ce8ebdddad
+===PRESERVE464=== the receipts + build output

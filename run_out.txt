@@ -1,0 +1,426 @@
+--- build ---
+run.sh build R1022
+tool health: exec rc=1 magic=cffaedfe out=[usage: xenolift <psx-exe> [out.c]        xenolift --ftab <psx-exe> [--disc <disc-image>] ]
+cargo: SKIPPED (Rust source content unchanged — md5 gate)
+[timing] cargo build: 0s (cycle total: 0s)
+emit: DONE (fresh, payload verified)
+[emit] R224 fallthrough-jr-ra guard APPLIED
+[emit] R873 spuerr body stub APPLIED
+[emit] R902 walk terminator guard APPLIED
+[emit] R903 widened terminator guard APPLIED to 2 remaining advance sites
+[emit] R904 exact-fit next==0 guard APPLIED
+[emit] R323 dispatch already pristine
+[emit] R766 stdio include ensured (fresh emit had no stdio; post-emit patches are self-contained)
+[emit] R758 GATED BYPASS APPLIED at fn_80077E88 DEFINITION (definition-anchored, verified adjacent - REAL-ENTRY era #9+)
+overlay module: 135168 bytes mapped at 0x8006F000 (26180 nonzero words)
+overlay fault-capture mapped OVER pre-menu snapshot: 135168 bytes, 31763 nonzero words (R681 real field coordinator)
+overlay coordinator entry 0x80077E88 first words: 8E020050 3C04800A 2484A3F0 00021303 (R682 proof - zeros = blank-page crash recurs)
+overlay stage-2 module: 135168 bytes mapped at 0x801D3000 (31535 nonzero words)
+coverage: 1868512 bytes natively translated total; 449344 within the 512KB exe image (85.7%); 1419168 overlay/extra bytes; 3954 functions
+reference ingest: +943 decomp symbols merged (xenogears-decomp SLUS-006.64; decomp names authoritative)
+symbol map file: disc1.map (1481 named entries)
+symbol map: 1481 named functions
+symbol map file: disc1.map (1481 named entries)
+seams: 209 hardware-touch sites across 42 functions (seams.txt - the HLE contract list v1)
+wrote disc1.c
+coverage: 1868512 bytes natively translated total; 449344 within the 512KB exe image (85.7%); 1419168 overlay/extra bytes; 3954 functions
+seams: 209 hardware-touch sites across 42 functions (seams.txt - the HLE contract list v1)
+[timing] emit: 2s (cycle total: 2s)
+[emit] R923 walk cursor guard APPLIED at fn_80031C58 head (a0=0 call loop ends clean)
+[emit] R925 lzss op-count abort APPLIED at UnpackCompressedBuffer (head reset + group cap 3M)
+[emit] R926 signature-based abort already present (R1011 code-keyed marker)
+[emit] R927 telemetry already present
+[emit] R928 HeapConsolidate band guards APPLIED (3 hops -> real END exit)
+[emit] R929 Vsync recursion cap APPLIED (nest cap 16, contract return, telemetry)
+[emit] R933 CD callback slot heal APPLIED (10 sites -> xenolift_cdcb_slot, garbage->NULL contract)
+[emit] R935 freelist head heal APPLIED at L_80031C4C (NULL -> 801FBFF8 END sentinel; R934 patcher syntax bug fixed)
+[emit] R936 DrawPrim camera APPLIED at L_80044B78 (env+prim context, cap 4)
+[emit] R1051 bodycam 8003342C APPLIED at entry label
+[emit] R1051 bodycam 800320A4 APPLIED at entry label
+[emit] R1051 bodycam 801D002C APPLIED at entry label
+[emit] R1051 bodycam 801D2FE8 APPLIED at entry label
+[emit] R1057 archlistcam 80028AC8 APPLIED at entry label
+[emit] R1106 menuchain 8001A4B4 APPLIED at KernelMenuMain entry
+[emit] R1106 menuchain 8001A250 APPLIED at KernelMenuInitialize entry
+[emit] R1106 menupunch 8001A344 APPLIED at KernelMenuUpdate entry (punch at n==1)
+[emit] R1111 vsyncguard 57848 APPLIED
+[emit] R1111 vsyncguard 57844 APPLIED
+[emit] R1108 chaincam 80031B10 APPLIED at entry label
+[emit] R1108 chaincam 80031A30 APPLIED at entry label
+[emit] R1108 chaincam 80035DB0 APPLIED at entry label
+[emit] R1108 chaincam 8001996C APPLIED at ChangeGameState entry
+[emit] R1115 chaincam 8004293C APPLIED at entry label
+[emit] R1060 datacam 800392EC APPLIED at entry label
+[emit] R1060 datacam 80039120 APPLIED at entry label
+[emit] R1052 bodycam 80077E88 APPLIED at entry label
+[emit] R1052 bodycam 80076858 APPLIED at entry label
+[emit] R1056 taintheal 801D002C APPLIED at entry label
+[emit] R1056 taintheal 801D2FE8 APPLIED at entry label
+[ccache] R1157 compile: FRESH (disc1.c content hash changed/first build)
+[ccache] R1157 compile: SKIPPED (runtime/runtime.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gpu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gte.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_spu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_mdec.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_memcard.c content hash unchanged - cached .o reused)
+link: DONE
+banner check: OK (runtime build R1189 in binary)
+[shieldcheck] dmashield PRESENT in binary
+[shieldcheck] mangleguard PRESENT in binary
+[shieldcheck] ringw PRESENT in binary
+[shieldcheck] reqres PRESENT in binary
+[shieldcheck] carve2 PRESENT in binary
+[shieldcheck] frclash PRESENT in binary
+[shieldcheck] descw PRESENT in binary
+[timing] compile+link: 90s (cycle total: 92s)
+--- live viewer ---
+--- run ---
+[budget] R789 dynamic window cap: run budget 86s (compile 94s elapsed, digest margin 20s)
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[fuse] run fuse cleared (R356: 210s hard kill — digest always generates)
+[timing] 15s run: 110s (cycle total: 202s)
+--- digest ---
+[digest] R751 log raw 1491468B -> capped  2436732B, assembling (this line visible = if digest is still empty, the block stalled, NOT the log)
+=IRQW=
+run.log:[hook] 0x80068960: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068964: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068960: 00000000 -> 00010001 at fn 0x8004BC54 sw_line=150247 sp=801FFF40 r16=800578E0
+run.log:[hook] 0x80068960: 00010001 -> 00020002 at fn 0x800195D4 sw_line=140992 sp=801FFFC8 r16=00000000
+run.log:[hook] 0x80068960: 00020002 -> 00030003 at fn 0x800195F8 sw_line=149004 sp=801FFFC8 r16=00000000
+run.log:[hook] 0x80068960: 00030003 -> 00040004 at fn 0x80040B7C sw_line=124686 sp=801FFF80 r16=00000000
+run.log:[hook] 0x80068960: 00040004 -> 00050005 at fn 0x80031A68 sw_line=150900 sp=801FFFC8 r16=00000000
+run.log:[hook] 0x80068960: 00050005 -> 00060006 at fn 0x80040474 sw_line=151306 sp=801FFF80 r16=00000000
+run.log:[hook] 0x80068960: 00060006 -> 00070007 at fn 0x80019964 sw_line=130482 sp=801FFF58 r16=00000001
+run.log:[hook] 0x80068960: 00070007 -> 00080008 at fn 0x800409EC sw_line=128478 sp=801FFF10 r16=00000001
+run.log:[hook] 0x80068960: 00080008 -> 00090009 at fn 0x8004B55C sw_line=127279 sp=801FFED8 r16=0000000A
+run.log:[hook] 0x80068960: 00090009 -> 000A000A at fn 0x800415B4 sw_line=126295 sp=801FFEE0 r16=00000002
+=EMITAUDIT=
+[emitaudit] disc1.c printf-family call count: 1
+255216:   R988 (b8-c99): the two fprintf(stderr,...) calls that lived here were THE hidden libc print entry (EMITAUDIT c99: "disc1.c printf-family call count: 2", both this fragment) behind the 10-cycle exit-134 class (macreport: __stack_chk_fail <- __xvprintf <- vfprintf_l <- fprintf attributed to real_main). Now routed through xenolift_receipt (runtime.c, non-static wrapper over xl_format + write(2)) - ZERO libc print machinery reachable from the guest binary. */
+[emitaudit] R926 target present: 0
+=EXITDIAG=
+=COORDERA=
+run.log.d:[fldcb] R571 FIELD-PHASE callback entry #19 a0=00000000 a1=0000000A idx=00000000 cur=00000006 land=0003FAFE caller=801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[fldcb] R571 FIELD-PHASE callback entry #20 a0=00000000 a1=0000000A idx=00000000 cur=00000006 land=0003FAFE caller=801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[fldcb] R571 FIELD-PHASE callback entry #21 a0=00000000 a1=0000000A idx=00000000 cur=00000006 land=0003FAFE caller=801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[fldcb] R571 FIELD-PHASE callback entry #22 a0=00000000 a1=0000000A idx=00000000 cur=00000006 land=0003FAFE caller=801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[fldcb] R571 FIELD-PHASE callback entry #23 a0=00000000 a1=0000000A idx=00000000 cur=00000006 land=0003FAFE caller=801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+run.log.d:[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+run.log.d:[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+run.log.d:[mvloop] pre-movie polling n=167772160 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[mvloop] pre-movie polling n=168820736 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[mvloop] pre-movie polling n=169869312 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[mvloop] pre-movie polling n=170917888 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+run.log.d:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+run.log.d:[logcap] end tail
+=SPXW=
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=000002E4 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 @t=22s
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=00000001 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 AC23F9D8 0000800B AC22FA24 000000CC @t=25s
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=00000001 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 AC23F9D8 0000800B AC22FA24 000000CC @t=28s
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=00000001 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 AC23F9D8 0000800B AC22FA24 000000CC @t=30s
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=00000001 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 AC23F9D8 0000800B AC22FA24 000000CC @t=33s
+run.log.d:[modhelp] R1017 module-helper 0x80076858 ENTRY: a0=00000001 a1=1F8000A0 a2=1F8000A8 a3=1F8000B0 r31=80077F48 | sp@90: 00000000 00000000 00000000 00000000 AC23F9D8 0000800B AC22FA24 000000CC @t=36s
+run.log:[spstub] R740 scratchpad WRITE 1F800000 <- 00000000 at fn 80076858
+run.log:[spstub] R740 scratchpad WRITE 1F800004 <- 00000000 at fn 80076858
+run.log:[spstub] R740 scratchpad WRITE 1F800008 <- 00000000 at fn 80076858
+run.log.d:[spstub] R740 scratchpad WRITE 1F800000 <- 00000000 at fn 80076858
+run.log.d:[spstub] R740 scratchpad WRITE 1F800004 <- 00000000 at fn 80076858
+run.log.d:[spstub] R740 scratchpad WRITE 1F800008 <- 00000000 at fn 80076858
+run.log.d:[spexec] R759 scratchpad executor ENTER target=1F8000B0
+run.log.d:[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+run.log.d:[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+run.log.d:[spexec] R759 scratchpad executor ENTER target=1F8000B0
+run.log.d:[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+run.log.d:[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+=SNDREG=
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=21s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=21s
+run.log.d:[sndinit] R966 SoundInitialize entry #3 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=21s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=21s
+run.log.d:[sndinit] R966 SoundInitialize entry #4 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=22s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=22s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=22s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=22s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=21s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=21s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=21s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=21s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=22s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=22s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=801FFF3C r5=00000000 @t=22s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=22s
+=GATEMISS=
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=00000000 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=800566F8 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=800566F8 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=21s
+=COORDW=
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old 00000000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=22s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old 00000000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=22s
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80077E88 r31=80019B98 (old EBE10222) @t=22s
+run.log:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80076858 r31=80077F48 (old 00000000) @t=22s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old 00000000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=22s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x800286CC r31=80028A74 (old 00000000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: EBE10222 543DAE66 3FFCCCE1 B142E144 at fn 0x80041534 r31=8002B168 (old 27BDFFC8) @t=22s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80077E88 r31=80019B98 (old EBE10222) @t=22s
+run.log.d:[coordw] R1000 entry 0x80077E88: 27BDFFC8 3C038001 8C630000 2402FFFF at fn 0x80076858 r31=80077F48 (old 00000000) @t=22s
+=UNPACKW=
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00C00000 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=22s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F4E80 a2=00C01800 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=22s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00C00000 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=22s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F4E80 a2=00C01800 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=22s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=8004EABC a1=801F3634 a2=00200000 a3=FE1FFFFF r31=80019D74 src[0..3]=00000000 000010A0 00040800 8000082C dst[0..3]=00[digestcap] R865: digest was   433289B - kept head 16KB + DEATH EVIDENCE + tail 12KB (death receipts must survive the cap - c454's EXITTAIL was cut by the middle-capper and the death went unnamed)
+=DEATHREC=
+--- EXITTAIL (run.log last 96) ---
+[fcbidx] R762 bank heads: | b0@800AA3F0: 02602021 27B00050 3C02800B 8C4200B4 | b1@800B23F0: 00000000 00000000 00000000 00000000 | b2@800BA3F0: 00000000 00000000 00000000 00000000 | b3@800C23F0: 00000000 00000000 00000000 00000000
+[fcb16] R744 table@800AA3F0 rec0-1: 02602021 27B00050 3C02800B 8C4200B4 3C03800B 9463F98E 02002821 A7A0002C 2442FC00 00031823 A7A20028 0C012AEF A7A3002A 0C0127BF
+[fcb16] R744 table@800AA3F0 rec2-3: 02002021 0C0127E3 02002021 27A40080 8FA2001C 27A50090 AFA00080 AFA00088 0C012663 AFA20084 8FA40018 8FA20090 8FA30098 8FA50094
+[wildctx] R680 unresolved jump 0x1F8000B0 @t=94s: cur_fn=0x80076858 r31=0x80077F48 r4=00660000 r5=C00D7F50 r6=1F8000A8 r7=1F8000B0 r16=800AF990 r17=1F800000 r29sp=801FFF98 | 92C0=00000006 FAEC=00000000 F0C=00000012 FE04=0001AA78
+[wildctx] R737 regs2: r2=C0737F50 r3=00000000 r8=00007FF0 r9=1F800000 r10=D6110000 r25=00000002 node(18090)=800592B8
+[spstub] R743 jump into SCRATCHPAD target 1F8000B0: copied[0xA0..0xC0] (THE STUB): AC23F9D8 0000800B AC22FA24 000000CC 00000000 00000004 00000000 00000000 00000000 00000000 | head[0..0x20]: 1F8000A0 1F8000A0 1F8000A0 00000000 00000000 00000000 00000000 00000000 | sp-writes-total: 324
+[spexec] R759 scratchpad executor ENTER target=1F8000B0
+[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+[padstart] R809 START press #19 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[mvloop] pre-movie polling n=150994944 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFF74100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[mvloop] pre-movie polling n=152043520 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=153092096 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=154140672 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-runaway] 29360128 ops suppressed, read frontier 0x839E4E00 cur_fn=801D2FE8 aborts=27
+[lzrwatch] R1151 module-window LZSS runaway confirmed: 29360128 suppressed reads cur_fn=801D2FE8 - converting to crash-kit recovery (R926 fuel never ignites in module code: its abort guard is emitted ONLY into kernel fn 0x80032EB4; c335: 35M+ ops, aborts=0, 143s to fuse-kill; the movie data (seek=108886=file#7) never arrives via the archive door)
+[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+[phasecb] FIELD RunFieldCoordinator entered (#28) caller=0x801D3064
+[fcb16] R744 r16=800AF990 r17=00000000 [r16+50]=00000001 [r16+54]=00000000 [r16+16]=0000
+[fcbidx] R762 bank heads: | b0@800AA3F0: 02602021 27B00050 3C02800B 8C4200B4 | b1@800B23F0: 00000000 00000000 00000000 00000000 | b2@800BA3F0: 00000000 00000000 00000000 00000000 | b3@800C23F0: 00000000 00000000 00000000 00000000
+[fcb16] R744 table@800AA3F0 rec0-1: 02602021 27B00050 3C02800B 8C4200B4 3C03800B 9463F98E 02002821 A7A0002C 2442FC00 00031823 A7A20028 0C012AEF A7A3002A 0C0127BF
+[fcb16] R744 table@800AA3F0 rec2-3: 02002021 0C0127E3 02002021 27A40080 8FA2001C 27A50090 AFA00080 AFA00088 0C012663 AFA20084 8FA40018 8FA20090 8FA30098 8FA50094
+[wildctx] R680 unresolved jump 0x1F8000B0 @t=96s: cur_fn=0x80076858 r31=0x80077F48 r4=00660000 r5=C00D7F50 r6=1F8000A8 r7=1F8000B0 r16=800AF990 r17=1F800000 r29sp=801FFF98 | 92C0=00000006 FAEC=00000000 F0C=00000012 FE04=0001AA78
+[wildctx] R737 regs2: r2=C0737F50 r3=00000000 r8=00007FF0 r9=1F800000 r10=D6110000 r25=00000002 node(18090)=800592B8
+[spstub] R743 jump into SCRATCHPAD target 1F8000B0: copied[0xA0..0xC0] (THE STUB): AC23F9D8 0000800B AC22FA24 000000CC 00000000 00000004 00000000 00000000 00000000 00000000 | head[0..0x20]: 1F8000A0 1F8000A0 1F8000A0 00000000 00000000 00000000 00000000 00000000 | sp-writes-total: 336
+[spexec] R759 scratchpad executor ENTER target=1F8000B0
+[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+[mvloop] pre-movie polling n=155189248 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=800269CC r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START press #20 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[mvloop] pre-movie polling n=156237824 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=800269CC r31=801D3064 padcell=FFF74100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[fldfrz2] R825 HOST watcher t=98s sectors=317 | seek=109176 | walker: FAEC=00000000 92C0=00000006 92BC=801ef300 92D0=00000000 F0C=00000012 F10=00511724 FE1C=00000000 FE20=00000003 FDF8=00000000 FE04=0001aa78 FDE4=0000000f | q10=00511724 q14=00000001 q18=000000a0
+[mvloop] pre-movie polling n=157286400 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=800269CC r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=158334976 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=800269CC r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-runaway] 30408704 ops suppressed, read frontier 0x83BE4E00 cur_fn=801D2FE8 aborts=28
+[lzrwatch] R1151 module-window LZSS runaway confirmed: 30408704 suppressed reads cur_fn=801D2FE8 - converting to crash-kit recovery (R926 fuel never ignites in module code: its abort guard is emitted ONLY into kernel fn 0x80032EB4; c335: 35M+ ops, aborts=0, 143s to fuse-kill; the movie data (seek=108886=file#7) never arrives via the archive door)
+[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+[phasecb] FIELD RunFieldCoordinator entered (#29) caller=0x801D3064
+[fcb16] R744 r16=800AF990 r17=00000000 [r16+50]=00000001 [r16+54]=00000000 [r16+16]=0000
+[fcbidx] R762 bank heads: | b0@800AA3F0: 02602021 27B00050 3C02800B 8C4200B4 | b1@800B23F0: 00000000 00000000 00000000 00000000 | b2@800BA3F0: 00000000 00000000 00000000 00000000 | b3@800C23F0: 00000000 00000000 00000000 00000000
+[fcb16] R744 table@800AA3F0 rec0-1: 02602021 27B00050 3C02800B 8C4200B4 3C03800B 9463F98E 02002821 A7A0002C 2442FC00 00031823 A7A20028 0C012AEF A7A3002A 0C0127BF
+[fcb16] R744 table@800AA3F0 rec2-3: 02002021 0C0127E3 02002021 27A40080 8FA2001C 27A50090 AFA00080 AFA00088 0C012663 AFA20084 8FA40018 8FA20090 8FA30098 8FA50094
+[wildctx] R680 unresolved jump 0x1F8000B0 @t=99s: cur_fn=0x80076858 r31=0x80077F48 r4=00660000 r5=C00D7F50 r6=1F8000A8 r7=1F8000B0 r16=800AF990 r17=1F800000 r29sp=801FFF98 | 92C0=00000006 FAEC=00000000 F0C=00000012 FE04=0001AA78
+[wildctx] R737 regs2: r2=C0737F50 r3=00000000 r8=00007FF0 r9=1F800000 r10=D6110000 r25=00000002 node(18090)=800592B8
+[spstub] R743 jump into SCRATCHPAD target 1F8000B0: copied[0xA0..0xC0] (THE STUB): AC23F9D8 0000800B AC22FA24 000000CC 00000000 00000004 00000000 00000000 00000000 00000000 | head[0..0x20]: 1F8000A0 1F8000A0 1F8000A0 00000000 00000000 00000000 00000000 00000000 | sp-writes-total: 348
+[spexec] R759 scratchpad executor ENTER target=1F8000B0
+[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+[mvloop] pre-movie polling n=159383552 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D3190 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=160432128 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D3190 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START press #21 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[mvloop] pre-movie polling n=161480704 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D3190 r31=801D3064 padcell=FFF74100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[mvloop] pre-movie polling n=162529280 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D3190 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[lzss-runaway] 31457280 ops suppressed, read frontier 0x83DE4E00 cur_fn=801D2FE8 aborts=29
+[lzrwatch] R1151 module-window LZSS runaway confirmed: 31457280 suppressed reads cur_fn=801D2FE8 - converting to crash-kit recovery (R926 fuel never ignites in module code: its abort guard is emitted ONLY into kernel fn 0x80032EB4; c335: 35M+ ops, aborts=0, 143s to fuse-kill; the movie data (seek=108886=file#7) never arrives via the archive door)
+[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+[phasecb] FIELD RunFieldCoordinator entered (#30) caller=0x801D3064
+[fcb16] R744 r16=800AF990 r17=00000000 [r16+50]=00000001 [r16+54]=00000000 [r16+16]=0000
+[fcbidx] R762 bank heads: | b0@800AA3F0: 02602021 27B00050 3C02800B 8C4200B4 | b1@800B23F0: 00000000 00000000 00000000 00000000 | b2@800BA3F0: 00000000 00000000 00000000 00000000 | b3@800C23F0: 00000000 00000000 00000000 00000000
+[fcb16] R744 table@800AA3F0 rec0-1: 02602021 27B00050 3C02800B 8C4200B4 3C03800B 9463F98E 02002821 A7A0002C 2442FC00 00031823 A7A20028 0C012AEF A7A3002A 0C0127BF
+[fcb16] R744 table@800AA3F0 rec2-3: 02002021 0C0127E3 02002021 27A40080 8FA2001C 27A50090 AFA00080 AFA00088 0C012663 AFA20084 8FA40018 8FA20090 8FA30098 8FA50094
+[wildctx] R680 unresolved jump 0x1F8000B0 @t=102s: cur_fn=0x80076858 r31=0x80077F48 r4=00660000 r5=C00D7F50 r6=1F8000A8 r7=1F8000B0 r16=800AF990 r17=1F800000 r29sp=801FFF98 | 92C0=00000006 FAEC=00000000 F0C=00000012 FE04=0001AA78
+[wildctx] R737 regs2: r2=C0737F50 r3=00000000 r8=00007FF0 r9=1F800000 r10=D6110000 r25=00000002 node(18090)=800592B8
+[spstub] R743 jump into SCRATCHPAD target 1F8000B0: copied[0xA0..0xC0] (THE STUB): AC23F9D8 0000800B AC22FA24 000000CC 00000000 00000004 00000000 00000000 00000000 00000000 | head[0..0x20]: 1F8000A0 1F8000A0 1F8000A0 00000000 00000000 00000000 00000000 00000000 | sp-writes-total: 360
+[spexec] R759 scratchpad executor ENTER target=1F8000B0
+[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+[mvloop] pre-movie polling n=163577856 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D2FE8 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=164626432 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D2FE8 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=165675008 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D2FE8 r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START press #22 injected (buf 0x800625FC = FFF74100 posture: status=00 ID=41 buttons=F7FF active-low bit3) - the menu has its player
+[mvloop] pre-movie polling n=166723584 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=801D2FE8 r31=801D3064 padcell=FFF74100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[padstart] R809 START released (posture FFFF4100)
+[lzss-runaway] 32505856 ops suppressed, read frontier 0x83FE4E00 cur_fn=801D2FE8 aborts=30
+[lzrwatch] R1151 module-window LZSS runaway confirmed: 32505856 suppressed reads cur_fn=801D2FE8 - converting to crash-kit recovery (R926 fuel never ignites in module code: its abort guard is emitted ONLY into kernel fn 0x80032EB4; c335: 35M+ ops, aborts=0, 143s to fuse-kill; the movie data (seek=108886=file#7) never arrives via the archive door)
+[ovlcb] overlay fn 0x80077E88 entered: a0=0x00000000 a1=0x0000000A a2=0x00007FF0 a3=0x00000000 caller=0x801D3064
+[phasecb] FIELD RunFieldCoordinator entered (#31) caller=0x801D3064
+[fcb16] R744 r16=800AF990 r17=00000000 [r16+50]=00000001 [r16+54]=00000000 [r16+16]=0000
+[fcbidx] R762 bank heads: | b0@800AA3F0: 02602021 27B00050 3C02800B 8C4200B4 | b1@800B23F0: 00000000 00000000 00000000 00000000 | b2@800BA3F0: 00000000 00000000 00000000 00000000 | b3@800C23F0: 00000000 00000000 00000000 00000000
+[fcb16] R744 table@800AA3F0 rec0-1: 02602021 27B00050 3C02800B 8C4200B4 3C03800B 9463F98E 02002821 A7A0002C 2442FC00 00031823 A7A20028 0C012AEF A7A3002A 0C0127BF
+[fcb16] R744 table@800AA3F0 rec2-3: 02002021 0C0127E3 02002021 27A40080 8FA2001C 27A50090 AFA00080 AFA00088 0C012663 AFA20084 8FA40018 8FA20090 8FA30098 8FA50094
+[wildctx] R680 unresolved jump 0x1F8000B0 @t=105s: cur_fn=0x80076858 r31=0x80077F48 r4=00660000 r5=C00D7F50 r6=1F8000A8 r7=1F8000B0 r16=800AF990 r17=1F800000 r29sp=801FFF98 | 92C0=00000006 FAEC=00000000 F0C=00000012 FE04=0001AA78
+[wildctx] R737 regs2: r2=C0737F50 r3=00000000 r8=00007FF0 r9=1F800000 r10=D6110000 r25=00000002 node(18090)=800592B8
+[spstub] R743 jump into SCRATCHPAD target 1F8000B0: copied[0xA0..0xC0] (THE STUB): AC23F9D8 0000800B AC22FA24 000000CC 00000000 00000004 00000000 00000000 00000000 00000000 | head[0..0x20]: 1F8000A0 1F8000A0 1F8000A0 00000000 00000000 00000000 00000000 00000000 | sp-writes-total: 372
+[spexec] R759 scratchpad executor ENTER target=1F8000B0
+[spexec] R759 stop @1F8000B0: zero word (end of stub) after 0 instrs
+[spexec] R759 SERVICE: scratchpad jump serviced (stub executed 0 instrs; guest continues)
+[mvloop] pre-movie polling n=167772160 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=168820736 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=169869312 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[mvloop] pre-movie polling n=170917888 (mod6=0 player=0 rs0=8FBE0050 lim=872546368 | R870 loop-id fn=8002675C r31=801D3064 padcell=FFFF4100 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109176 last_cmd=01 pend=0 sched=1 FE04=0001AA78 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=AE020000 cnt=8C43004C | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[logcap] end tail
+--- asan ---
+--- canaryrec ---
+--- abrtrec ---
+--- segvdie ---
+--- segvrec ---
+.log:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #2: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #3 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #3: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #4 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #1: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #2 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #2: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #3 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+run.log:[statestamp] R814 FULL HANDOFF STAMPED #3: FAEC=1, 92C0=-1, 92BC=1, 92D0=0, 9330=1 (walker latch - proceed posture) - walker + dispatcher + R758 walk chain take it from here
+run.log:[statestamp] R821 EARLY HANDOFF at bootentry #4 (pre-walker stamp; walker's t=6s stub pass sees proceed posture)
+=DEV=
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801803 = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801801 = 0x00000001
+run.log:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F80104A = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=13)
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=14)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=24)
+run.log.d:[dev] write 0x1F801800 = 0x00000001
+run.log.d:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log.d:[dev] write 0x1F801800 = 0x00000000
+run.log.d:[dev] write 0x1F801803 = 0x00000000
+run.log.d:[dev] write 0x1F801800 = 0x00000000
+run.log.d:[dev] write 0x1F801801 = 0x00000001
+run.log.d:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F80104A = 0x00000000
+run.log.d:[dev] write 0x1F801800 = 0x00000001
+run.log.d:[dev] read  0x1F801803 = 0x00000003 (n=13)
+run.log.d:[dev] read  0x1F801803 = 0x00000003 (n=14)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log.d:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log.d:[dev] read  0x1F801801 = 0x00000002 (n=24)
+=DIR2=
+=BANKW=
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #1: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #2: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F4E80 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F2B20 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #1: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #2: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F4E80 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F2B20 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CD0 <- 84000000 writer_fn=800320E8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801EF300 writer_fn=80031DA8 (bank1)
+=FTAB2=
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[ftab] file#=6 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C8 bytes=54A901640A0000 -> LBA=108884 size=2660
+[ftab] file#=7 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100CF bytes=56A901C8350000 -> LBA=108886 size=13768
+[ftab] file#=3 base=0x80010004 off=2593 gate48=0x00000000 entry=0x800146F9 bytes=D5A60358230000 -> LBA=239317 size=9048
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)

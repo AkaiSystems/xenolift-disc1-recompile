@@ -1,0 +1,759 @@
+[disc] R1236 disc path resolved: /Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin
+[disc] BIN=/Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin (found)
+--- build ---
+run.sh build R1024
+tool health: exec rc=1 magic=cffaedfe out=[usage: xenolift <psx-exe> [out.c]        xenolift --ftab <psx-exe> [--disc <disc-image>] ]
+cargo: SKIPPED (Rust source content unchanged — md5 gate)
+[timing] cargo build: 0s (cycle total: 0s)
+emit: SKIPPED (capture hash stable — matched emit hash; R1020 gate)
+[emit] R224 guard already present
+[emit] R873 spuerr body stub already present
+[emit] R902 walk terminator guard already present
+[emit] R903 widened guard already present
+[emit] R904 exact-fit guard already present
+[emit] R1202 null-block free guard already present
+[emit] R323 dispatch already pristine
+[emit] R1394 dispatch guard already present
+[emit] R752 no-churn: R758 gated bypass present and healthy - disc1.c untouched (compile cache stays valid)
+overlay module: 135168 bytes mapped at 0x8006F000 (32450 nonzero words)
+overlay fault-capture mapped OVER pre-menu snapshot: 135168 bytes, 31763 nonzero words (R681 real field coordinator)
+overlay coordinator entry 0x80077E88 first words: 8E020050 3C04800A 2484A3F0 00021303 (R682 proof - zeros = blank-page crash recurs)
+overlay stage-2 module: 135168 bytes mapped at 0x801D3000 (10707 nonzero words)
+coverage: 1868816 bytes natively translated total; 449696 within the 512KB exe image (85.8%); 1419120 overlay/extra bytes; 3601 functions
+reference ingest: +943 decomp symbols merged (xenogears-decomp SLUS-006.64; decomp names authoritative)
+symbol map file: disc1.map (1481 named entries)
+symbol map: 1481 named functions
+symbol map file: disc1.map (1481 named entries)
+seams: 209 hardware-touch sites across 42 functions (seams.txt - the HLE contract list v1)
+wrote disc1.c
+coverage: 1868816 bytes natively translated total; 449696 within the 512KB exe image (85.8%); 1419120 overlay/extra bytes; 3601 functions
+seams: 209 hardware-touch sites across 42 functions (seams.txt - the HLE contract list v1)
+[timing] emit: 1s (cycle total: 1s)
+[emit] R923 walk cursor guard already present
+[emit] R925 lzss op-count abort already present (R1011: marker now keyed to the guard CODE text - R1010 checked a string that never matched the emitted comment form R925/R926/R927, my own marker-mismatch repeat of the original bug; the guard code substring g_lzss_overrun_reads > 4096u is form-independent)
+[emit] R926 signature-based abort already present (R1011 code-keyed marker)
+[emit] R927 telemetry already present
+[emit] R928 heap-band guards already present
+[emit] R929 Vsync recursion cap already present
+[emit] R933 CD callback slot heal already present
+[emit] R935 freelist head heal already present
+[emit] R936 DrawPrim camera already present
+[emit] R1051 bodycam 8003342C already present
+[emit] R1051 bodycam 800320A4 already present
+[emit] R1051 bodycam 801D002C already present
+[emit] R1051 bodycam 801D2FE8 already present
+[emit] R1057 archlistcam 80028AC8 already present
+[emit] R1106 menuchain 8001A4B4 already present
+[emit] R1106 menuchain 8001A250 already present
+[emit] R1106 menupunch 8001A344 already present
+[emit] R1111 vsyncguard 57848 already present
+[emit] R1111 vsyncguard 57844 already present
+[emit] R1108 chaincam 80031B10 already present
+[emit] R1108 chaincam 80031A30 already present
+[emit] R1108 chaincam 80035DB0 already present
+[emit] R1108 chaincam 8001996C already present
+[emit] R1115 chaincam 8004293C already present
+[emit] R1060 datacam 800392EC already present
+[emit] R1060 datacam 80039120 already present
+[emit] R1052 bodycam 80077E88 already present
+[emit] R1052 bodycam 80076858 already present
+[emit] R1056 taintheal 801D002C already present
+[emit] R1056 taintheal 801D2FE8 already present
+[ccache] R1157 compile: SKIPPED (disc1.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: FRESH (runtime/runtime.c content hash changed/first build)
+[ccache] R1157 compile: SKIPPED (hle/hle_gpu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gte.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_spu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_mdec.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_memcard.c content hash unchanged - cached .o reused)
+link: DONE
+banner check: OK (runtime build R1291 in binary)
+[shieldcheck] dmashield PRESENT in binary
+[shieldcheck] mangleguard PRESENT in binary
+[shieldcheck] ringw PRESENT in binary
+[shieldcheck] reqres PRESENT in binary
+[shieldcheck] carve2 PRESENT in binary
+[shieldcheck] frclash PRESENT in binary
+[shieldcheck] descw PRESENT in binary
+[timing] compile+link: 5s (cycle total: 6s)
+--- live viewer ---
+--- run ---
+[budget] R789 dynamic window cap: run budget 173s (compile 7s elapsed, digest margin 20s)
+[prov] R1200 source archived: prev_run/runtime_last.c sha256=5386d1c3647f18f8aedf068e5aa04fce050526434fe31cfda1a9c044c573f271
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[fuse] run fuse cleared (R356: 210s hard kill — digest always generates)
+[timing] 15s run: 196s (cycle total: 202s)
+--- digest ---
+[logtrim] R799 raw log pre-trimmed to last 200MB for bounded forensics
+[digest] R751 log raw 1269775189B -> capped  3697061B, assembling (this line visible = if digest is still empty, the block stalled, NOT the log)
+=IRQW=
+=EMITAUDIT=
+[emitaudit] disc1.c printf-family call count: 1
+253810:   R988 (b8-c99): the two fprintf(stderr,...) calls that lived here were THE hidden libc print entry (EMITAUDIT c99: "disc1.c printf-family call count: 2", both this fragment) behind the 10-cycle exit-134 class (macreport: __stack_chk_fail <- __xvprintf <- vfprintf_l <- fprintf attributed to real_main). Now routed through xenolift_receipt (runtime.c, non-static wrapper over xl_format + write(2)) - ZERO libc print machinery reachable from the guest binary. */
+[emitaudit] R926 target present: 0
+=EXITDIAG=
+=COORDERA=
+run.log.d:[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=210
+run.log.d:[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=211
+run.log.d:[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=212
+run.log.d:[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=213
+run.log.d:[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=214
+run.log.d:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+run.log.d:[wedge] R1196 executed-binary xenogears_boot_134631 sha256=cd357f1ecce79026be545115834b3eae6460ebedf85921840f78cfb5c66f317d dSYM=prev_run/last.dSYM
+run.log.d:[logcap] end tail
+=SPXW=
+=SNDREG=
+=GATEMISS=
+=COORDW=
+=UNPACKW=
+=MODMISS=
+=MODEXEC=
+=GPULIVE=
+=ARCHREQ=
+=TITLEERA=
+=LOGOPAINT=
+=SPLASHGATE=
+=SPLASHPACE=
+=TPAGEFIX=
+=SPLASHUP=
+=LOADCAM=
+=ENVVT=
+=FLUSH14=
+=PRIMSUB=
+=PRIMX=
+=GPUCLS=
+=SPSTUB=
+=SPCTX=
+=CDCB=
+=FLHEAD=
+=GPUFIN=
+=DRAWCAM=
+=STKBAND=
+=FILE25W=
+=HEAPFIX=
+=DMASHIELD=
+=FLDSEC=
+stage2: promotion REFUSED (R1324 vtable sanity: 0 ptr-class head words - string/garbage era; keeping previous capture)
+=BUILD=
+5 cmd=09 LBA=1) CLEARED @t=174s, 107s after armed, 0 pumps since set, clears=98
+overlay module: 135168 bytes mapped at 0x8006F000 (32450 nonzero words)
+overlay fault-capture mapped OVER pre-menu snapshot: 135168 bytes, 31763 nonzero words (R681 real field coordinator)
+overlay coordinator entry 0x80077E88 first words: 8E020050 3C04800A 2484A3F0 00021303 (R682 proof - zeros = blank-page crash recurs)
+overlay stage-2 module: 135168 bytes mapped at 0x801D3000 (10707 nonzero words)
+[disc] SLUS EXE LOAD LINE MISSING — disc read suspect
+=TIMING= cycle seconds: 226 (download+unzip excluded)
+=WD=
+=TICK=
+fd-ticks: 0 wl-ticks: 0 reads-done: 0 pairs: 0 forces: 0 convs-used: 0 reprimes: 0 kicks: 0 rspops: 0
+=WHEAL=
+=WALKHEAD=
+=WALKNODE=
+=WALKTERM=
+=WALKSRC=
+=WALKIDX=
+=ASYCTX=
+=BOUNDARYREL=
+=COVERAGE=
+translated_bytes 1868816
+image_bytes 524288
+in_image_bytes 449696
+overlay_extra_bytes 1419120
+translated_functions 3601
+=SEAMINV=
+mmio_page_base_hits 209
+seam_functions 42
+=FLDDEC=
+=ETCBEAT=
+=SEEKDONE=
+=SCREEN=
+=SCREENASCII=
+[ascii] display 256x240@(0,0) -> 96x36 cells | nonzero 9232/61440 = 15%
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+            .                                                                                   
+            .......  . ..... .. ........... .. ........ ........ ..  .... ..... .  ..... .. ....
+            .... .  ... ...  .. ........... ........ .. .. . ...... .. .. .. .. .     ..... ... 
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+[ascii] vram.png + screen.png refreshed on Mac (open xenolift/screen.png to see the real image)
+=FAULTCTX=
+=FHSITE=
+=ASCIIW=
+=MCW=
+=RECTGUARD=
+=B2X=
+=F15DISC=
+=BOOT2=
+=MODTRACE=
+=DESKDIAL=
+=MOUNTWALK=
+=LOOPW=
+=DESCW2=
+=PHASE=
+=F5DOOR=
+=F5DUMP=
+[f5dump] walk complete - match lines above if found; silence after this = no ISO file claims LBA 108873
+=EXITTAIL=
+--- run.log last 96 ---
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=122
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=123
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=124
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=125
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=126
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=127
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=128
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=129
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=130
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=131
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=132
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=133
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=134
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=135
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=136
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=137
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=138
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=139
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=140
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=141
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=142
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=143
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=144
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=145
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=146
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=147
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=148
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=149
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=150
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=151
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=152
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=153
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=154
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=155
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=156
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=157
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=158
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=159
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=160
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=161
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=162
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=163
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=164
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=165
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=166
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=167
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=168
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=169
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=170
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=171
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=172
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=173
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=174
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=175
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=176
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=177
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=178
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=179
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=180
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=181
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=182
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=183
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=184
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=185
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=186
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=187
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=188
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=189
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=190
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=191
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=192
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=193
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=194
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=195
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after ar[digestcap] R865: digest was    50430B - kept head 16KB + DEATH EVIDENCE + tail 12KB (death receipts must survive the cap - c454's EXITTAIL was cut by the middle-capper and the death went unnamed)
+=WEDGECAM=
+=DEATHREC=
+--- EXITTAIL (run.log last 96) ---
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=122
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=123
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=124
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=125
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=126
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=127
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=128
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=129
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=130
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=131
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=132
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=133
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=134
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=135
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=136
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=137
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=138
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=139
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=140
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=141
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=142
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=143
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=144
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=145
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=146
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=147
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=148
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=149
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=150
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=151
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=152
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=153
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=154
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=155
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=156
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=157
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=158
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=159
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=160
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=161
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=162
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=163
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=164
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=165
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=166
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=167
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=168
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=169
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=170
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=171
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=172
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=173
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=174
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=175
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=176
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=177
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=178
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=179
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=180
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=181
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=182
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=183
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=184
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=185
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=186
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=187
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=188
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=189
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=190
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=191
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=192
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=193
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=194
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=195
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=196
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=197
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=198
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=199
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=200
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=201
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=202
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=203
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=204
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=205
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=206
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=207
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=208
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=209
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=210
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=211
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=212
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=213
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=214
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[wedge] R1196 executed-binary xenogears_boot_134631 sha256=cd357f1ecce79026be545115834b3eae6460ebedf85921840f78cfb5c66f317d dSYM=prev_run/last.dSYM
+[logcap] end tail
+--- asan ---
+--- canaryrec ---
+--- abrtrec ---
+--- segvdie ---
+--- segvrec ---
+002AB28:;
+r[3] = r[4] & 0x00FFu;
+L_8002AB2C:;
+r[2] = r[0] | 0x0002u;
+L_8002AB30:;
+{
+uint32_t __c = (r[3] != r[2]) ? 1u : 0u;
+L_8002AB34:;
+r[2] = r[0] | 0x000Au;
+if (__c) { xenolift_fn_8002ABFC(); return; }
+}
+L_8002AB38:;
+r[2] = 0x8005u << 16;
+L_8002AB3C:;
+r[2] = LW(r[2] + (int32_t)(int16_t)0xFE20);
+L_8002AB40:;
+/* nop */
+L_8002AB44:;
+r[3] = r[2] + (int32_t)(int16_t)0xFFFF;
+L_8002AB48:;
+r[2] = (r[3] < (uint32_t)(int32_t)(int16_t)0x0006 ? 1u : 0u);
+L_8002AB4C:;
+{
+uint32_t __c = (r[2] == r[0]) ? 1u : 0u;
+L_8002AB50:;
+r[2] = r[3] << 2;
+if (__c) { xenolift_fn_8002AC14(); return; }
+}
+L_8002AB54:;
+r[1] = 0x8002u << 16;
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+### WINDOW L_80041CA0 (@line 126326, 41 lines) ###
+r[2] = LBU(r[2] + (int32_t)(int16_t)0x0000);
+L_80041C90:;
+/* nop */
+L_80041C94:;
+r[17] = r[2] & 0x0003u;
+L_80041C98:;
+{
+r[31] = 0x80041CA0;
+L_80041C9C:;
+/* nop */
+xenolift_fn_800415B4_getintr();
+}
+L_80041CA0:;
+r[16] = r[2] + r[0];
+L_80041CA4:;
+{
+uint32_t __c = (r[16] == r[0]) ? 1u : 0u;
+L_80041CA8:;
+r[2] = r[16] & 0x0004u;
+if (__c) goto L_80041D18;
+}
+L_80041CAC:;
+{
+uint32_t __c = (r[2] == r[0]) ? 1u : 0u;
+L_80041CB0:;
+r[2] = r[16] & 0x0002u;
+if (__c) goto L_80041CE0;
+}
+L_80041CB4:;
+r[2] = 0x8005u << 16;
+L_80041CB8:;
+r[2] = xenolift_cdcb_slot(0x800564ACu);
+L_80041CBC:;
+/* nop */
+L_80041CC0:;
+{
+uint32_t __c = (r[2] == r[0]) ? 1u : 0u;
+L_80041CC4:;
+/* nop */
+if (__c) goto L_80041CDC;
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+### WINDOW L_80031DA8 (@line 85313, 41 lines) ###
+{
+L_80031DA4:;
+r[10] = (r[4] == 0u) ? 0x801FBFF8u : (r[4] + (int32_t)(int16_t)0xFFF8); /* R903 widened terminator guard */
+xenolift_fn_80031C58();
+return;
+}
+}
+/* ---------- 0x80031DA8 (split chunk) ---------- */
+static void xenolift_fn_80031DA8(void)
+{
+L_80031DA8:;
+{
+uint32_t __c = (r[6] == r[0]) ? 1u : 0u;
+L_80031DAC:;
+r[2] = r[0] | 0x0001u;
+if (__c) goto L_80031DC8;
+}
+L_80031DB0:;
+r[2] = LW(r[28] + (int32_t)(int16_t)0x01C0);
+L_80031DB4:;
+/* nop */
+L_80031DB8:;
+{
+uint32_t __c = (r[2] != r[0]) ? 1u : 0u;
+L_80031DBC:;
+r[2] = r[0] + r[0];
+if (__c) { xenolift_fn_80031F58(); return; }
+}
+L_80031DC0:;
+{
+r[31] = 0x80031DC8;
+L_80031DC4:;
+r[4] = r[0] | 0x0082u;
+xenolift_fn_80019ACC_MainLoop();
+}
+L_80031DC8:;
+{
+uint32_t __c = (r[16] != r[2]) ? 1u : 0u;
+L_80031DCC:;
+r[10] = 0xFE1Fu << 16;
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+### WINDOW L_80019ACC (@line 22517, 41 lines) ###
+{
+L_80019AC8:;
+/* nop */
+xenolift_fn_80019ACC_MainLoop(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019ACC (function) ---------- */
+static void xenolift_fn_80019ACC_MainLoop(void)
+{
+L_80019ACC:;
+r[29] = r[29] + (int32_t)(int16_t)0xFFD0;
+xenolift_fn_80019AD0(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019AD0 (function) ---------- */
+static void xenolift_fn_80019AD0(void)
+{
+L_80019AD0:;
+SW(r[29] + (int32_t)(int16_t)0x0028, r[31]);
+xenolift_fn_80019AD4(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019AD4 (function) ---------- */
+static void xenolift_fn_80019AD4(void)
+{
+L_80019AD4:;
+SW(r[29] + (int32_t)(int16_t)0x0024, r[17]);
+xenolift_fn_80019AD8(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019AD8 (function) ---------- */
+static void xenolift_fn_80019AD8(void)
+{
+L_80019AD8:;
+{
+uint32_t __c = (r[4] == r[0]) ? 1u : 0u;
+SW(r[29] + (int32_t)(int16_t)0x0020, r[16]);
+if (__c) { xenolift_fn_80019AF8(); return; }
+}
+xenolift_fn_80019AE0(); /* fallthrough */
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+### WINDOW L_80019B40 (@line 22839, 41 lines) ###
+r[31] = 0x80019B44;
+r[4] = r[4] + (int32_t)(int16_t)0x0800;
+xenolift_fn_80031B10_HeapRelocate();
+}
+xenolift_fn_80019B44(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019B40 (function) ---------- */
+static void xenolift_fn_80019B40(void)
+{
+L_80019B40:;
+r[4] = r[4] + (int32_t)(int16_t)0x0800;
+xenolift_fn_80019B44(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019B44 (function) ---------- */
+static void xenolift_fn_80019B44(void)
+{
+L_80019B44:;
+{
+r[31] = 0x80019B4C;
+/* nop */
+xenolift_fn_80019C7C_HeapResetUser();
+}
+xenolift_fn_80019B4C(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019B48 (function) ---------- */
+static void xenolift_fn_80019B48(void)
+{
+L_80019B48:;
+/* nop */
+xenolift_fn_80019B4C(); /* fallthrough */
+return;
+}
+/* ---------- 0x80019B4C (function) ---------- */
+static void xenolift_fn_80019B4C(void)
+{
+L_80019B4C:;
+r[2] = LW(r[17] + (int32_t)(int16_t)0x000C);
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+### WINDOW L_80019F74 (@line 24013, 41 lines) ###
+r[2] = r[0] | 0x01E0u;
+L_80019F64:;
+SH(r[29] + (int32_t)(int16_t)0x0110, r[0]);
+L_80019F68:;
+SH(r[29] + (int32_t)(int16_t)0x0112, r[0]);
+L_80019F6C:;
+{
+r[31] = 0x80019F74;
+L_80019F70:;
+SH(r[29] + (int32_t)(int16_t)0x0116, r[2]);
+xenolift_fn_80044764_ClearImage();
+}
+L_80019F74:;
+{
+L_80019F78:;
+/* nop */
+xenolift_park_tick();
+goto L_80019F74;
+}
+L_80019F7C:;
+{
+r[31] = 0x80019F84;
+L_80019F80:;
+r[16] = r[0] | 0x00F0u;
+xenolift_fn_800322B4_HeapForceFreeAllBlocks();
+}
+L_80019F84:;
+r[4] = r[29] + (int32_t)(int16_t)0x0030;
+L_80019F88:;
+r[5] = r[0] + r[0];
+L_80019F8C:;
+r[6] = r[0] + r[0];
+L_80019F90:;
+r[7] = r[0] | 0x0180u;
+L_80019F94:;
+{
+r[31] = 0x80019F9C;
+L_80019F98:;
+SW(r[29] + (int32_t)(int16_t)0x0010, r[16]);
+xenolift_fn_80043928_SetDefDrawEnv();
+... WINDOW TRUNCATED (R426 digest diet - static code, window fully shipped+read c179-c183)
+[modsrc] done: 0 sections, 656 chars
+=FVP=
+=MPAD=
+=MINPUT=
+=RCB=
+=SNDREBOOT=
+=SPGUARD=
+=WILDCODE=
+=WILDCTX=
+=CRASHKIT=
+[crash] resolver: host_pc/host_base missing from crash kit output
+=STAB2=
+=FMT=
+=BADCODE=
+=MODBASE=
+=STAGE2P=
+=FLDX=
+=OVLGATE=
+=MISALIGN=
+=FAULTGATE=
+=JSRC=
+=WALKMAP=
+=ZBAND=
+=F16HDR=
+=F17INS=
+=READALL=
+=MPAD=
+=BWALK=
+=BOOTWALK=
+=CRASH2=
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+=LASTLOG=
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=178
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=179
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=180
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=181
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=182
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=183
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=184
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=185
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=186
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=187
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=188
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=189
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=190
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=191
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=192
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=193
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=194
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=195
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=196
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=197
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=198
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=199
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=200
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=201
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=202
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=203
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=204
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=205
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=206
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=207
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=208
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=209
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=210
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=211
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=212
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=213
+[pendclr] R1167 pending INT1 (site=5 cmd=09 LBA=1) CLEARED @t=195s, 128s after armed, 0 pumps since set, clears=214
+[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[wedge] R1196 executed-binary xenogears_boot_134631 sha256=cd357f1ecce79026be545115834b3eae6460ebedf85921840f78cfb5c66f317d dSYM=prev_run/last.dSYM
+[logcap] end tail
+=DEPTH=
+=SEGvREC=
+=RUNGASP=
+run.log:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+run.log.d:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+=JUMPREC=
+=FONTW=
+=MVDOOR=
+=PADSTART=
+=SIGWATCH=
+=SIOPAD=
+=PADRDW=
+=CBMOD=
+=CBMOD2=
+=BYPASSREC=
+=SDOOR=
+=WFDUMP=
+=BANKHEAL=
+=ARCHGUARD=
+=CANARYREC=
+=ABRTREC=
+=SEGVDIE=
+=DASHFIX=
+=SPUERR=
+=SPUDONE=
+=KICKDUE=
+=WEDGECAM=
+=FLDFRZ2=
+=FLDFRZ=
+=ABORTMSG=
+=STATESTAMP=
+=DEV=
+run.log:[dev] write 0x1F801803 = 0x00000007
+run.log:[dev] write 0x1F801803 = 0x00000007
+run.log.d:[dev] write 0x1F801803 = 0x00000007
+run.log.d:[dev] write 0x1F801803 = 0x00000007
+=DIR2=
+=BANKW=
+=FTAB2=
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)

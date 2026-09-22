@@ -1,0 +1,1481 @@
+80018084 g_MainGameStateOverlayBuffer
+80018088 g_CurGameState
+8001808C g_MainGameStates
+80018E28 CD_str0
+80018E38 CD_str1
+80018EC4 CD_str2
+80018ECC CD_str3
+80018EDC CD_str4
+80019524 start
+80019548 RestoreResidentExecutionRegisters — restores SP and S8 to 0x80200000 and GP to 0x80059170.
+80019560 ClearMemory
+80019578 GameBootstrap — Initializes graphics input storage archives audio and core resources before entering the initial game state.
+80019964 printf
+8001996C ChangeGameState
+800199CC LoadGameStateOverlay
+80019ACC MainLoop
+80019C2C DumpMainRamToPc — Creates `c:\core` through the development PC interface and writes the first 2 MiB of RAM into it.
+80019C7C HeapResetUser
+80019CA0 GameCheckAndHandleSoftReset
+80019CD0 GameSoftReset
+80019D48 GameShowSplashScreen
+80019EF8 GameHandleError
+8001A1E4 KernelMenuInitializeCursor
+8001A250 KernelMenuInitialize
+8001A344 KernelMenuUpdate
+8001A4B4 KernelMenuMain
+8001A5CC AllocateGridEffectBuffers — Allocates two 13440-byte primitive buffers and two 1120-byte occupancy maps then clears both maps.
+8001A684 IncrementWrappedGridCell — Wraps signed row and column coordinates across the grid boundaries and increments the selected occupancy byte.
+8001A6E8 UpdateAndDrawGridEffect — Emits tiles for occupied cells then clears the current map and advances twenty random walkers while marking each surrounding 3-by-3 neighborhood.
+8001AADC InitKernelVariables — initializes resident Field, party-loading, music, compass, and rendering state globals.
+8001AC94 GamePartySignalReinitialize
+8001ACA4 BeginPartyResourceReload — Resets cached resource identifiers then selects field archive storage and queues current party skins plus the two shared field resources.
+8001ACF0 GameCharacterGetGearID
+8001AD1C GameWaitForCdData
+8001AD4C GamePartyCharactersInitializeSkins
+8001AEB8 GamePartyGearsInitializeSkins
+8001B044 GamePartySyncSkinData
+8001B158 GamePartyStreamLoadSkinData
+8001B3A8 GamePartySyncStreamedData
+8001B484 FieldLoadNewBundle — reuses a matching Field bundle or frees the previous buffer and starts loading archive entry 0xB8 plus the field index.
+8001B53C FieldLoadRawBundle — allocates and pins a buffer, then asynchronously reads a raw Field bundle from archive entry 0xB8 plus the field index.
+8001B5A8 FieldUnloadWdsIfLoaded — unloads the currently loaded World Map WDS object and clears its loaded flag.
+8001B5E8 FieldFinalizePendingMusic — starts the deferred music instance, releases it when required, and clears pending music state.
+8001B66C FieldClearLoadedMusic — resolves deferred music/WDS cleanup, invalidates loaded music and wave IDs, and clears reset state.
+8001B6BC IdleGameState — Returns immediately without changing any state.
+8001B6C4 RunBattleAndDispatchOutcome — initializes Battle graphics, runs BattleMain through Result teardown, dispatches successful outcomes to Movie, resident continuation, Field, or World Map, and resets resident state to title Field 0x1EA on defeat.
+8001B844 BattleInitializeGraphicsEnvironments — resets graphics state, initializes geometry projection, and creates two 320x224 Battle display and drawing environments.
+8001B94C BattleConfigureDrawEnvironment — enables background clearing and dithering and sets the Battle clear color to RGB(60,120,120).
+8001B970 InitializeNewGameState — Loads the initial game-state image then expands its encoded string records and clears transient progress values.
+8001BB0C ApplyGameSoundSettings — Submits the current sound mode and volume state to the audio system.
+8001BB50 StartNewGame — Sets new-game defaults then initializes persistent game data and waits for all required archive transfers.
+8001BBAC LoadCoreSoundResources — Allocates and streams the core sound files then registers the SEDS bank and initializes character-associated sound entries.
+8001BD40 RandomU8RangeInclusive — Returns an inclusive random byte between two bounds with explicit handling for fixed zero and `0xFF` sentinel bounds.
+8001BDDC MenuInitializeGfxEnvironment
+8001BE14 MenuInitializeGfxEnvironments
+8001BEEC func_8001BEEC
+8001BF38 MenuProcessControllerInput
+8001C074 MenuDebugPresentFrame — polls menu input, swaps render environments, clears the active ordering table, runs enabled diagnostics, synchronizes drawing, and submits the frame.
+8001C1A8 MenuExecute
+8001C634 MenuMain
+8001C76C MenuExecutionConstants — Maps menu operations to command identifiers transition parameters vectors and packed coefficients used during menu execution.
+8001C8DC WorkListsFreeAllEntries
+8001C944 WorkListsReset
+8001C964 TimerWorkListUpdate
+8001C9F8 WorkListUpdate
+8001CA58 WorkListAddTask
+8001CAF0 WorkListAllocateTask
+8001CB48 WorkListRemoveTask
+8001CBE8 WorkListDeleteTask
+8001CC18 TimerWorkListAddTask
+8001CD08 TimerWorkListAllocateTask
+8001CD64 WorkListSetTaskCallback
+8001CD6C TimerWorkListSetTaskCallback
+8001CD74 WorkListTaskSetOnFreeCallback
+8001CD7C WorkListTaskGetTaskCallback
+8001CD88 WorkListTaskGetOnFreeCallback
+8001CD94 TimerWorkListRemoveTask
+8001CE44 TimerWorkListDeleteTask
+8001CE74 WorkListsRemoveOwnedTasks — removes matching-generation unprotected tasks owned by a target from both work lists and invokes each removed task’s free callback.
+8001D034 TimerWorkListClearFlaggedDependentLinks — finds matching-generation flagged timer tasks owned by a target and clears each associated sprite’s dependent link.
+8001D0A4 FindWorkTaskByOwnerGenerationAndCallback — Searches the regular work chain for an entry whose owner generation and trigger callback all match.
+8001D10C FindWorkTaskByOwnerAndGeneration — Searches the regular work chain for an entry whose owner and masked generation match.
+8001D164 FindWorkTaskByCallback — Searches the regular work chain for the first entry using the requested trigger callback.
+8001D19C WorkListsDeleteTasks
+8001D1D8 WorkListsAddTasks
+8001D298 ClearSpriteRenderChain — Clears the head of the pending sprite-render chain.
+8001D2A4 SpriteFrameTransferQueueClear — clears the pending sprite-frame transfer queue.
+8001D2B0 SpriteQueueFrameTransfer — updates a sprite frame and queues the actor for shape transfer without duplicating an existing queue entry.
+8001D3F4 SpriteFrameTransferQueueRemove — unlinks every occurrence of a sprite from the pending frame-transfer queue.
+8001D468 BuildQueuedSpriteFrames — Traverses the pending sprite chain and decodes each active frame into render packets before clearing the chain.
+8001D4E8 SpriteEnsureDirectionTransforms — lazily allocates and zero-initializes the sprite’s eight direction-transform records.
+8001D53C DecodeStaticSpriteFrameTiles — Decodes a packed static-atlas frame into positioned textured tile packets with palette page blend and flip attributes.
+8001DAE8 DecodeDynamicSpriteFrameTiles — Decodes a frame into tile packets and uploads embedded tile pixels into scratch VRAM when the frame uses dynamic texture data.
+8001E148 SpriteApplyRenderTransform — refreshes a dirty transform when required, transforms the sprite position and scaled frame offsets, and installs the resulting rotation and translation matrix.
+8001E298 RenderSpriteFramesWithOptionalShadow — applies the sprite render transform, renders its unclipped frame tiles, and conditionally renders its ground shadow.
+8001E2F8 RenderSpriteFramesAboveClipPlane — Updates the sprite transform and emits textured frame packets clipped to the upper side of the selected plane then prepares its optional shadow transform.
+8001E368 RenderSpriteFramesBelowClipPlane — Updates the sprite transform and emits textured frame packets clipped to the lower side of the selected plane then prepares its optional shadow transform.
+8001E3D8 RenderSpriteFrameTilesUnclipped — projects every current frame tile into a textured quad and links it into the supplied ordering table without Y clipping.
+8001E9BC RenderSpriteGroundShadow — flattens the sprite at its ground height using half-height scaling and emits black textured quads into the supplied ordering table.
+8001EE68 SpriteFramesAreVramBacked — returns whether the current sprite-frame data uses VRAM-backed coordinates.
+8001EE74 SpriteFramesGetMaxTileCount — returns the maximum tile count encoded in the sprite-frame metadata.
+8001EE88 RenderSpriteFrameTilesAboveClipY — emits only each projected sprite-tile portion at or above a supplied Y boundary while adjusting geometry and texture coordinates at the cut.
+8001F1D4 RenderSpriteFrameTilesBelowClipY — emits only each projected sprite-tile portion at or below a supplied Y boundary while adjusting geometry and texture coordinates at the cut.
+8001F530 AllocateSpriteScratchVramStrip — Assigns a horizontal scratch-VRAM span across three 64-pixel rows and wraps to the first row after exhausting the region.
+8001F5BC GetScaledSpriteFrameDimensions — Resolves the current frame and writes its three byte-sized dimensions multiplied by the sprite scale.
+8001F6B0 SpriteApplyFramePrimitiveAttributes — copies the sprite color, primitive code, and selected blend mode into every current frame-tile descriptor.
+8001F750 SpriteDecodeShortFrameDirectionTransforms — parses short-format frame records and applies embedded direction offsets and rotations to the sprite’s direction transforms.
+8001F8E8 SpriteUpdateFrameDirectionTransforms — validates a frame index and decodes that frame’s embedded direction-transform updates using the appropriate record format.
+8001FAB4 GraphicsDrawPauseLetters
+8001FB30 SpriteLoadEmbeddedVramImages — loads an embedded multi-image blob into VRAM at stored texture coordinates using a temporary 8 KiB stack.
+8001FBA4 AnimScriptResolveVariableAddress — resolves an encoded operand to either a stack-relative byte or an external-data byte selected by its high bit.
+8001FBE4 AnimScriptExecuteGenericOpcode — Executes generic sprite-animation operations for movement, transforms, attachments, resources, audio, arithmetic, colors, and models; opcode CC stores the current instruction address plus a signed 16-bit byte offset as the secondary bytecode pointer.
+80021AD8 ColorAddClampByte — adds a signed delta to a color channel and saturates the result to the range 0 through 255.
+80021B04 MathSetSVector — writes three supplied 16-bit components to a destination vector.
+80021B14 MathSetVector — writes three supplied 32-bit components to a destination vector.
+80021B24 CopyShortVector3 — Copies three consecutive 16-bit vector components.
+80021B48 CopyLongVector3 — Copies three consecutive 32-bit vector components.
+80021B6C EnableSpriteRawTexture — Enables unmodulated texture rendering and refreshes the sprite packet colors.
+80021B98 SpriteSetColor
+80021BCC SpriteSetTimeScale — writes the sprite animation-bytecode time scale used by Field movement-speed operations.
+80021BF0 SpriteSetSpecialAnimFile
+80021BF8 SetSpriteAnimationCallback — Stores the callback invoked by animation control opcodes.
+80021C00 SetSpriteCoordinateShift — Replaces the five-bit coordinate-shift value used when positioning sprite frames.
+80021C20 AnimScriptStackPopU8
+80021C3C AnimScriptStackPopU16
+80021C6C AnimScriptStackPopU24
+80021CA0 AnimScriptStackPushU8
+80021CC4 AnimScriptStackPushU16
+80021CF8 AnimScriptStackPushU24
+80021D3C SetSpriteXZPosition — Converts integer X and Z coordinates to 16.16 fixed point and stores them in the sprite position.
+80021D50 RestoreSpriteMotionState — Restores position animation identifiers scale motion values and linked auxiliary values then advances animation until the saved cycle is reached.
+80021EBC CaptureSpriteMotionState — Saves position animation progress orientation scale motion values and linked auxiliary values into a compact snapshot.
+80021FB8 SetSpriteLowBehaviorFlags — Replaces the low byte of the sprite behavior flags.
+80021FC0 SetSpriteMoveSpeed — Stores a new movement speed and recomputes horizontal velocity from the current direction and speed scale.
+80021FE0 SpriteSetMotionAngle — stores the sprite’s movement angle and immediately recomputes its horizontal velocity.
+80022000 SpriteSetScale
+80022038 SpriteRefreshTransformMatrix — recomputes the sprite transform matrix only when dirty and then clears the dirty state.
+80022090 SpriteComputeTransformMatrix
+80022224 SpriteResolveAnimationPackageFile — preserves texture and palette coordinates, resolves frame, palette, and animation references, and resets package animation bookkeeping.
+800222BC SpriteSelectAnimationPackageFile — resolves a newly selected animation package, records it, marks frame data dirty, and applies battle-specific VRAM coordinates.
+800223B0 SpriteSetFacingAngle — updates sprite facing and direction-dependent animation state.
+80022660 SpriteExecuteBytecodeUntil — executes the sprite animation VM until the requested bytecode checkpoint or a stopping opcode is reached.
+80022974 SpriteRecomputeHorizontalVelocity — derives horizontal X and Z velocity from movement speed, time scale, and direction angle.
+80022A00 ReadFirstWord — Returns the 32-bit value stored at the supplied address.
+80022A0C GfxLoadImageAccelerated
+80022A70 GfxLoadClutsAccelerated
+80022B2C SpriteIntegrateVerticalMotion — integrates scaled vertical velocity and gravity, clamps at ground height, applies bounce restitution, and stops small rebounds.
+80022CAC SpriteScaleMotionDelta — scales a motion delta by the sprite’s optional 10-bit fixed-point motion factor or returns it unchanged when no factor is active.
+80022CDC SpriteIntegrateMotion — Advances fixed-point X and Z by scaled velocity then applies vertical velocity and gravity.
+80022D44 SpriteApplyDirectionalFrameEntry — Selects the current directional frame then updates horizontal flipping and applies its nine-bit frame index.
+80022DF4 SpriteAnimationTaskCallback — Ticks animation bytecode and motion once or conditionally twice then invokes the completion callback when the script ends.
+80022E8C TickAnimationTaskWithFrameCounter — Increments the global animation-frame counter and executes the task’s normal animation update.
+80022EB8 DestroyAnimationTask — Releases queued image data directional transforms render packets and linked work entries before freeing the animation allocation.
+80022FC4 AllocateSpriteFramePackets — Replaces existing frame-packet storage with `count × 24` bytes allocated using the requested heap flags.
+8002303C AllocateSpriteTileOverrides — Allocates one four-byte override per tile and initializes the first texture-coordinate pair from the active animation package.
+800230A8 DestroySpriteAllocation — Frees optional tile overrides and frame packets then unlinks and releases the sprite allocation.
+80023124 MathAngleBetweenPackedPoints — Returns the negated 12-bit angle from the second packed signed coordinate pair to the first.
+80023170 RestartSpriteAnimationFrame — Clears the script wait timer and cycle state then applies flip controls and selects the requested animation frame.
+800231E0 ReadRelativeSpriteWord — Returns the first 32-bit value at the sprite-relative offset stored in its motion field.
+800231F8 ReadIncrementedRelativeSpriteWord — Returns one plus the second 32-bit value at the sprite-relative offset stored in its motion field.
+80023210 AnimScriptTick
+80023290 SpriteSetSemiTransparencyMode — Sets the sprite blend mode and primitive semitransparency state then updates existing render packets when required.
+80023340 ResizeSpriteFramePackets — Frees current frame-packet storage and allocates zero-flag replacement storage sized to `count × 24` bytes.
+800233A4 AnimTaskCreate — allocates an animation task with trailing data, registers timer and normal work-list tasks, and installs trigger/free callbacks.
+80023440 SpriteDecodeRenderType — Decodes a four-bit sprite render type from the animation descriptor flags.
+80023468 SpriteClassifyRenderStorage — Maps a decoded sprite render type to storage class zero one or two.
+800234AC SpriteClearDirectionTransforms — Zeroes all eight directional translation and rotation records.
+80023538 SpriteBindAnimationHeader — Binds one animation header, resolves bytecode and directional-table pointers relative to their respective offset fields at +0x02 and +0x04, applies flag-controlled motion and transform resets, and resets interpreter state.
+80023804 SpriteInitializeState — Initializes a newly allocated sprite with default flags colors scale timing pointers and motion state.
+8002393C SpriteBaseClearRotationAndFrames — Clears a sprite base record's rotation components and frame-data pointer.
+80023950 SpriteDisableBaseData — Selects the sprite storage layout without a base record.
+80023958 SpriteInitializeEmbeddedBase — Selects and clears the sprite's embedded base storage.
+800239A0 InitializeEmbeddedSpriteStorage — Initializes embedded transform storage and connects the sprite’s base animation package direction data and render-chain link.
+800239F4 SpriteInitializeEmbeddedFrameBase — Selects embedded base and frame storage then clears direction and linkage state.
+80023A48 SpriteAllocateAnimationTaskByRenderType — Allocates an animation task with render-type-specific trailing storage and initializes its selected storage layout and metadata.
+80023B84 SpriteSpawnLinkedChild — Allocates a linked child sprite then copies parent render and motion state before binding its animation and render callback.
+80023FD8 CreateSpriteFromAnimationEntry — Resolves an indexed animation entry then allocates and initializes a sprite with the requested position mode inherited attributes animation binding and runtime update policy.
+80024294 AllocateSpriteWithCreationGroup — Temporarily selects a creation group then allocates and initializes a 0x164-byte sprite before restoring the default group.
+800242F4 InitializeSpriteWithCreationGroup — Temporarily selects a creation group then initializes an existing sprite before restoring the default group.
+8002435C InitializeSprite — Clears sprite state then installs its task callbacks and initializes transform animation color resource and render fields.
+80024524 AllocateSprite — Allocates a 0x164-byte sprite workspace then records its size and initializes it from the supplied parameters.
+800245D8 SpriteStartAnimationById — Selects a default or special animation by signed ID then binds it and reapplies the sprite's facing direction.
+80024730 SpriteConfigureRenderCallback — Performs render-type-specific setup and installs the corresponding indexed rendering callback.
+800248D4 SpriteRunAnimationBytecode — Runs compact frame and wait commands plus extended sprite-animation operations until a wait, blocking condition, or end while handling frame selection, branches, calls, and current-PC-relative secondary pointers.
+80024F20 ResetSpriteRenderState — Clears the double-buffered sprite contexts and resets primitive cursors ordering buckets and transfer queues.
+80024F64 GfxAllocateWorkBuffers
+80024FB8 GfxFreeWorkBuffers
+80024FE4 GfxSetCurrentOT
+80024FF4 GfxSetSpriteTransformMatrix — Copies a complete transformation matrix into the global matrix used for sprite projection.
+80025044 GfxFlushImageTransferQueue — Executes all queued image uploads or black clears for the current render context then empties its queue.
+800250E0 SelectSpriteRenderBuffer — Selects the active sprite buffer and resets its primitive cursor ordering buckets and transfer-record count.
+80025180 GfxQueueDeferredFree — Adds an allocation to the current render context's deferred-free list using a node from the graphics work buffer.
+800251C8 QueueSpriteTransferRecord — Appends a 16-byte transfer record when space remains and prepends it to the bucket selected by the current render index.
+80025224 SpriteSetRenderHandlerByType — Selects an indexed sprite rendering handler and assigns it as the work-list callback.
+80025258 RenderFieldActorSprite — resident field actor sprite projection and OT submission dispatcher (Ghidra decompile confirmed 2026-08-23).
+8002541C RenderSpriteTile — Projects one sprite vertex then emits a FillTilePrimitive primitive with the configured color dimensions and depth.
+80025544 RenderSpriteTriangle — Projects three sprite vertices then emits a backface-tested F3 triangle into the depth ordering table.
+80025710 SkipSpriteRendering — Returns without producing any rendering work.
+80025718 RenderSpriteModel — Builds a rotation matrix from sprite angles and renders the associated model when its visibility state permits.
+800257F0 RenderParentedSpriteModel — Composes parent and local transforms then renders the associated model with the resulting matrix and position.
+80025A88 DrawSpriteModelPart — Depth-tests a sprite model then prepares its matrices and submits the selected model part into the active ordering table.
+80025C04 ScaleSpritePacketRgb555 — Scales each packed RGB555 channel by a fixed-point factor while preserving transparency and nonzero source channels.
+80025D4C ModulateSpritePacketRgb555 — Applies mode-dependent RGB555 channel offsets and scaling then clamps each result while preserving transparency.
+80025FA8 BuildTintedSpriteFt4Packets — Decodes a selected sprite frame into scaled and flipped FT4 packets with texture coordinates CLUT pages and optional color modulation.
+80026338 ResourceHelperGetTexCoords
+800263E4 SetupMenuResourcePolyFT4 — builds double-buffered scaled FlatTexturedQuadrilateralPrimitive primitives for menu-resource textures.
+8002675C BuildFieldSpriteFt4Packets — Builds double-buffered FlatTexturedQuadrilateralPrimitive packets from expanded 0x1C-byte Field sprite descriptors by scaling screen geometry independently from low-byte UV deltas and applying axis reversal with origin decrement and zero-boundary compensation.
+80026A0C BuildSpritePackets — Emits SpritePrimitive primitives for every fragment in a selected frame and appends the required texture-page draw-mode packet.
+80026B9C SkipSpritePacketBuild — Returns without emitting any sprite packets.
+80026BA4 SubmitSpriteFt4Packets — Builds FT4 packets for a sprite frame then links each packet and its draw-mode command into the selected ordering bucket.
+80026DCC BuildSpriteTextureDescriptors — Decodes a selected frame into compact geometry and texture descriptors with scaling and axis-flip adjustments.
+80026F44 ScaleTextureDescriptorRgb555 — Scales packed RGB555 descriptor colors by a fixed-point factor while preserving transparency and nonzero channels.
+80026FE8 BlendTextureDescriptorRgb555 — Interpolates packed RGB555 descriptor colors toward target colors with clamped channels and preserved transparency.
+8002709C CreateFieldPanoramaPrimitiveSet — allocates and initializes the field panorama primitive set (Ghidra decompile confirmed 2026-08-23).
+800273C4 RenderFieldPanoramaSpan — Projects a panorama span between two world points and emits wrapped texture strips and optional clipping polygons into an ordering table.
+800278F8 RenderFieldPanoramaTextureStrips — Splits a horizontally wrapping panorama texture into at most eight textured quad strips and links them into the selected ordering table.
+80027D40 __builtin_delete — PsyQ libcard/libapi (Ghidra symbol DB, prior RE sessions)
+80027D64 GfxLineScrollInitialize
+80027EAC GfxLineScrollUpdate
+8002800C GfxLineScrollFree
+8002804C ArchiveVisualizeHostIoRetry — Paints a color-coded retry stripe and after the fourth failure resets graphics and permanently displays the failing archive entry and path.
+80028230 ArchiveInit
+800283D4 ArchiveReset
+80028470 ArchiveSetIndex
+800284B4 ArchiveGetArchiveOffsetIndices
+80028530 ArchiveGetDiscNumber
+80028548 ArchiveGetRelativeEntryOffset — Returns an indexed archive sector offset relative to the current archive base.
+80028570 ArchiveReadHddFile
+800286BC ArchiveGetCurFileSize
+800286CC ArchiveDataSync
+80028738 ArchiveDecodeSize
+80028808 ArchiveDecodeSizeAligned
+800288EC ArchiveDecodeAlignedSize
+80028928 ArchiveDecodeSizeAbsolute
+80028998 ArchiveGetFilePath
+800289D0 ArchiveDecodeSector
+80028A18 ArchiveDecodeSectorAtSavedOffset — Decodes a 24-bit sector number from the archive table using the saved archive offset.
+80028A60 ArchiveCdDataSync
+80028A94 ArchiveChangeStreamingFile
+80028AAC ArchiveClearStreamFileSections
+80028B14 ReadCurrentArchiveFileFromHost — Reads the current host-backed archive file with retries then closes it and clears the active transfer state.
+80028E60 AreArchiveStreamSectionsInState — Tests a bounded run of stream sections and returns whether every section has the requested state.
+80028ECC ArchiveConsolidateStreamFileEntry
+80028F30 AcquireArchiveStreamChunk — Advances host or CD stream filling then exposes the next contiguous payload and reports whether all required sections are ready.
+8002945C ReleaseArchiveStreamSection — Locates a stream section from its payload address then clears it and returns its previous state.
+800294B4 ReleaseArchiveStreamChunk — Clears every section belonging to a consumed stream chunk then normalizes the ring and returns the first section's previous state.
+8002954C ArchiveReadFileFromCdSector
+800295D8 ArchiveReadFileToBuffer
+80029690 ArchiveReadFile
+80029AFC ArchiveStartQueuedReads — Sorts a terminated read queue by archive index then starts asynchronous CD reads or performs synchronous host-file reads.
+80029EB0 BeginArchiveTextureStream — Validates and initializes a multi-section texture stream then starts CD callbacks or drains the equivalent host stream synchronously.
+8002A260 ArchiveAllocStreamFile
+8002A2D0 PositionArchiveOrHalt — Waits for archive activity to settle then seeks to a requested entry or pauses the CD drive when no entry is requested.
+8002A394 ArchiveCdSeekToFile
+8002A428 ArchiveCdSetMode
+8002A498 ArchiveResetStreamChannel — records the active channel and reset flag; with debug streaming active, clears its bookkeeping and closes the host stream.
+8002A524 ArchiveStreamFreeQueueData
+8002A57C AllocateArchiveStreamQueue — Allocates a terminated queue of archive entries and aligned payload buffers while releasing all partial allocations on failure.
+8002A68C ArchiveCdDriveCommandHandler
+8002AC24 ArchiveQueuedReadReadyCallback — Consumes ready CD sectors across queued destinations while validating locations and seeking gaps or retrying failures before completion.
+8002B084 ArchiveCurrentFileReadyCallback — Copies each ready sector into the current archive destination, advances its destination and remaining-byte state, and retries or finalizes the read.
+8002B2F0 ArchiveStreamReadyCallback — Receives standard CD sectors into sequenced ring sections then advances counters and pauses or retries as required.
+8002B5D0 ArchiveTextureStreamReadyCallback — Receives texture-stream CD sectors into sequenced ring sections then advances counters and pauses or retries as required.
+8002B8B0 PumpHostArchiveStream — Reads 2048-byte blocks from a host file into free ring sections and updates section sequence and remaining-byte state.
+8002BA40 ArchiveQueuedReadDataCallback — Copies the queued-read remaining-entry count into the active completion counter when CD data arrives.
+8002BA58 ArchiveStreamDataCallback — Marks a completed ring transfer ready then advances its sequence and stops the drive after the final section drains.
+8002BB50 ArchiveTextureStreamDataCallback — Parses streamed texture commands and asynchronously uploads their image rectangles while releasing consumed ring sections.
+8002BF38 PumpHostTextureStream — Parses host-backed texture commands and synchronously uploads their image rectangles while releasing consumed ring sections.
+8002C310 PrintArchiveStreamDiagnostics — Prints current archive transfer counters ring positions texture coordinates and pending command values.
+8002C3D8 ArchiveGetDebugTable
+8002C3E8 ModelResolvePointers
+8002C4BC ModelUnresolvePointers — Clears the resolved flag and converts model-part pointers and packet references back into base-relative offsets.
+8002C59C ModelResolvePartPointers — Converts one model part's relative data references into absolute addresses once and marks the part resolved.
+8002C644 ModelAllocateRuntimeBuffer — Performs a one-time allocation of the configured model runtime buffer and reports whether allocation had already occurred.
+8002C68C ModelResolveEmbeddedResource — Performs one-time pointer resolution for an embedded model then frees and clears its transient backing allocation.
+8002C6E0 SetNearColor
+8002C700 ModelRenderPacket
+8002C8CC ModelInitializePacket
+8002CB54 ModelAllocatePackets
+8002CBBC ModelPartFreeLightData
+8002CC10 ModelPacketSetBaseTexPage
+8002CC54 ModelPacketSetTexPageOverride — installs a direct texture-page override and selects forced-page mode.
+8002CC74 ModelPacketSetBaseClut
+8002CCAC ModelPacketClearTextureOverrides — restores normal texture-page and CLUT handling.
+8002CCC8 ModelPacketSetTexPage
+8002CD24 ModelPacketSetClut
+8002CD64 ModelPacketSetTextureData
+8002CDCC ModelPacketInitPolyF3
+8002CF34 ModelPacketInitUnlitPolyF3
+8002CF58 ModelPacketInitPolyF4
+8002D0C0 ModelPacketInitUnlitPolyF4
+8002D0E4 ModelPacketInitUnlitPolyFT4
+8002D180 ModelPacketInitPolyG4
+8002D244 ModelPacketInitPolyGT4
+8002D354 ModelPacketInitPolyG4Variant — builds a lit GouraudQuadrilateralPrimitive packet from four model normals and the primitive base color.
+8002D420 ModelPacketInitPolyGT4Variant — builds a lit textured GouraudTexturedQuadrilateralPrimitive packet with active CLUT and texture-page state.
+8002D530 ModelPacketInitPolyFT4
+8002D6AC ModelPacketInitPolyG3
+8002D77C ModelPacketInitPolyG3_2
+8002D814 ModelPacketInitPolyFT3
+8002D984 ModelPacketInitUnlitPolyFT3
+8002DA14 ModelPacketInitPolyGT3
+8002DAFC ModelPacketInitPolyFT3_2
+8002DB84 MathTriangleNormal
+8002DC9C MathGetLargestVectorComponent
+8002DD20 ModelLoadTimTextures — Walks embedded TIM images in reverse and uploads each pixel block and optional CLUT with draw synchronization.
+8002DDE4 GfxLoadPackedImageSet — Parses packed image records then computes mode-dependent VRAM coordinates and uploads their 16-bit pixels.
+8002DFE0 GetModelScratchBuffer — Returns the fixed model rendering workspace at 0x8006FAF0.
+8002DFF0 SetModelRenderBounds — Stores the horizontal clipping limit and packed vertical clipping limit used by model packet renderers.
+8002E010 ModelRenderPolyGT3ByAverageDepth — Projects and clips GT3 triangles then writes packet coordinates and orders visible primitives by average depth.
+8002E038 RenderFlatTriangleAverage — transforms and submits flat triangles using average depth.
+8002E054 RenderFlatQuadAverage — transforms and submits flat quads using average depth.
+8002E1F4 ModelPacketRenderHandlerEpilogue — Advances the model packet cursor by the current primitive stride and commits the rendered-packet count and packet cursor.
+8002E268 FieldModelFT4RawHandler — transforms, clips, and submits raw field-model FlatTexturedQuadrilateralPrimitive packets.
+8002E448 ModelRenderPolyGT3ByNearestDepth — Projects and clips GT3 triangles then writes packet coordinates and orders visible primitives by their nearest vertex depth.
+8002E470 RenderFlatTriangleNearestMode — transforms and submits flat triangles using nearest-depth mode.
+8002E64C RenderGouraudTexturedQuadFarthest — Projects indexed Gouraud-textured quads and rejects invalid or back-facing geometry before linking visible packets at their farthest vertex depth.
+8002E688 RenderRawTexturedQuadFarthest — transforms and submits raw textured quads using farthest depth (Ghidra static analysis + authenticated runtime seam).
+8002E8B4 RenderGouraudTexturedTriangleNearest — Projects indexed Gouraud-textured triangles and rejects invalid or back-facing geometry before linking visible packets at their nearest vertex depth.
+8002E8DC RenderFlatTriangleNearest — transforms and submits flat triangles using nearest depth.
+8002EAB8 RenderGouraudTexturedQuadNearest — Projects indexed Gouraud-textured quads and rejects invalid or back-facing geometry before linking visible packets at their nearest vertex depth.
+8002ED20 RenderFlatTriangleFarthest — transforms and submits flat triangles using farthest depth.
+8002EEF8 RenderFlatTriangleAverageDepthCue — Projects flat triangles and applies depth-cued color before linking visible front-facing packets at their average depth.
+8002EF0C RenderFlatTexturedTriangleAverageDepthCue — submits flat-textured triangles using average depth and depth cueing.
+8002F0E4 RenderFlatTexturedTriangleNearestDepthCue — submits flat-textured triangles using nearest depth and depth cueing.
+8002F2E0 RenderNormalLitTexturedTriangles — Projects textured triangles and derives each packet color from its surface normal before depth-sorting visible front-facing packets.
+8002F4B4 RenderFlatTexturedTriangleModeOne — submits flat-textured triangles through renderer mode one.
+8002F6B4 RenderGouraudLitTriangles — Projects triangles and computes separate normal-lit colors for all three vertices before depth-sorting visible front-facing packets.
+8002F8D0 RenderFlatTexturedQuadModeOne — submits flat-textured quads through renderer mode one.
+8002FAE8 RenderNormalLitTexturedQuads — Projects textured quads and derives each packet color from its surface normal before depth-sorting visible front-facing packets.
+8002FCFC RenderFlatTexturedQuadAverageDepthCue — submits flat-textured quads using average depth and depth cueing.
+8002FF0C RenderFlatTexturedQuadNearestDepthCue — submits flat-textured quads using nearest depth and depth cueing.
+8003014C StepValueTowardTarget — Moves the current signed value toward its target by the configured step and clamps it at the target.
+800301C8 ModelCopyIndexedVertexPositions — Copies the X Y and Z components of each indexed source vertex to the corresponding destination vertex.
+80030228 ApplyScaledModelVertexDeltas — Adds indexed 12-bit fixed-point deformation deltas to model vertices.
+800302D4 ApplyScaledModelNormalDeltas — Adds indexed 12-bit fixed-point deformation deltas to model normals and renormalizes each result.
+800303C8 CreateModelDeformationWorkspace — Allocates deformation control storage and writable vertex arrays then copies indexed base vertices and initializes interpolation channels.
+800305D8 ApplyModelDeformationFrame — Advances every deformation channel and applies its scaled vertex deltas plus optional renormalized normal deltas.
+800306D0 DestroyModelDeformationWorkspace — Frees deformation vertex buffers and control storage after restoring the model’s original vertex and normal pointers.
+80030750 RenderEnvironmentMappedTriangle — transforms and submits environment-mapped triangles.
+80030988 PatchTextureUvStepCode — patches twelve halfword immediate fields with four repeated texture UV-step values.
+80030A30 SetFlatDirectionalLight — Normalizes and negates a selected directional light vector then installs its direction and color coefficients.
+80030B14 InstallSceneLightMatrix — Rotates the supplied light basis through the current rotation matrix and loads the resulting GTE light matrix.
+80030C40 SetSceneAmbientLight — Converts three 12-bit ambient components to GTE precision and installs them as the background color.
+80030C78 SetAmbientColorRaw — Loads three unscaled components directly into the GTE background-color registers.
+80030C98 RenderLitQuadBatch — Projects packed four-index quads and emits normal-lit flat quad packets only when their geometry is valid visible and front-facing.
+80030EE8 AnyProjectedTriangleVertexVisible — Projects three vertices and returns true when at least one has valid depth and lies within the configured screen limits.
+8003101C IsModelBoundsCulled — Tests selected bounding-box corners and edge midpoints and returns false as soon as any tested triplet is visible.
+800315A0 LinkPolyF3GpuPrimitive — Splices a flat triangle packet into a GPU DMA chain with a four-word payload.
+800315C4 LinkPolyFT3GpuPrimitive — Splices a flat-textured triangle packet into a GPU DMA chain with a seven-word payload.
+800315E8 LinkPolyG3GpuPrimitive — Splices a Gouraud triangle packet into a GPU DMA chain with a six-word payload.
+8003160C LinkPolyGT3GpuPrimitive — Splices a Gouraud-textured triangle packet into a GPU DMA chain with a nine-word payload.
+80031630 LinkPolyF4GpuPrimitive — Splices a flat quad packet into a GPU DMA chain with a five-word payload.
+80031654 LinkPolyFT4GpuPrimitive — Splices a flat-textured quad packet into a GPU DMA chain with a nine-word payload.
+80031678 LinkPolyG4GpuPrimitive — Splices a Gouraud quad packet into a GPU DMA chain with an eight-word payload.
+8003169C LinkPolyGT4GpuPrimitive — Splices a compact Gouraud-textured quad packet into a GPU DMA chain with an eleven-word payload.
+800316C0 LinkLineF2GpuPrimitive — Splices a two-point flat line packet into a GPU DMA chain with a three-word payload.
+800316E4 LinkLineG2GpuPrimitive — Splices a two-point Gouraud line packet into a GPU DMA chain with a four-word payload.
+80031708 LinkLineF3GpuPrimitive — Splices a three-point flat line packet into a GPU DMA chain with a five-word payload.
+8003172C LinkLineG3GpuPrimitive — Splices a three-point Gouraud line packet into a GPU DMA chain with a seven-word payload.
+80031750 LinkLineF4GpuPrimitive — Splices a four-point flat line packet into a GPU DMA chain with a six-word payload.
+80031774 LinkLineG4GpuPrimitive — Splices a four-point Gouraud line packet into a GPU DMA chain with a nine-word payload.
+80031798 LinkFourWordGpuPrimitive — Prepends a primitive to an ordering-table chain and sets its GPU payload count to four words.
+800317BC LinkFixedSpriteGpuPrimitive — Splices a fixed-size sprite packet into a GPU DMA chain with a three-word payload.
+800317E0 LinkThreeWordGpuPrimitive — Prepends a primitive to an ordering-table chain and sets its GPU payload count to three words.
+80031804 FontAddBackgroundTile — links one font/debug-text background tile primitive into an ordering table.
+80031828 LinkTile1GpuPrimitive — Splices a one-pixel tile packet into a GPU DMA chain with a two-word payload.
+8003184C LinkTile8GpuPrimitive — Splices an eight-pixel tile packet into a GPU DMA chain with a two-word payload.
+80031870 LinkTile16GpuPrimitive — Splices a sixteen-pixel tile packet into a GPU DMA chain with a two-word payload.
+80031894 HeapGetNextBlockHeader
+800318A8 HeapGetBlockUser
+800318BC HeapGetBlockSourceAddress
+800318DC HeapIsBlockPinned
+800318F0 HeapDebugHookNoOp — Returns immediately without reading or changing runtime state.
+800318F8 HeapLoadSymbols
+80031A30 HeapReset
+80031A68 HeapInit
+80031B10 HeapRelocate
+80031B9C HeapGetCurrentUser
+80031BA8 HeapSetCurrentUser
+80031BB4 HeapToggleErrorHandler
+80031BC4 HeapGetAllocInformation
+80031BDC HeapAlloc
+80031F70 HeapInsertAlloc
+80031FF8 HeapConsolidate
+800320A4 HeapPinBlock
+800320B8 HeapUnpinBlock
+800320D0 HeapUnpinBlockCopy
+800320E8 HeapFree
+8003218C HeapFreeBlocksWithFlag
+8003223C HeapFreeAllBlocks
+800322B4 HeapForceFreeAllBlocks
+80032340 HeapGetTotalFreeSize
+800323B4 HeapWalkUntilEnd
+80032404 HeapGetLargestFreeBlockSize
+80032498 HeapChangeCurrentUser
+800324B8 HeapSetCurrentContentType
+800324C4 HeapGetSymbolNameFromAddress
+80032584 HeapDebugDumpBlock
+8003278C HeapDebugDump
+80032B0C HeapAllocSound
+80032B64 HeapCalloc
+80032BAC HeapForceFree
+80032BDC HeapPrintf
+80032C18 HeapDelayedFree
+80032CB8 HeapTickDelayedFree
+80032D60 HeapFreeAllDelayedBlocks
+80032DCC HeapWriteToDebugFile
+80032E04 HeapDumpToFile
+80032E7C HeapDerefPtr
+80032E88 LZSSHeapDecompress
+80032EB4 LZSSDecompress
+80032F54 InitializeDialogTextRenderer — Initializes dialog state and geometry then allocates line primitives and glyph-image buffers and configures two texture pages.
+8003342C ResolveArchiveEntryPointers
+80033474 ResolveFileEntryPointers
+800334B8 GetSystemFontFile
+800334C8 GetSystemDataFile
+800334D8 SystemFreeFont
+80033518 SystemFreeData
+80033558 SystemInitializeFont
+800335F4 SystemInitializeData
+80033668 SystemInitialize
+80033698 SystemTransferPaletteToVRAM
+80033728 GetStringEntry
+8003373C DialogGetWidth
+80033760 DialogGetHeight
+80033784 GetSystemTableString — Returns a selected string from a system text table chosen by the supplied table index.
+800337B8 GetSystemTable16String — Returns the selected string from system text table 16.
+800337E8 GetAccessoryName
+80033818 GetItemName
+80033848 GetWeaponName
+80033878 GetSystemTable24String — Returns the selected string from system text table 24.
+800338A8 GetSystemTable25String — Returns the selected string from system text table 25.
+800338D8 GetSystemTable18String — Returns the selected string from system text table 18.
+80033908 GetSystemTable20String — Returns the selected string from system text table 20.
+80033938 GetSystemTable19String — Returns the selected string from system text table 19.
+80033968 GetSystemTable21String — Returns the selected string from system text table 21.
+80033998 GetSystemTable27String — Returns the selected string from system text table 27.
+800339C8 GetExtendedSystemTableString — Returns a selected string from the system text table at index 28 plus the supplied table selector.
+800339FC GetSystemTable48String — Returns the selected string from system text table 48.
+80033A2C GetSystemTable50String — Returns the selected string from system text table 50.
+80033A5C GetSystemStringTable51Entry — Returns indexed text from system string table 51 using its 16-bit relative offset table.
+80033A8C GetSystemStringTable52Entry — Returns indexed text from system string table 52 using its 16-bit relative offset table.
+80033ABC DecodeSystemTextCodes — Converts 16-bit system text codes through character-map entry 0x1B into a shared byte string until a 0xFFFF terminator.
+80033B34 SystemDecodeStringCodes — maps input codes through system-data table 0x1B, emits one or two bytes per code, and NUL-terminates the destination.
+80033BAC FindSystemGlyphPairIndex — Searches 324 encoded glyph pairs and returns the matching index or 0x8000 when absent.
+80033C20 EncodeSystemTextToGlyphIndices — Converts a null-terminated byte string into 16-bit glyph indices and returns -1 if any encoded pair is unmapped.
+80033CD0 GetDialogControlStatus — Returns the dialog control-status byte while the status-ready flag is set and otherwise returns zero.
+80033CF0 FormatIntegerAsSystemText — Encodes a signed or unsigned decimal value as system glyph codes and stores the trimmed decoded text in a shared buffer.
+80033DD4 PushDialogTextStream — Saves the current dialog text position then installs a nested text stream and marks it for automatic return.
+80033DF0 AdvanceDialogTextRenderer — Interprets dialog commands and advances line timing while rasterizing the next permitted batch of glyphs into the upload buffer.
+800345E0 TextStreamClearCompletionState — Clears the completion bit and also clears page-wait mode and delay when page waiting is active.
+80034614 TextStreamFinalizeWhenDelayExpires — Clears text mode and preserves only state bit 1 when the delay counter reaches zero.
+8003463C TextStreamFreeQueuedEntriesWhenIdle — Frees every queued text entry and resets the queue head and count when no delay remains.
+800346A4 TextStreamReset — Clears mode and delay then preserves only state bit 1 and frees all queued text entries.
+800346D4 TextStreamDestroy — Resets queued text state and frees both rendering buffers.
+80034714 TextStreamEnqueueText — Allocates and appends an eight-byte text queue entry then increments the queue count.
+800347AC TextStreamGetCursorX — Returns the base X coordinate plus four times the current horizontal text advance.
+800347C0 TextStreamGetCursorY — Returns base Y plus row height times the visible cursor-row offset with underflow mapped to the last row.
+80034800 TextStreamSetRowPrimitiveColors — Writes one RGB color to all four rendering primitives for every text row.
+80034874 TextStreamSetOpaqueRow — Selects the row whose rendering primitives remain opaque while other rows become semitransparent.
+8003487C TextStreamClearOpaqueRow — Selects row 255 so every rendered text row becomes semitransparent.
+80034888 SystemStringEntryRender — renders and advances a system string entry, including glyph primitives and VRAM uploads (Ghidra static analysis + field text-box runtime census, 2026-08-23).
+80034EAC SystemRenderStringEntry
+80034F98 GetEncodedGlyphTileWidth — Returns a two- or three-tile width according to the encoded glyph’s lead and trail bytes.
+80034FFC RasterizeEncodedGlyph — Reads an 11-row encoded glyph and merges its pixels into the selected nibble phase of a 4-bpp image buffer.
+8003569C ControllerGetButtonState
+80035734 ControllerGetType
+800357C0 ControllerRemapButtonState
+8003582C ControllerRemapAnalogJoystickState
+80035884 ControllerStickToAnalogX
+800358A0 ControllerStickToAnalogY
+800358BC ControllerPoll
+80035C0C ControllerPushState
+80035CDC ControllerPopState
+80035DA0 ControllerGetNumStates
+80035DB0 ControllerResetState
+80035E44 IncrementCappedPlayTimeClock — Advances a 60-frame clock through seconds and minutes into hours then stops permanently at 100 hours.
+80035F1C SaveVramRectAsTim — Captures a VRAM rectangle and writes a 16-bit TIM header followed by its pixel data to a host file.
+80035FF8 SaveVramRectAsPpm — Captures a VRAM rectangle and writes a P6 image after expanding each 15-bit pixel into 8-bit RGB channels.
+8003611C InitializePadOutputPackets — Clears two eight-byte pad output packets and submits both packet buffers to the pad transport.
+80036188 AdvancePadOutputPacket — Advances one pad output packet through asserted and released states while consuming its pulse count unless paused.
+80036220 AdvancePadOutputPackets — Advances both pad output packets by one state-machine step.
+80036258 SetPadOutputPulseCount — Stores a 16-bit pulse count in the indexed pad output packet.
+80036270 SetPadOutputPacketPaused — Sets the indexed pad output packet's pause byte.
+80036288 ControllerInit
+8003633C SetControllerPollingFlag — Stores the low byte of the supplied value in the controller polling flag.
+8003634C ControllerTick — Polls both pads and queues their state then advances play time and pad output while invoking the optional tick callback and guarded software break.
+800363E0 SetControllerDebugBreakGuard — Stores the supplied value as the controller tick software-break guard.
+800363F0 SetControllerUpdateCallback — Sets the callback invoked after each controller polling and input-queue update cycle.
+80036400 SetControllerStateResetFlag — Stores the supplied value in the controller state reset flag.
+80036410 IsControllerStateQueueFull — Returns whether the controller input-state queue has overflowed.
+80036420 ControllerMergeQueuedStates — Drains queued controller snapshots and ORs all held and edge states together or resets everything after queue overflow.
+80036528 ControllerPrintRawPacket — Prints every byte in a raw pad packet and additionally prints the decoded active-low button mask for a valid digital packet.
+800365FC ControllerDebugPrint
+800366E0 SetFormattedCharacterOutputCallback — Installs the callback used to emit each character produced by formatted output.
+800366F0 EmitFontCharacter — Emits one character into the current font rendering buffer.
+80036718 FontVPrintf — Formats a variable argument list using printf-style flags width precision and conversions and emits the resulting characters.
+80036CD8 FontSetFlag
+80036CF8 FontRemoveFlag
+80036D18 FontGetFlags
+80036D30 FontSetLetterFlag
+80036D50 FontRemoveLetterFlag
+80036D70 FontGetLetterFlags
+80036D88 FontSetLetterWidth
+80036D98 FontSetRowHeight
+80036DA8 FontSetCurLetterX
+80036DB8 FontSetCurLetterY
+80036DC8 FontSetColor
+80036E4C FontLoadClut
+80036F44 FontGetDefaultLetterWidth
+80036F5C FontGetDefaultLetterHeight
+80036F74 FontGetCurLetterX
+80036F8C FontGetCurLetterY
+80036FA4 FontGetCurLetterCount
+80036FBC FontStoreCurrentPositions
+80036FE4 FontRestoreCurrentPositions
+8003700C FontPrintf
+80037058 FontSetPositionsByOffset
+8003708C FontSetCursorAndRowOriginByOffset — Clamps offsets to zero and positions the cursor and next-row origin relative to the active font area.
+800370DC FontAddLetterPrimitive
+800372CC FontResetLetterRendering
+80037324 FontDrawLetters
+8003747C SetFontExternalStorage — Selects or clears external font storage whose presence prevents the font allocation from being heap-freed.
+8003748C FontFree
+800374E8 FontLoadFont
+80037878 SelectionSort — Sorts fixed-size records in place with a comparator using an allocated temporary record for each selection swap.
+800379B4 SetAuxiliaryRuntimeCallback — Stores the supplied callback pointer in the auxiliary runtime callback slot.
+800379C8 ScreenPrintf — Forwards a format string and variadic arguments to the active on-screen font renderer.
+800379D0 GraphicsInitializationNoOp — Returns immediately without reading or modifying runtime state.
+800379D8 LoadPairedArchiveResources — Validates an index then allocates and pins aligned buffers for entries 2n+6 and 2n+k+7 and queues both reads.
+80037B88 SoundInitialize
+80037DC0 SoundReset
+80037E8C SoundEnableAllSpuChannels
+80037EE4 SoundMuteAllSpuChannels
+80037F44 SoundEnableEventProcessing — Enables the sound event and sets its enabled flag only when currently disabled.
+80037F88 SoundDisableEventProcessing — Disables the sound event and clears its enabled flag only when currently enabled.
+80037FD8 SoundLoadWdsFile
+800380D0 SoundLoadPartialWdsFile — Rejects duplicate WDS IDs then reserves SPU memory and queues available sample bytes before retaining and linking the copied header.
+800381F4 SoundSpuMemoryAllocateWDS
+80038264 SoundWdsSetTransferParamters
+8003827C SoundTransferWdsPart
+80038310 SoundFreeWdsEntry
+800383EC SoundFindWdsEntry
+80038428 SoundAddSedsEntry
+8003852C SoundRemoveSedsEntry — Stops channels using the target SEDS ID then unlinks the matching entry and reports absent or invalid data.
+80038624 SoundClearSedsEntries — Stops active sound-effect elements and clears the loaded SEDS list head.
+8003864C SoundFindSedsEntry — Returns the loaded SEDS entry whose 16-bit ID matches the supplied entry or null when absent.
+8003869C SoundStopAllPlayback — Releases voices from enabled managers and aborts all currently active sound elements.
+800386C4 SoundSetOutputMode — Replaces output-mode flags from a mode value and reapplies master and reverb settings while recalculating active channel volumes.
+80038824 SoundGetOutputMode — Decodes the sound output flags and returns mode 0 for normal output or mode 1 or 2 for the two alternate channel modes.
+8003885C SoundSetupCdMix
+800388D4 SoundSetAutoReverbEnabled — Sets or clears automatic application of per-manager reverb settings.
+8003890C SoundSetManagerPlaybackEnabled — Clears the manager inhibit bit when enabling playback and sets it when disabling playback.
+80038934 SoundSetReverbModeWithAllocation
+80038AD4 SoundInitiateReverbWorkAreaTransfer
+80038B4C SoundExecuteReverbWorkAreaTransfer
+80038C68 SoundSetMasterVolumeWithFade
+80038D18 SoundSetCdVolumeWithFade
+80038DB4 SoundSetCdAttr
+80038DF4 SoundApplyVolumeSettings
+80038E6C SoundSetVolumeWithPhase
+80038EC0 SoundHeapInitialize
+80038F18 SoundHeapAllocate
+80039024 AllocateSoundHeapFromHighEnd — Allocates aligned cleared memory from the high end of the last fitting sound-heap gap and re-enables sound events only after success.
+80039144 SoundHeapFree
+800391CC SoundHeapGetLargestFreeSpan — Scans every heap gap and returns the largest available span rounded down to 16 bytes.
+80039248 SoundHeapSetBlockMemory
+800392EC SoundHeapClearBlockMemory
+80039360 SoundSpuMemoryInitialize
+800393B8 SoundSpuMemoryAllocateBlock
+800394B8 SoundSpuMemoryAllocateBlockFromTop — Allocates a suitably sized SPU RAM block from the upper end of a free gap and returns its SPU address or zero on failure.
+800395B8 SoundSpuMemoryAllocateBlockAtAddress
+800396E0 SoundSpuMemoryFreeBlock
+80039748 SoundSpuMemorySetBlockCategory — Finds the SPU RAM block at the requested address and updates its one-byte category when present.
+8003977C SoundSpuMemoryGetIdleStatus — Returns zero unconditionally.
+80039784 SoundSpuMemoryGetFreeBlock
+800397C0 SoundSpuMemoryFindBlock
+800397FC CreateAndStartSmdsManager — Creates a dedicated manager for an SMDS score then starts it with the requested initial volume and transition duration.
+80039850 CreateSmdsManager — Allocates an SMDS manager sized for its track count expands optional percussion mappings initializes its tracks and links it into the active-manager list.
+80039910 SoundInitializeAudioManagerInPlace — Clears caller-provided storage and initializes playback state within it while marking the storage as externally owned.
+800399D4 DestroyAudioManager — Stops an active audio manager then removes it from the global list and frees its linked allocations and owned manager block.
+80039A80 SoundStartAudioManager — Resets playback channels and interpolation state then applies the requested initial level transition and marks playback running.
+80039B68 SoundBindWdsSamplesAndStartAudioManager — Resolves each playback channel’s WDS sample and instrument data then starts playback with the requested level transition.
+80039C4C StopAudioManager — Rejects a null manager then clears the active flag and releases all associated SPU voices.
+80039C8C SoundFadeOutAudioManager — Transitions an audio manager’s playback level to zero over the requested number of updates.
+80039CC4 SoundStopAllActiveAudioManagers — Clears the running flag and releases every assigned voice for each active audio manager.
+80039D24 SoundImmediateReturnControlEntry — Returns immediately without reading arguments or changing state.
+80039D2C SetSedsDispatchEnabled — Enables SEDS effect dispatch or stops all pooled SEDS tracks before disabling it.
+80039D78 SetOrGetSedsTrackLimit — Optionally clamps the permanent SEDS track limit to an even value from 4 through 16 and always returns the current limit.
+80039DB8 PlaySedsEffectOnLastVoicePair — Starts an enabled SEDS effect through the final pooled track pair using default volume and pan.
+80039E18 PlaySedsEffectOnVoicePair12 — Starts an enabled SEDS effect through the pair mapped to physical voice 12 using default volume and pan.
+80039E60 PlayDefaultStereoSoundEffect — When sound effects are enabled selects two channels and starts the requested effect at volume 0x6000 and pan 0x4000.
+80039EC4 PlaySedsEffectOnSelectedVoicePair — Normalizes a pair selector and starts an enabled SEDS effect through that pooled track pair with default volume and pan.
+80039F18 SoundPlayEffect — starts a packed sound-effect ID with explicit volume and pan.
+80039F9C PlaySedsEffectWithMixOffsets — Normalizes a pair selector and starts an enabled SEDS effect with two signed eight-bit mix operands converted to fixed point.
+80039FF8 StopAllSedsEffects — Releases every active voice in the permanent SEDS manager and clears its active-track mask.
+8003A094 StopSedsEffectsByBankId — Stops every active pooled SEDS track whose recorded bank identifier matches the supplied SEDS ID.
+8003A14C SoundStopEffectById — stops active sound-effect instances matching a packed effect ID.
+8003A20C StopSelectedSedsVoicePair — Normalizes a pair selector then stops both pooled SEDS tracks in that pair.
+8003A2D4 SoundImmediateReturnVoiceEntry — Returns immediately without reading arguments or changing state.
+8003A2DC SoundImmediateReturnChannelEntry — Returns immediately without reading arguments or changing state.
+8003A2E4 SoundEffectSetPanById — updates pan for active sound-effect events matching a packed ID and marks pan state dirty.
+8003A344 SetSedsVoicePairVolume — Sets the fixed-point volume of both active tracks in a selected SEDS pair and marks their voice volumes dirty.
+8003A3B8 FadeSedsEffectsByPlaybackId — Starts a fixed-duration volume transition on every active pooled SEDS track matching the playback identifier.
+8003A450 FadeSedsVoicePairVolume — Starts a fixed-duration volume transition on both active tracks in a selected SEDS pair.
+8003A4FC SetSedsEffectsByPlaybackIdVolume — Immediately sets the fixed-point volume of every active pooled SEDS track matching the playback identifier.
+8003A55C SetSedsVoicePairPan — Sets the fixed-point pan of both active tracks in a selected SEDS pair and marks their voice volumes dirty.
+8003A5D0 GetActiveSedsVoiceMask — Returns the physical-voice mask used by active pooled SEDS tracks optionally restricted to a playback identifier.
+8003A65C RecycleAndSelectSoundEffectChannels — Releases channels already playing the requested effect and selects a contiguous free or lowest-priority channel range.
+8003A82C SoundIsAudioManagerRunning — Returns the audio manager’s running flag as zero or one.
+8003A838 SoundSetAudioManagerTempoScale — Sets or interpolates the playback tempo scale and immediately recalculates the effective tick rate when no duration is requested.
+8003A89C SoundInstanceSetVolumeFade — sets an audio instance target volume immediately or over a timed fade and resumes it when required.
+8003A948 SoundSetAudioManagerPitchOffset — Sets or interpolates a manager-wide pitch offset and marks every active channel for pitch recalculation when applied immediately.
+8003A9BC SoundSetAudioManagerPanOffset — Sets or interpolates a manager-wide pan offset and marks every active channel for volume recalculation when applied immediately.
+8003AA30 ActivateAudioManager — Applies optional reverb settings then marks active voices for refresh prepares eligible elements and sets the manager active flag.
+8003AAC4 SoundSetAudioManagerChannelPauseMask — Applies a channel pause mask and suspends newly selected active voices or reacquires voices whose pause bits were cleared.
+8003ABE8 SoundSetAudioManagerBookmarkId — Stores the one-byte bookmark identifier used when playback scripts capture restart positions.
+8003ABF0 SoundGetAudioManagerPlaybackTime — Returns the playback-position pointer and decomposes the fixed-point tick counter into sub-240 ticks and base-60 higher units.
+8003AC58 SoundUpdateAudioManagerMinimumWait — Finds the smallest pending wait among active channels and stores it as the manager’s next processing delay.
+8003ACC8 SoundResolveAudioManagerFirstScript — Resolves the first script address for a listed audio manager or for the list head when no manager is supplied.
+8003AD20 SoundApplyAudioManagerSnapshotCommand — Dispatches snapshot control mode zero to discard mode one to save and mode two to restore.
+8003AD98 SoundDiscardAudioManagerSnapshot — Frees saved playback snapshots and clears the snapshot-present flag when one is active.
+8003ADCC SoundSaveAudioManagerSnapshot — Allocates storage for current playback state then copies that state and marks a snapshot available.
+8003AE84 SoundRestoreAudioManagerSnapshot — Releases current voices then restores saved playback state while preserving the current timeline position and reactivating eligible channels.
+8003AF24 SoundArmAudioManagerPositionControl — Records a target sequence position and marks it pending then releases assigned voices and resets the primary playback interpolator to full scale.
+8003AFA0 MarkEligibleTracksForUpdate — Sets the pending-update bit on each active track that is not paused held or otherwise excluded by track state mask 0x30.
+8003AFFC SoundAbortAllVoices
+8003B060 SoundReleaseAllVoices
+8003B0AC ExpandSmdsPercussionMappings — Expands sparse SMDS percussion patch records into the manager's 96-entry note-to-preset pitch and pan lookup table.
+8003B148 CreatePermanentSedsManager — Creates the permanent even-sized SEDS track pool and maps its tracks to sequential high-priority physical voices ending at SPU voice 23.
+8003B1FC SoundDestroyAudioManager — Removes an audio manager from the active list and releases its heap allocation.
+8003B22C InitializeSmdsManagerFromHeader — Copies SMDS tempo track WDS and global reverb defaults into its manager applies enabled reverb state and initializes manager timing.
+8003B32C SoundInitializeDefaultAudioManager — Assigns default sequence identifiers volume limits and reverb selection before initializing playback state.
+8003B370 SoundInitializeAudioManager
+8003B424 InitializeSmdsTracks — Initializes every SMDS track from its script offset and default WDS ID loads preset zero when available and disables tracks with zero offsets.
+8003B644 StartSedsEffect — Resolves a registered SEDS bank and effect entry then initializes its two pooled tracks with scripts volume pan WDS state ownership and physical voice assignments.
+8003B930 FreeAudioManagerLinkedAllocations — Detaches and frees every sound-heap block in an audio manager’s secondary allocation chain.
+8003B97C SoundCopyAudioManagerData
+8003B9E4 SoundAddAudioManagerToList
+8003BA38 SoundRemoveAudioManagerFromList
+8003BB08 MarkActiveTracksDirty — ORs the supplied pending-update flags into every active track in a manager.
+8003BB40 SoundCalculateAudioManagerSize
+8003BB64 SoundOnTransferCallback
+8003BC10 SoundQueueSpuWriteCommand
+8003BC34 SoundQueueSpuReadCommand
+8003BC58 SoundQueueSpuReadDecodedDataAll — Queues an asynchronous transfer that reads all decoded SPU capture data and invokes the supplied completion callback.
+8003BC7C SoundQueueSpuReadDecodedDataCdOnly — Queues an asynchronous transfer that reads CD-only decoded SPU capture data and invokes the supplied completion callback.
+8003BCA0 SoundQueueTransferCommand
+8003BDBC SoundTransferQueueSync
+8003BDF4 SoundTransferNoOp — Returns immediately without changing transfer state.
+8003BDFC WaitOrQuerySoundTransfer — Optionally waits for SPU transfer processing to finish and otherwise returns the active transfer command type while processing remains busy.
+8003BE68 SoundProcessTransferCommand
+8003BFA0 SoundSpuIRQHandler
+8003C010 SoundSetSpuIrqCallback
+8003C020 SoundSequencerCallback240Hz — Runs the 240 Hz sound callback committing prior voice writes advancing manager ticks interpreting ready tracks updating modulators staging new parameters and committing key-offs.
+8003C484 SoundTickInterpolator
+8003C4C4 AdvanceSequencerLogicalTick — Advances per-tick pitch volume and pan slides decrements note and gate durations requests gate key-offs and marks tracks ready for interpretation.
+8003C6E8 InterpretReadySequenceTracks — Executes untimed bytecode for ready tracks then handles the next note rest or tie including duration gate lookahead pitch and modulator restart state.
+8003CC84 ApplyPercussionNoteMapping — Resolves a percussion note through the SMDS mapping table then loads its WDS preset and mapped pitch and pan.
+8003CD00 SoundScriptDefaultHandler
+8003CD08 HandleSequenceOpcode80Rest — Reads a duration then requests key-off and marks the track as resting until that duration expires.
+8003CD30 SoundScriptFermata
+8003CD4C SoundScriptNop3
+8003CD54 HandleSequenceOpcode8D — Conditionally updates the saved sequence position and octave when the operand matches manager state.
+8003CD7C SoundScriptDefaultSkip3
+8003CD84 SoundScriptNop4
+8003CD8C HandleSequenceReturnOrEndTrack — Handles opcode 0x90 by jumping to the saved repeat point and restoring its octave or releasing the voice and ending the track when none exists.
+8003CE04 SoundScriptSaveOctaveAndIP
+8003CE18 SoundScriptSetOctave
+8003CE38 SoundScriptRaiseOctave
+8003CE50 SoundScriptLowerOctave
+8003CE68 HandleSequenceOpcode97 — Configures manager bar and beat timing values including the divisor 192 divided by the second operand.
+8003CE9C HandleSequenceOpcodeF9 — Updates manager bar and beat bookkeeping counters and resets the current timing divisor.
+8003CEC0 SoundScriptSetManagerUnk1a
+8003CED4 SoundScriptAddManagerUnk1a
+8003CEF0 HandleSequenceBeginLoop — Handles opcode 0x98 by pushing a counted-loop frame with its continuation position and current octave.
+8003CF38 HandleSequenceEndLoop — Handles opcode 0x99 by repeating with the saved octave until the count expires then popping the loop frame.
+8003CFA4 HandleSequenceBreakLoopFinal — Handles opcode 0x9A by taking the alternate ending only on the final loop iteration.
+8003CFF0 HandleSequenceOpcode9CPlaySedsEffect — Starts the identified SEDS effect at volume 127 and centered pan.
+8003D034 HandleSequenceOpcode9DStopSedsEffect — Stops every active SEDS track matching the supplied 16-bit playback identifier.
+8003D070 HandleSequenceOpcode9EExternalCallback — Transfers execution to an entry in an external registered SEDS group selected by the command's group and entry operands.
+8003D0E8 HandleSequenceOpcodeA0SetTempo — Replaces the manager tempo byte and immediately recomputes its scaled tick increment.
+8003D110 HandleSequenceOpcodeA1AddTempo — Adds a signed operand to fixed-point tempo state and invalidates the cached tick increment.
+8003D13C HandleSequenceOpcodeA2SlideTempo — Sets a target tempo and computes the logical-tick step needed to reach it over the requested duration.
+8003D17C HandleSequenceOpcodeA6SetManagerVolume — Replaces manager volume with the operand shifted into Q8.24 and marks every active track's volume dirty.
+8003D1BC HandleSequenceOpcodeA7FadeManagerVolume — Starts a manager-volume transition toward the requested target over the encoded duration.
+8003D208 SoundScriptSetUnk62
+8003D21C HandleSequenceOpcodeAAReassignSpuVoice — Releases the track's previous physical SPU voice and assigns the requested valid voice number.
+8003D298 HandleSequenceOpcodeACLoadPreset — Selects and loads a preset from the track's current WDS including sample addresses signed-Q8 tuning and ADSR state.
+8003D2D0 HandleSequenceOpcodeADDurationAdjust — Adds the signed operand to the persistent duration adjustment or resets it when the operand is zero.
+8003D300 HandleSequenceOpcodeAEEnablePercussion — Enables SMDS percussion-note mapping when the manager has a percussion table.
+8003D328 SoundScriptPercussionOff
+8003D340 SoundScriptSetActiveFlag800
+8003D358 SoundScriptClearActiveFlag800
+8003D370 HandleSequenceOpcodeB2EnableFm — Enables SPU pitch modulation for an eligible physical voice paired with its preceding voice.
+8003D3A4 HandleSequenceOpcodeB3DisableFm — Disables SPU pitch modulation for the track's physical voice.
+8003D3D8 HandleSequenceOpcodeB4SetNoiseClock — Sets the global SPU noise clock and enables noise as the track's voice source.
+8003D438 HandleSequenceOpcodeB5AddNoiseClock — Adds the operand to the global SPU noise clock modulo 64 and enables noise for the track.
+8003D4A4 SoundScriptSetVoiceFlags2000AndMode
+8003D4C4 SoundScriptSetVoiceFlags2000ClearMode
+8003D4E4 HandleSequenceOpcodeB8SetReverbParameters — Updates global reverb depth delay and feedback while retaining the current reverb mode.
+8003D53C HandleSequenceOpcodeBAEnableReverb — Enables the track voice's send to global SPU reverb when manager state permits it.
+8003D59C SoundScriptSetVoiceFlags4000ClearMode
+8003D5BC SoundScriptSkip3
+8003D5C4 SoundScriptNop
+8003D5CC SoundScriptNop2
+8003D5D4 SoundScriptCallE5BC
+8003D60C HandleSequenceOpcodeC1SetAdsrModes — Replaces attack sustain and release shape modes from the command operands and marks all ADSR components dirty.
+8003D640 SoundScriptSetAttackTime
+8003D65C SoundScriptSetDecayTime
+8003D678 SoundScriptSetSustain
+8003D694 SoundScriptSetRelease
+8003D6B4 SoundScriptSetSustainLevel
+8003D6D0 SoundScriptSetAdsrDRAndSR
+8003D6F8 SoundScriptSetAttackMode
+8003D714 SoundScriptSetSustainMode
+8003D730 SoundScriptSetReleaseMode
+8003D74C SoundScriptSetUnk6E
+8003D770 SoundScriptAddUnk6E
+8003D79C HandleSequenceOpcodeD2AddFinePitchOffset — Adds a signed one-thirty-second-semitone delta to the track pitch offset.
+8003D7C8 HandleSequenceOpcodeD3AddQ8PitchOffset — Adds the command's signed 16-bit big-endian Q8 semitone delta to the track pitch offset.
+8003D7FC HandleSequenceOpcodeD4StartPitchSlide — Starts a logical-tick pitch slide by a signed semitone delta over the requested duration.
+8003D854 SoundScriptToggleUnk04Bit2
+8003D86C SoundScriptClearUnk04Bit1
+8003D884 HandleSequenceOpcodeD6SetPortamento — Sets the glide duration used to connect future note changes or disables portamento when zero.
+8003D8B8 HandleSequenceOpcodeD8ConfigurePitchModulator — Configures standard pitch modulation in slot zero from depth speed and phase operands.
+8003D9A4 HandleSequenceOpcodeD9ConfigurePitchModulator — Configures general pitch modulation in slot zero with operand-selected waveform direction depth speed and phase.
+8003DAB0 HandleSequenceOpcodeD7SetPitchModulatorRamp — Sets the pitch modulator's ramp-in rate from the encoded operand.
+8003DAEC SoundScriptSetUnkCEAndF6
+8003DB0C SoundScriptClearUnkCEAndF6
+8003DB2C HandleSequenceOpcodeE0SetVolume — Replaces track volume immediately cancels the active volume slide and marks volume dirty.
+8003DB58 HandleSequenceOpcodeE1AddVolume — Adds a signed track-volume delta cancels the active volume slide and marks volume dirty.
+8003DB98 HandleSequenceOpcodeE2SlideVolume — Computes a logical-tick Q8.24 step toward the signed target volume over the requested duration.
+8003DBE4 HandleSequenceOpcodeF8PerNoteVolumeSweep — Captures a per-note starting volume and computes its sweep toward the target over the requested duration.
+8003DC50 HandleSequenceOpcodeE4ConfigureVolumeModulator — Configures standard volume modulation in slot one from depth speed and phase operands.
+8003DD24 HandleSequenceOpcodeE5ConfigureVolumeModulator — Configures general volume modulation in slot one with selected waveform period polarity and phase.
+8003DE18 HandleSequenceOpcodeE3SetVolumeModulatorRamp — Sets the volume modulator's ramp-in rate from the encoded operand.
+8003DE54 SoundScriptSetUnkCEAndUnk116
+8003DE74 SoundScriptClearUnkCEAndUnk116
+8003DE94 SoundScriptSetUnk74
+8003DEB4 HandleSequenceOpcodeE9AddPan — Adds a signed Q8.8 delta to track pan and marks voice volume for recomputation.
+8003DEE4 HandleSequenceOpcodeEASlidePan — Computes the Q8.8 pan step toward a signed target while preserving the retail terminal-delta behavior.
+8003DF3C HandleSequenceOpcodeEBSetPanModulatorRamp — Sets the pan modulator's ramp-in rate from the encoded operand.
+8003DF78 HandleSequenceOpcodeECConfigurePanModulator — Configures standard pan modulation in slot two from depth speed and phase operands.
+8003E04C HandleSequenceOpcodeEDConfigurePanModulator — Configures general pan modulation in slot two with selected waveform period polarity and phase.
+8003E140 SoundScriptSetUnkCEAndUnk136
+8003E160 HandleSequenceOpcodeEFDisablePanModulator — Disables pan-modulator slot two.
+8003E180 HandleSequenceOpcodeF0ConfigureModulator — Selects one of four slots and configures its waveform target polarity and initial control state.
+8003E1F8 HandleSequenceOpcodeF1SetModulatorAmplitude — Sets the selected modulator's period and signed amplitude from the command operands.
+8003E290 SoundComputeLfoStep — conditionally scales a signed LFO step from duration and mode parameters.
+8003E308 HandleSequenceOpcodeF2SetModulatorDelayRamp — Sets the selected modulator's startup delay and ramp-in rate.
+8003E358 SoundScriptNop5
+8003E360 HandleSequenceOpcodeF6EnableModulator — Reinitializes and enables the selected general modulator slot.
+8003E3E0 SoundLfoRestart — restores configured LFO phase/step state, clears its accumulator, and marks it active.
+8003E40C HandleSequenceOpcodeF7DisableModulator — Disables the selected general modulator slot and removes it from the track's active mask.
+8003E44C HandleSequenceOpcodeFCSelectWdsPreset — Selects a WDS ID with fallback to the first loaded bank and immediately loads the requested preset.
+8003E4BC HandleSequenceOpcodeFDSetTempoScale — Sets the manager tempo scale to the operand shifted by eight and leaves it unchanged when the operand is zero.
+8003E4F0 HandleSequenceOpcodeFESelectWds — Selects a WDS ID with fallback to the first loaded bank without reloading the current preset.
+8003E54C HandleSequenceOpcodeFFRetireEndedVoice — Checks the assigned SPU envelope and releases ownership and deactivates the track after the voice reaches zero.
+8003E5BC LoadInstrumentVoiceParameters — Loads an indexed 16-byte WDS preset into a track including sample start and loop addresses signed-Q8 tuning and ADSR parameters then marks the instrument state dirty.
+8003E680 unk_SoundSetFlagsOnActiveVoices
+8003E6C0 SoundSetFlagsOnActiveVoices
+8003E700 SoundClearVoiceDataPointers
+8003E724 SoundAssignVoiceToChannelAndStop
+8003E7E0 SoundAssignVoiceToChannel
+8003E83C SoundReleaseVoiceFromChannel
+8003E8A4 SoundAbortVoiceOnChannel
+8003E900 CommitPendingSpuVoiceWrites — Commits dirty volume pitch sample-address and ADSR fields for all 24 voices rebuilds FM noise and reverb masks then writes pending key-ons.
+8003EB5C CommitPendingSpuVoiceKeyOffs — Applies fast linear release to voices awaiting termination then writes and clears the pending SPU key-off masks.
+8003EBF0 StageTrackVoiceParameters — Derives each active track's gain pan and signed-Q8 pitch from preset tuning note and modulation then stages SPU voice writes and key requests.
+8003EEA0 ConvertQ8SemitoneToSpuPitch — Converts a signed-Q8 semitone value into the 14-bit SPU pitch register using C60 as unity pitch and the driver's octave and fractional-semitone lookup tables.
+8003EF04 SoundAssignVoiceToChannelAndPlay
+8003EFA0 SoundStopVoiceOnChannel
+8003EFE4 UpdateTrackModulators — Advances all four enabled track modulators at 240 Hz and accumulates their signed pitch volume and pan contributions.
+8003F190 SoundModulatorDisable — Clears the modulation slot's enabled bit.
+8003F1A4 SoundModulatorTickUnipolarSquare — Reloads the period at expiration and toggles the output between zero and the configured amplitude.
+8003F1EC SoundModulatorTickBipolarSquare — Reloads the period at expiration and alternates the output between positive and negative amplitude.
+8003F240 SoundModulatorTickTriangle — Reverses the signed step at each period boundary and adds that step to the current output every tick.
+8003F2A0 SoundModulatorTickAlternatingRamp — Alternates step polarity and normal or doubled periods at boundaries then accumulates the selected step each tick.
+8003F308 SoundModulatorTickSawtooth — Adds a fixed step while the period remains and resets the output to zero whenever the period expires.
+8003F354 SoundModulatorTickUnipolarRandomHold — Samples a nonnegative random amplitude at each period boundary and holds it until the next boundary.
+8003F3C0 SoundModulatorTickBipolarRandomHold — Samples a random amplitude spanning negative through positive full scale at each period boundary and holds it.
+8003F42C SeedSoundModulatorRandom — Replaces the modulation random-number state with the supplied seed.
+8003F43C GenerateSoundRandom15 — Advances the sound subsystem’s xorshift seed and returns its low 15 bits.
+8003F468 SoundSetVoiceKeyOn
+8003F484 SoundSetVoiceKeyOff
+8003F4A0 SoundSetReverbVoices
+8003F4BC SoundUnkDebugNoReturn_8003F4BC
+8003F4C4 SoundSetVoiceStartAddress
+8003F4E0 SoundSetVoiceLoopAddress
+8003F4FC SoundSetVoiceVolume
+8003F518 SoundSetVoicePitch
+8003F530 SoundSetVoiceAdsrAttackModeAndRate
+8003F560 SoundSetVoiceAdsrDecayShift
+8003F588 SoundSetVoiceAdsrSustainRateAndDirection
+8003F5BC SoundSetVoiceAdsrReleaseShiftAndMode
+8003F5EC SoundSetVoiceAdsrSustainLevel
+8003F614 SoundValidateFile
+8003F67C SoundUnkDebug0
+8003F684 SoundFileComputeChecksum
+8003F6B0 SoundHandleError
+8003F738 RotMatrix
+8003F8B0 rcos
+8003F8CC rsin
+8003F8E8 bzero
+8003F918 memchr
+8003F968 memcpy
+8003F99C memmove
+8003FA08 memset
+8003FA38 rand
+8003FA68 srand
+8003FA78 strcat
+8003FB20 strcmp
+8003FB84 strcpy
+8003FBC8 strlen
+8003FBF8 Sprintf
+80040454 FlushCache
+80040464 _bu_init
+80040474 OpenEvent
+80040484 CloseEvent
+80040494 TestEvent
+800404A4 EnableEvent
+800404B4 DisableEvent
+800404C4 UnDeliverEvent
+800404D4 EnterCriticalSection
+800404E4 ExitCriticalSection
+800404F4 SwEnterCriticalSection
+80040514 SwExitCriticalSection
+80040534 open
+80040544 read
+80040554 write
+80040564 close
+80040574 format
+80040584 firstfile
+80040594 nextfile
+800405A4 rename
+800405B4 erase
+800405C4 Krom2RawAdd
+800405D4 ChangeClearPAD
+800405F4 SetRCnt
+80040690 GetRCnt
+800406C8 StartRCnt
+800406FC StopRCnt
+80040734 ResetRCnt
+8004076C SetInitPadFlag — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+8004077C ReadInitPadFlag — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+8004078C PAD_init — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040828 InitPAD
+800408C4 StartPAD
+800408F4 DeactivatePadInterface — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+8004092C SetPatchPad — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+800409AC RemovePatchPad — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+800409E4 _Pad1 — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040A4C _IsVSync — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040A8C InitPAD2
+80040A9C StartPAD2
+80040AAC StopPAD2
+80040ABC func_80040ABC
+80040ACC SysEnqIntRP
+80040ADC SysDeqIntRP
+80040AEC EnablePAD
+80040B00 func_80040B00
+80040B14 _patch_pad
+80040B7C _SendPAD — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040BA4 _send_pad — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040C20 SendPadResultMaskPatch — Masks the controller-transfer result with the active send-pad mask before the installed kernel path continues.
+80040C3C SendPAD — Executes the installed low-level controller transfer routine.
+80040C5C _remove_ChgclrPAD — PsyQ libetc PAD (controller) (Ghidra symbol DB, prior RE sessions)
+80040CBC SetDriveSyncCallback — PsyQ libcd (CD-ROM) (Ghidra symbol DB, prior RE sessions)
+80040CD0 SetDriveReadyCallback — PsyQ libcd (CD-ROM) (Ghidra symbol DB, prior RE sessions)
+80040CE4 SetDriveStreamCallback — PsyQ libcd (CD-ROM) (Ghidra symbol DB, prior RE sessions)
+80040D08 CdInit
+80040DA0 def_cbsync
+80040DC8 def_cbready
+80040DF0 def_cbread
+80040E18 DeliverEvent
+80040E28 CdStatus
+80040E38 CdMode
+80040E48 CdLastCom
+80040E58 CdLastPos
+80040E68 CdReset
+80040ED4 CdFlush
+80040EF4 CdSetDebug
+80040F0C CdComstr
+80040F40 CdIntstr
+80040F74 CdSync
+80040F94 CdReady
+80040FB4 CdSyncCallback
+80040FCC CdReadyCallback
+80040FE4 CdControl
+8004111C CdControlF
+80041248 CdControlB
+8004138C CdMix
+800413AC CdGetSector
+800413CC CdGetSector2
+800413EC CdDataCallback
+80041410 CdDataSync
+80041430 CdIntToPos
+80041534 CdPosToInt
+800415B4 getintr
+80041B3C CD_sync
+80041DBC CD_ready
+80042088 CD_cw
+800424A4 CD_vol
+8004252C CD_flush
+8004260C CD_initvol
+80042700 CD_initintr
+80042750 CD_init
+8004293C CD_datasync
+80042AA8 CD_getsector
+80042BA8 CD_getsector2
+80042C98 CD_set_test_parmnum
+80042CA8 callback
+80042D8C puts
+80042DDC putchar
+80042E90 toupper
+80042EC0 tolower
+80042EF0 cb_read
+800431C0 cb_data
+800432BC cd_read_retry
+800434D0 CdReadBreak
+8004356C CdRead
+80043670 CdReadSync
+8004373C CdReadCallback
+80043754 CdReadMode
+8004376C UploadTexturePage — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80043858 UploadPaletteTable — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800438C0 UploadClutPaletteAlternate — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80043928 SetDefDrawEnv
+800439E0 SetDefDispEnv
+80043A1C GetTPage
+80043A58 GetClut
+80043A70 DumpTPage
+80043AD0 DumpClut
+80043B10 NextPrim
+80043B2C IsEndPrim
+80043B48 AddPrim
+80043B84 AddPrims
+80043BC0 CatPrim
+80043BE4 TermPrim
+80043BFC SetSemiTrans
+80043C24 SetShadeTex
+80043C4C SetPolyF3
+80043C60 SetPolyFT3
+80043C74 SetPolyG3
+80043C88 SetPolyGT3
+80043C9C SetPolyF4
+80043CB0 SetPolyFT4
+80043CC4 SetPolyG4
+80043CD8 SetPolyGT4
+80043CEC SetSprt8
+80043D00 SetSprt16
+80043D14 SetSprt
+80043D28 SetTile1
+80043D3C SetTile8
+80043D50 SetTile16
+80043D64 SetTile
+80043D78 SetLineF2
+80043D8C SetLineG2
+80043DA0 SetLineF3
+80043DC0 SetLineG3
+80043DE0 SetLineF4
+80043E00 SetLineG4
+80043E20 SetDrawTPage
+80043E4C SetDrawMove
+80043EAC PrepareVramLoadPacket — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80043F18 MergeGpuPrimitiveChains — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80043F50 DumpDrawEnv
+80044064 DumpDispEnv
+80044110 ResetGraph
+80044294 SetGraphReverse
+800443A8 SetGraphDebug
+8004440C SetGraphQueue — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800444B8 GetGraphType — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800444C8 GetGraphDebug
+800444D8 DrawSyncCallback
+80044534 SetDispMask
+800445D0 DrawSync
+8004463C checkRECT — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80044764 ClearImage
+800447F8 ClearImage2
+80044894 LoadImage
+800448F8 StoreImage
+8004495C MoveImage
+80044A20 ClearOTag
+80044AD8 ClearOTagR
+80044B70 DrawPrim
+80044BD0 DrawOTag
+80044C44 PutDrawEnv
+80044D48 DrawOTagEnv
+80044E64 GetDrawEnv
+80044E9C PutDispEnv
+80045344 GetDispEnv
+8004537C ReadOrderingDrawEndpoint — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800453AC ConfigureTextureWindow — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800453E8 ConfigureDrawingArea — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004546C ConfigureDrawingOffset — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800454B0 SetPriority — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800454DC SetDrawMode
+80045534 ConfigureDrawingEnvironment — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004574C SetDrawEnv2 — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800459DC get_mode — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045A34 get_cs — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045B00 get_ce — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045BCC get_ofs — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045C10 get_tw — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045C94 get_dx — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045D44 _status — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045D5C _otc — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80045E44 _clr — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800460A0 _dws — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800462DC _drs — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046560 _ctl — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046588 _getctl — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004659C _cwb — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800465EC _cwc — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046638 _param — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046668 _addque — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004668C _addque2 — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004696C _exeque — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046C58 _reset — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046DB4 _sync — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046EFC set_alarm — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80046F30 get_alarm — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004709C _version — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80047178 FillGpuPacketMemory — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800471A4 GPU_cw — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions); BIOS thunk A0:0x49
+800471B4 OpenTIM
+800471C4 ReadTIM
+8004722C DecodeTmdModel — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+8004726C DecodeTmdStream — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80047518 get_tim_addr — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80047638 get_tmd_addr — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+800477D0 unpack_packet — PsyQ libgpu/libgs (primitives, TIM/TMD) (Ghidra symbol DB, prior RE sessions)
+80048AB0 ConfigureFogInterval — PsyQ libgte C wrappers / libmath (Ghidra symbol DB, prior RE sessions)
+80048BC4 InitGeom
+80048C4C SquareRoot0
+80048CDC InvSquareRoot
+80048D68 VectorNormalS
+80048D7C VectorNormal
+80048DA8 VectorNormalSS
+80048DD8 NormalizeLoadedGteVector — Computes a reciprocal square root from the loaded vector's squared magnitude and scales all three components to Q12 unit length.
+80048E94 NormalizeMatrixBasis — PsyQ libgte C wrappers / libmath (Ghidra symbol DB, prior RE sessions)
+80048F7C LoadAverage12
+80048FCC LoadAverage0
+8004901C LoadAverageShort12 — PsyQ libgte C wrappers / libmath (Ghidra symbol DB, prior RE sessions)
+800490A4 LoadAverageShort0 — PsyQ libgte C wrappers / libmath (Ghidra symbol DB, prior RE sessions)
+8004912C LoadAverageByte
+8004918C LoadAverageCol
+8004920C MulMatrix0
+8004931C CompMatrix
+8004947C ApplyMatrixLV
+800495DC ApplyRotMatrix
+8004960C PushMatrix
+800496AC PopMatrix
+8004974C ScaleMatrixL
+8004987C SetMulMatrix
+8004998C ApplyRotMatrixLV
+80049ACC MulMatrix
+80049BDC MulMatrix2
+80049CEC ApplyMatrix
+80049D3C ApplyMatrixSV
+80049D9C TransMatrix
+80049DCC ScaleMatrix
+80049EFC SetRotMatrix
+80049F2C SetLightMatrix
+80049F5C SetColorMatrix
+80049F8C SetTransMatrix
+80049FAC SetVertex0
+80049FBC SetVertex1
+80049FCC SetVertex2
+80049FDC SetVertexTri
+80049FFC SetRGBfifo
+8004A010 SetIR123
+8004A024 SetIR0
+8004A030 SetSZfifo3
+8004A044 SetSZfifo4
+8004A05C SetSXSYfifo
+8004A070 SetRii
+8004A084 SetMAC123
+8004A098 SetData32
+8004A0A4 SetDQA
+8004A0B0 SetDQB
+8004A0BC ReadGeomOffset
+8004A0DC ReadGeomScreen
+8004A0EC SetBackColor
+8004A10C SetFarColor
+8004A12C SetGeomOffset
+8004A14C SetGeomScreen
+8004A15C LocalLight
+8004A180 DpqColor
+8004A19C NormalColor
+8004A1B8 NormalColor3
+8004A1F4 NormalColorDpq
+8004A218 NormalColorDpq3
+8004A260 NormalLightCol
+8004A280 NormalColorCol3
+8004A2C4 ColorDpq
+8004A2EC ColorCol
+8004A310 AverageSZ3
+8004A320 AverageSZ4
+8004A33C LightColor
+8004A364 DpqColorLight
+8004A38C DpqColor3
+8004A3C8 Intpl
+8004A3EC Square12
+8004A414 Square0
+8004A43C AverageZ3
+8004A45C AverageZ4
+8004A480 OuterProduct12
+8004A4D8 OuterProduct0
+8004A530 Lzc
+8004A54C RotTransSV
+8004A57C SquareSS12
+8004A5B4 SquareSS0
+8004A5EC SquareSL12
+8004A61C SquareSL0
+8004A64C RotTransPers
+8004A67C RotTransPers3
+8004A6DC RotTrans
+8004A70C NormalClip
+8004A73C RotTransPers4
+8004A7BC RotAverage4
+8004A83C RotAverageNclip4
+8004A8EC TransposeMatrix
+8004A92C RotMatrixYXZ
+8004ABBC RotMatrixZYX
+8004AE4C RotMatrixX
+8004AFEC RotMatrixY
+8004B18C RotMatrixZ
+8004B32C ratan2
+8004B4AC _patch_gte — PsyQ libetc (vsync/intr) + libc (Ghidra symbol DB, prior RE sessions)
+8004B51C GteExceptionContextSavePatch — Locates the active exception frame and saves AT V0 V1 and RA before reading the processor cause register.
+8004B54C Vsync
+8004B694 v_wait
+8004B730 ChangeClearRCnt
+8004B740 ResetCallback
+8004B770 InterruptCallback
+8004B7A0 DMACallback
+8004B7D0 RecordVerticalRetrace — PsyQ libetc (vsync/intr) + libc (Ghidra symbol DB, prior RE sessions)
+8004B804 VSyncCallbacks — PsyQ libetc (vsync/intr) + libc (Ghidra symbol DB, prior RE sessions)
+8004B834 StopCallback
+8004B864 RestartCallback
+8004B894 CheckCallback
+8004B8A4 GetIntrMask
+8004B8BC SetIntrMask
+8004B8D8 startIntr
+8004B9B4 trapIntr
+8004BB9C setIntr
+8004BCF0 stopIntr
+8004BD9C restartIntr
+8004BE24 memclrIntr
+8004BE50 setjmp
+8004BE8C longjmp
+8004BEC0 func_8004BEC0
+8004BED0 ReservedInstructionTrapStub — Executes a conditional branch with a reserved opcode in its delay slot and therefore raises a reserved-instruction exception before completion.
+8004BED8 func_8004BED8
+8004BEF0 ReturnFromException
+8004BF00 ResetEntryInt
+8004BF10 HookEntryInt
+8004BF20 startIntrVSync
+8004BF78 trapIntrVSync
+8004BFF0 setIntrVSync
+8004C01C memclrIntrVSync
+8004C048 startIntrDMA
+8004C098 trapIntrDMA
+8004C21C setIntrDMA
+8004C2C4 memclrIntrDMA
+8004C2F0 SetVideoMode
+8004C308 GetVideoMode
+8004C318 PCopen
+8004C338 PCclose
+8004C348 PClseek
+8004C36C PCcreate
+8004C38C PCinit
+8004C398 PCread
+8004C458 _SN_read — PsyQ libetc (vsync/intr) + libc (Ghidra symbol DB, prior RE sessions)
+8004C470 PCwrite
+8004C530 _SN_write — PsyQ libetc (vsync/intr) + libc (Ghidra symbol DB, prior RE sessions)
+8004C548 SpuInit
+8004C568 _SpuInit
+8004C660 SpuStart
+8004C6DC _spu_init
+8004C970 _spu_FwriteByIO
+8004CB3C _spu_FiDMA
+8004CBFC _spu_Fr_
+8004CCA8 _spu_t
+8004CF38 _spu_Fw
+8004CFC0 _spu_Fr
+8004D028 _spu_FsetRXX
+8004D070 _spu_FsetRXXa
+8004D114 _spu_FgetRXXa
+8004D150 _spu_FsetPCR
+8004D1B0 _spu_FsetDelayW
+8004D1DC _spu_FsetDelayR
+8004D208 _spu_Fw1ts
+8004D270 _SpuDataCallback
+8004D294 SpuQuit
+8004D310 SpuInitMalloc
+8004D364 SpuSetNoiseClock
+8004D3B4 SpuSetReverb
+8004D484 _SpuIsInAllocateArea
+8004D504 _SpuIsInAllocateArea_
+8004D590 SpuReadDecodedData
+8004D600 SpuSetIRQ
+8004D740 SpuSetIRQCallback
+8004D784 _SpuCallback
+8004D7A8 SpuGetVoiceEnvelopeAttr
+8004D818 SpuRead
+8004D878 SpuWrite
+8004D8D8 SpuSetTransferStartAddr
+8004D930 SpuSetTransferMode
+8004D964 SpuSetTransferCallback
+8004D988 SpuSetCommonAttr
+8004DD1C SpuSetReverbModeType
+8004DEF8 _spu_setReverbAttr
+8004E3C8 SpuClearReverbWorkArea
+8004E564 WaitEvent
+8004E574 SpuSetReverbModeDepth
+8004E5A0 SpuSetReverbModeDelayTime
+8004E6B8 SpuSetReverbModeFeedback
+8004E774 SpuGetReverbModeType
+8004E784 _card_info
+8004E794 InitCARD
+8004E7E8 StartCARD
+8004E820 StopCARD
+8004E850 InitCARD2
+8004E860 StartCARD2
+8004E870 StopCARD2
+8004E880 CardFastTrackWaitPatch — Waits for the card busy bit to clear when required then resumes the saved fast-track continuation; otherwise it returns immediately.
+8004E8D8 _patch_card — Installs the card fast-track wait path into kernel memory under a critical section and flushes the instruction cache.
+8004E960 CardHandlerDelayTrampoline — Executes the displaced card-handler instructions then waits 200 decrement iterations before returning.
+8004E990 _patch_card2 — Atomically swaps the card-handler prologue with the delay trampoline and flushes the instruction cache so repeated execution toggles installation.
+8004E9FC CardLongBusyDelay — Spins on a decrementing counter initialized to 0x320000 before returning.
+8004EA20 _ExitCard — Replaces three kernel card-exit instructions with no-operations under a critical section then flushes the instruction cache.
+8004EAA0 g_GameStateOverlayArchiveOffsets
+8004EABC g_PublishedByLogoCompressed
+8004F2C0 g_KernelErrorDescriptions
+8004F2D8 g_KernelMenuCurChoice
+8004F30C g_GamePartySkinsInitialized
+8004F34C g_GameSceneMapNum
+8004F360 g_GameHasLoadedWDS
+8004F374 g_PartyIsWaitingForStreamData
+8004FBD8 g_GfxPauseLettersCompressed
+8004FDF0 g_ArchiveTable
+8004FDF4 g_ArchiveHeader
+8004FDF8 g_ArchiveCurFileSize
+8004FE04 g_ArchiveCurFileSector
+8004FE14 g_CurArchiveOffset
+8004FE1C g_ArchiveCdDriveState
+8004FE20 g_ArchiveCdDriveError
+8004FE30 g_ArchiveCurStreamFile
+8004FE48 g_ArchiveDebugTable
+8004FE50 g_UnknownHandlerBlocks
+80050108 g_ModelTextureMode
+8005010C g_ModelClutMode
+80050140 g_HeapContentTypeNames
+80050190 g_SystemPaletteData
+800501E8 g_ControllerButtonMasks
+80050208 g_ControllerIsStateStackFull
+8005020C g_ControllerStickToAnalogX
+8005021C g_ControllerStickToAnalogY
+80050238 g_ControllerButtonMappings
+80050598 g_FontClutData
+80050624 g_SoundScriptHandlers
+800508E4 g_pSoundSpuRegisters
+800508E8 g_ReverbWorkAreaSizes
+800563FC g_pInterruptStatusRegister
+80056400 g_pRCounters
+80056404 g_InterruptStatusMasks
+80056420 setloc
+800564A8 CD_cbsync
+800564AC CD_cbready
+800564B4 CD_debug
+800564B8 CD_status
+800564BC CD_status1
+800564C0 CD_nopen
+800564C4 CD_pos
+800564C8 CD_mode
+800564C9 CD_com
+800564D0 CD_comstr
+80056550 CD_intstr
+800565F0 ComAttr
+80056770 reg0
+80056774 reg1
+80056778 reg2
+8005677C reg3
+80056780 com_delay
+80056784 _spu
+80056788 Intr
+800567A4 cdrom_delay
+800567A8 d_pcr
+800567AC d3_madr
+800567B0 d3_bcr
+800567B4 d3_chcr
+800567C1 _ctype_
+80056844 CD_cbread
+80056848 ReadAttr
+800568CC g_GpuPrintf
+800568D2 g_GraphDebugLevel
+800568DC g_DrawSyncCallbackFn
+800568E0 g_GpuDrawEnv
+8005693C g_GpuDispEnv
+8005783C g_pGPUSTAT
+80057840 g_pTMR_HRETRACE_VAL
+80057844 g_HsyncInterruptCount
+80057848 g_VsyncPrevInterruptCount
+800578A4 g_InterruptEnvironment
+8005890C g_InterruptControl
+8005892C g_pInterruptControl
+80058930 g_pI_STAT
+80058934 g_pI_MASK
+80058938 g_pDMA_DPCR
+80058940 g_VsyncInterruptCallbacks
+80058960 g_VsyncInterruptCount
+80058964 g_pTMR_HRETRACE_MODE
+80058968 g_pDMA_DICR
+8005896C g_DmaInterruptCallbacks
+80058990 g_VideoMode
+8005899C _spu_EVdma
+800589A0 _spu_keystat
+800589A4 _spu_trans_mode
+800589A8 _spu_rev_flag
+800589AC _spu_rev_reserve_wa
+800589B0 _spu_rev_offsetaddr
+800589B4 _spu_rev_attr
+800589C8 _spu_RQvoice
+800589CC _spu_RQmask
+800589D0 _spu_voice_centerNote
+80058A00 _spu_zerobuf
+80058E00 _spu_env
+80058E04 g_SpuRunning
+80058E08 _spu_RXX
+80058E0C _spu_madr
+80058E10 _spu_bcr
+80058E14 _spu_chcr
+80058E18 _spu_sys_pcr
+80058E1C _spu_delay
+80058E20 _spu_tsa
+80058E24 _spu_transMode
+80058E28 _spu_addrMode
+80058E2C _spu_mem_mode
+80058E30 _spu_mem_mode_plus
+80058E34 _spu_mem_mode_unit
+80058E38 _spu_mem_mode_unitM
+80058E3C _spu_inTransfer
+80058E40 _spu_transferCallback
+80058E44 _spu_IRQCallback
+80058E48 _spu_dummy
+80058E58 _spu_dma_mode
+80058E5C _spu_transfer_startaddr
+80058E60 _spu_transfer_time
+80058E64 _spu_AllocBlockNum
+80058E68 _spu_AllocLastNum
+80058E6C _spu_memList
+80058E70 _spu_rev_startaddr
+80058EC0 _spu_rev_param
+80059178 g_MenuDebugEnabled
+80059188 g_NumTimerWorkListEntries
+8005918C g_NumWorkListEntries
+800592B8 g_HeapDebugPrintfFn
+800592BC g_CurGameStateOverlayBuffer
+800592C0 g_CurGameStateOverlayID
+800592CC g_KernelMenuCurRenderEnvironment
+800592D0 g_KernelMenuIsRunning
+800592F8 g_GfxCurContext
+800592FC g_GfxWorkBufferSize
+80059308 g_ModelTexPage
+8005930C g_ModelClut
+80059310 g_ModelBaseTexPage
+80059314 g_ModelBaseClut
+80059318 g_HeapCurContentType
+8005931C g_HeapCurUser
+80059320 g_Heap
+8005932C g_HeapNeedsConsolidation
+80059330 g_HeapIsErrorHandlerOff
+80059334 g_SymbolData
+80059338 g_SymbolDataEndAddress
+8005933C g_HeapLastAllocSize
+80059340 g_HeapLastAllocSrcAddr
+80059344 D_80059344
+80059348 g_HeapDebugDumpFileHandle
+80059360 g_SystemDataEntries
+80059368 g_SystemDataFile
+8005936C g_SystemFontFile
+80059374 g_C1PrevButtonState
+80059378 g_C2PrevButtonState
+8005937C g_ControllerNumStates
+80059380 g_ControllerCurStateWriteIndex
+80059384 g_ControllerCurStateReadIndex
+80059388 g_ControllerType
+80059394 g_Font
+80059398 g_FontClutDest
+80059409 g_SoundReverbType
+8005940A g_SoundReverbDelay
+8005940B g_SoundReverbFeedback
+8005940C g_SoundReverbDepth
+80059410 g_SoundHeapHead
+80059414 g_SystemPalette2
+80059424 g_pCurModelPacket
+80059428 g_WorkListCurTimer
+80059430 g_C1LeftStickXAxis
+80059434 g_C2LeftStickXAxis
+80059438 g_C1LeftStickYAxis
+8005943C g_C2LeftStickYAxis
+80059440 g_SoundSedsLinkedList
+80059444 g_C1RightStickXAxis
+80059448 g_C2RightStickXAxis
+8005944C g_C1RightStickYAxis
+80059450 g_C2RightStickYAxis
+80059458 g_SoundTransferQueue
+8005948C g_C1ButtonStateReleased
+80059490 g_C2ButtonStateReleased
+80059498 g_pCurModelLightData
+800594A4 g_C1ButtonStatePressedOnce
+800594A8 g_C2ButtonStatePressedOnce
+800594B4 g_GfxWorkBuffers
+800594B8 g_GfxWorkBuffer2
+800594C4 g_GfxImageList
+800594D8 g_SoundReverbMemoryHandle
+800594F4 g_SoundTransferQueueWriteIndex
+800594FC g_SoundKeyOnFlags
+80059500 g_SoundSpuErrorId
+8005950C g_SoundSpuIrqCallbackFn
+80059510 g_SoundTransferQueueReadIndex
+80059514 g_SoundSpuIRQCount
+8005951C g_SoundHeapSize
+8005952C g_pCurModelNormals
+80059530 g_SoundCdRomAttenuation
+80059534 g_GfxCurWorkBufferEnd
+8005953C g_pCurModelVertices
+80059550 g_SoundKeyOffFlags
+80059554 g_unk_VoicesNeedingProcessing
+80059558 g_SoundWdsLinkedList
+80059564 g_SoundAudioManagerListHead
+8005956C g_GfxCurOT
+80059570 g_C1ButtonState
+80059574 g_C2ButtonState
+8005957C g_SoundControlFlags
+80059580 g_GfxCurWorkBuffer
+80059584 g_SoundWdsCurSpuAddress
+80059588 g_SoundWdsRemainingBytes
+8005958C g_TimerWorkList
+80059594 g_WorkList
+800595A4 g_SoundUploadDestBuffer
+800595BC g_unk_SoundEvent
+800595D4 g_SystemPalette1
+800595DC g_SoundUploadSourceAddr
+800595E0 g_SoundUploadBytesRemaining
+800595E4 g_SoundHeapEnd
+800595E8 g_KernelMenuRenderEnvironments
+80059F10 g_ArchiveCdCurLocation
+80059FA4 g_HeapUserContentNames
+80059FCC g_HeapDelayedFreeBlocksHead
+8005A0FC g_C1ButtonStatesPressed
+8005A11C g_C2ButtonStatesPressed
+8005A13C g_C1ButtonStatesReleased
+8005A15C g_C2ButtonStatesReleased
+8005A17C g_C1ButtonStatesPressedOnce
+8005A19C g_C2ButtonStatesPressedOnce
+8005A1FC g_RandomSeed
+8005A210 Result
+8005A228 Alarm
+8005A37C g_GpuCurTIMHandle
+8005A39C g_pGameState
+8005A3C0 g_SoundVolumeController
+8005A414 g_PartyDataBuffers
+8005A4C8 _spu_RQ
+8006252C g_SoundChannels
+8006258C g_GameCurLoadedWDS
+80062590 g_GamePartyMembers
+800625A0 g_Menu
+800625A4 g_PartyStreamDataQueue
+800625FC g_C1Buffer
+8006261E g_C2Buffer
+80065AFC g_PartyStreamDataPointers
+8006D634 g_GameState
+8006F9FC g_SoundSpuMemoryBlocks
+8006FABC g_GamePartyMemberSkins
+8006FAC8 g_SoundSpuMemoryTableStart

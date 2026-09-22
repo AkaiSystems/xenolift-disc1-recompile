@@ -1,0 +1,62 @@
+SRC_SHA=01b37d7c7252f8a29650cf8f0a27875a0ef1ea15dc62870a55417a77b194daa6
+TREE_VERIFIED (the R1386 tree - the arm+bell+decoupled announcement is in place)
+f15arm marker: 1 (expect 1)
+R1386 markers: 3 (expect 3)
+f15post-R1386 print: 1 (expect 1)
+r1385_armed refs: 4 (expect 4)
+bell line: 1 (expect 1)
+===RUN467=== run-only (RUN_BUDGET_S=190, no build)
+RUN_RC=0
+===DIGEST467=== the R1385 verdict: the completion announcement + the wait's own camera
+--- THE FIRE + THE ANNOUNCEMENT:
+30390:[f15arm] R1384: file-15 posture armed on FIRST PASS: FDF8 0->92180, act=1 pend=1 irq-force=1 (the fld-rearm bell); FE08=8007F2F8
+--- THE WAIT'S OWN CAMERA (waitbr R1306: the ACTUAL LegacyCdDataWait return values; ret==0 = the wait exits):
+8
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000000 FE04=00000004 FDF8=00000000 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=2 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000000 FE04=00000005 FDF8=00000000 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=3 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000000 FE04=00000007 FDF8=00000000 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=4 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000000 FE04=0001A8D2 FDF8=0000F0F0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=5 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000000 FE04=0001A8D2 FDF8=0000F0F0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=6 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+[waitbr] R1306 LegacyCdDataWait RETURN: ret=00000000 FDFC=00000000 FE1C=00000002 FE04=0001A8F1 FDF8=00025DF0 A22C=00000000 d3_chcr_ptr=1F8010B8 pointee=00000000 bit24=0 d3_madr=1F8010B0 d3_bcr=1F8010B4 r31=80041420 n=7 - exit needs ret==0+FDFC==0+FE1C==0; if all three hold here the loop label is wrong and the caller branch is the stall
+--- THE NEAR-MISS CAMERA:
+30391:[f15near] R1383 near-miss #1: fe08=8007F2F8 seek=108995 act=1 pend=1 sched=0 since=0 fired=1
+--- THE STREAM TAIL (sectors + drain):
+5
+42
+31118:[req] FDF8 00001014->00000814 at fn 0x800415B4
+31132:[req] FDF8 00000814->00000014 at fn 0x800415B4
+31149:[req] FDF8 00000014->FFFFF814 at fn 0x80040FCC
+31150:[req] FDF8 FFFFF814->00000000 at fn 0x8002A394
+--- THE WAIT LOOP: mvloop tail (did the n-counter pass the arm era? does A22C/FE1C move?):
+arm at line 30390
+31932:[mvloop] pre-movie polling n=41943040 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=80036BE0 r31=80036BE8 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+31935:[mvloop] pre-movie polling n=42991616 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=800370DC r31=80036708 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+31938:[mvloop] pre-movie polling n=44040192 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=80040030 r31=800403C8 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+31940:[mvloop] pre-movie polling n=45088768 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=80036760 r31=80036BE8 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+--- mvloop receipts AFTER the arm (the loop exit evidence):
+832:[mvloop] pre-movie polling n=7340032 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=800317E0 r31=800373F4 padcell=FFF74000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+869:[mvloop] pre-movie polling n=8388608 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=800366F0 r31=80036BE8 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+880:[mvloop] pre-movie polling n=9437184 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=80036760 r31=80036BE8 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+1052:[mvloop] pre-movie polling n=11534336 (mod6=1 player=0 rs0=22163C28 lim=134744836 | R870 loop-id fn=80045C20 r31=800457E4 padcell=FFFF4000 FE1C=00000000 | R874 DOOR: FDFC=00000000 FE48=00000001 FE30=00000000 | R878 CD-STATE: seek=109041 last_cmd=09 pend=0 sched=0 FE04=0001A9F1 FDF8=00000000 A22C=00000002 A228=00000000 - spin exits when FDFC=0+LegacyCdDataWait-ret=0+FE1C=0; A22C=CD-data-arrived flag LegacyCdDataWait times out on | R894 SLICE-GATE: cntdn=03FF7F14 cnt=A8200B50 | R894 ARCH-REQ: FDF0=00000000 FDF4=00000000 FE14=00000000)
+--- MDEC/movie activity (the movie player would be the next consumer):
+3
+--- the game acks during the stream (pendclr tail):
+31157:[pendclr] R1167 pending INT1 (site=1 cmd=06 LBA=108996) CLEARED @t=6s, 0s after armed, 1 pumps since set, clears=96
+31188:[pendclr] R1167 pending INT1 (site=1 cmd=06 LBA=108996) CLEARED @t=6s, 0s after armed, 1 pumps since set, clears=97
+31213:[pendclr] R1167 pending INT3 (site=5 cmd=09 LBA=109041) CLEARED @t=6s, 0s after armed, 0 pumps since set, clears=98
+31216:[pendclr] R1167 pending INT2 (site=2 cmd=09 LBA=109041) CLEARED @t=6s, 0s after armed, 0 pumps since set, clears=99
+--- forward execution after the arm (fvp/mod6/READ ISSUED/seek past 108999):
+135:[fld2sig] sched=1 seek=109003 pend=1 arm1=0 loaded=1 data=0/2060 cmd=06 FDF8=75796 FE04=0001a9cb FDFC=0 FE1C=0 FE20=3 resp_n=3
+--- state cameras after the arm (A22C/FE1C/wedgespin/abort):
+829:[cd] wl: R1210 h2 fallback DECLINED post-movie (c25: fallback starter round = state-10 fault injector; game chain advancing natively)
+903:[wedgespin] R1195 read32 a=0x80077014 (cur_fn 0x800317E0 depth=1 streak=5 hits=154158028)
+904:[wedgespin] R1195 read32 off=0x80077014 (NEW, cur_fn 0x800317E0 depth=1 streak=5)
+905:[wedgespin] R1195 read32 off=0x80077014 (rep, cur_fn 0x800317E0 depth=1 streak=5)
+906:[wedgespin] R1195 read32 a=0x80059658 (cur_fn 0x800317E0 depth=1 streak=5 hits=154158030)
+907:[wedgespin] R1195 read32 off=0x80059658 (NEW, cur_fn 0x800317E0 depth=1 streak=5)
+--- death receipts:
+31997:[rungasp] R806 process exit status=137 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+--- tree sha:
+expected=01b37d7c7252f8a29650cf8f0a27875a0ef1ea15dc62870a55417a77b194daa6
+01b37d7c7252f8a29650cf8f0a27875a0ef1ea15dc62870a55417a77b194daa6
+===PRESERVE467=== c118 protocol

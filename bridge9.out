@@ -1,0 +1,2757 @@
+[bridge9] === v9 AUTOPILOT auto-lab start Thu Sep 17 05:36:24 CDT 2026 cycles=45 conv=6aa26c825d5b4135ae6b48b5 ===
+[05:36:41] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=1509 chars
+[05:36:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 156s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=1361 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:39:18] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 109s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1351 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:41:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 217s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=1514 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:44:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 4 running... 30s
+[bridge9] cycle 4 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 187s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=1373 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:47:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 167s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=1511 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:50:38] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 209s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=1567 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:54:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 189s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=1824 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[05:57:15] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 8 running... 30s
+[bridge9] cycle 8 running... 60s
+[bridge9] cycle 8 running... 90s
+[bridge9] cycle 8 running... 120s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 265s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=1517 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:01:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 9 running... 30s
+[bridge9] cycle 9 running... 60s
+[bridge9] cycle 9 running... 90s
+[bridge9] cycle 9 running... 120s
+[bridge9] cycle 9 running... 150s
+[bridge9] cycle 9 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 299s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=1627 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:06:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 123s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=1503 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:08:42] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 122s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=1661 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:10:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 249s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=1749 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:14:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 78s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=1948 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:16:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 259s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=1710 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:20:30] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 15 running... 30s
+[bridge9] cycle 15 running... 60s
+[bridge9] cycle 15 running... 90s
+[bridge9] cycle 15 running... 120s
+[bridge9] cycle 15 running... 150s
+[bridge9] cycle 15 running... 180s
+[bridge9] cycle 15 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 315s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=1596 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:25:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 181s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=1849 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:28:46] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 91s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=1857 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:30:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 18 running... 30s
+[bridge9] cycle 18 running... 60s
+[bridge9] cycle 18 running... 90s
+[bridge9] cycle 18 running... 120s
+[bridge9] cycle 18 running... 150s
+[bridge9] cycle 18 running... 180s
+[bridge9] cycle 18 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 306s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=1612 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:35:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 112s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=1892 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:37:15] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 141s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=1839 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:39:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 142s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=1953 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:41:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 60s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=1898 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:42:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 154s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=1778 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:45:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 116s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=1911 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:47:29] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 109s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=1914 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:49:18] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 124s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=1945 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:51:21] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 75s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=2348 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:52:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 28 running... 30s
+[bridge9] cycle 28 running... 60s
+[bridge9] cycle 28 running... 90s
+[bridge9] cycle 28 running... 120s
+[bridge9] cycle 28 running... 150s
+[bridge9] cycle 28 running... 180s
+[bridge9] cycle 28 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 323s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=1693 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[06:57:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 137s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=2394 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:00:16] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 146s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=2350 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:02:42] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 196s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=2040 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:05:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 32 running... 30s
+[bridge9] cycle 32 running... 60s
+[bridge9] cycle 32 running... 90s
+[bridge9] cycle 32 running... 120s
+[bridge9] cycle 32 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 301s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=1916 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:11:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 128s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=2057 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:13:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 136s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=2198 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:15:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 113s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=2203 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:17:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 36 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 140s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=1805 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:19:37] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 158s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=2207 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:22:14] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 38 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 146s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=2129 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:24:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 140s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1808 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:27:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 86s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=2170 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:28:26] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 41 running... 30s
+[bridge9] cycle 41 running... 60s
+[bridge9] cycle 41 running... 90s
+[bridge9] cycle 41 running... 120s
+[bridge9] cycle 41 running... 150s
+[bridge9] cycle 41 running... 180s
+[bridge9] cycle 41 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 368s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=2205 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:34:34] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 42 running... 30s
+[bridge9] cycle 42 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 152s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=2115 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:37:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 111s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=2097 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:38:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 122s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=2485 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:40:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 85s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[07:42:24] === run_bridge exited (rc=0) — restarting in 10s ===
+[07:43:25] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=2318 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:43:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 1 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=2205 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:46:28] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 2 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 140s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=2231 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:48:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 3 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=2339 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:51:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 73s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=2400 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:53:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 64s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=2250 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:54:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 6 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 176s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=2039 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:57:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 151s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=2302 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[07:59:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 102s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=2013 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:01:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 113s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=2423 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:03:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 60s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=1925 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:04:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 11 running... 30s
+[bridge9] cycle 11 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 220s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=2348 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:07:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 128s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=2272 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:09:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 103s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=2297 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:11:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 165s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=2060 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:14:26] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 15 running... 30s
+[bridge9] cycle 15 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 189s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=2010 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:17:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 104s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=2103 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:19:19] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 130s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=2263 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:21:29] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 404s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=1968 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:28:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 149s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=1648 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:30:43] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 142s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=1907 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:33:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 284s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=2036 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:37:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 22 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 236s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=1853 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:41:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 227s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=1939 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:45:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 148s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=2154 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:47:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 151s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=1931 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:50:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 26 running... 30s
+[bridge9] cycle 26 running... 60s
+[bridge9] cycle 26 running... 90s
+[bridge9] cycle 26 running... 120s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 276s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=1977 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:55:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 233s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=1926 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[08:58:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 212s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=1894 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:02:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 207s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=1889 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:05:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 30 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 243s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=1923 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:10:02] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 159s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=1881 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:12:40] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 225s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=1972 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:16:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 174s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=2197 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:19:20] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 220s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=2140 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:22:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 193s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=2032 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:26:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 230s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=1963 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:30:02] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 37 running... 30s
+[bridge9] cycle 37 running... 60s
+[bridge9] cycle 37 running... 90s
+[bridge9] cycle 37 running... 120s
+[bridge9] cycle 37 running... 150s
+[bridge9] cycle 37 running... 180s
+[bridge9] cycle 37 running... 210s
+[bridge9] cycle 37 running... 240s
+[bridge9] WATCHDOG: cycle 37 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 342s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=2367 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:35:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 38 running... 30s
+[bridge9] cycle 38 running... 60s
+[bridge9] cycle 38 running... 90s
+[bridge9] cycle 38 running... 120s
+[bridge9] cycle 38 running... 150s
+[bridge9] cycle 38 running... 180s
+[bridge9] cycle 38 running... 210s
+[bridge9] cycle 38 running... 240s
+[bridge9] WATCHDOG: cycle 38 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 318s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=2450 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:41:03] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 219s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1986 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:44:42] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=2136 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:47:46] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=2202 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:50:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 186s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=1994 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:53:54] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 43 running... 30s
+[bridge9] cycle 43 running... 60s
+[bridge9] cycle 43 running... 90s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 318s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=1949 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[09:59:12] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 44 running... 30s
+[bridge9] cycle 44 running... 60s
+[bridge9] cycle 44 running... 90s
+[bridge9] cycle 44 running... 120s
+[bridge9] cycle 44 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 302s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=1905 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:04:14] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 176s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[10:07:10] === run_bridge exited (rc=0) — restarting in 10s ===
+[10:08:01] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=1899 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:08:01] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 207s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=2034 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:11:28] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 186s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1927 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:14:34] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 193s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=1984 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:17:47] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 225s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=2187 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:21:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 5 running... 30s
+[bridge9] cycle 5 running... 60s
+[bridge9] cycle 5 running... 90s
+[bridge9] cycle 5 running... 120s
+[bridge9] cycle 5 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 301s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=1810 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:26:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 252s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=1970 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:30:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 7 running... 30s
+[bridge9] cycle 7 running... 60s
+[bridge9] cycle 7 running... 90s
+[bridge9] cycle 7 running... 120s
+[bridge9] cycle 7 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 336s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=2054 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:36:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 8 running... 30s
+[bridge9] cycle 8 running... 60s
+[bridge9] cycle 8 running... 90s
+[bridge9] cycle 8 running... 120s
+[bridge9] cycle 8 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 347s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=2033 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:42:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 9 running... 30s
+[bridge9] cycle 9 running... 60s
+[bridge9] cycle 9 running... 90s
+[bridge9] cycle 9 running... 120s
+[bridge9] cycle 9 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 308s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=1832 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:47:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 136s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=1954 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:49:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 11 running... 30s
+[bridge9] cycle 11 running... 60s
+[bridge9] cycle 11 running... 90s
+[bridge9] cycle 11 running... 120s
+[bridge9] cycle 11 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 384s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=1959 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:55:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 208s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=1917 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[10:59:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 13 running... 30s
+[bridge9] cycle 13 running... 60s
+[bridge9] cycle 13 running... 90s
+[bridge9] cycle 13 running... 120s
+[bridge9] cycle 13 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 374s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=1868 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:05:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 314s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=1767 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:10:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 151s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=1925 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:13:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 16 running... 30s
+[bridge9] cycle 16 running... 60s
+[bridge9] cycle 16 running... 90s
+[bridge9] cycle 16 running... 120s
+[bridge9] cycle 16 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 263s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=1730 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:17:46] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 242s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=1829 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:21:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 214s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=1965 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:25:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 19 running... 30s
+[bridge9] cycle 19 running... 60s
+[bridge9] cycle 19 running... 90s
+[bridge9] cycle 19 running... 120s
+[bridge9] cycle 19 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 313s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=1757 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:30:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 142s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=1669 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:32:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 143s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=1668 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:35:21] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 211s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=1866 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:38:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] cycle 23 running... 60s
+[bridge9] cycle 23 running... 90s
+[bridge9] cycle 23 running... 120s
+[bridge9] cycle 23 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 381s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=1673 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:45:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 275s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=1879 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:49:47] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 25 running... 30s
+[bridge9] cycle 25 running... 60s
+[bridge9] cycle 25 running... 90s
+[bridge9] cycle 25 running... 120s
+[bridge9] cycle 25 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 374s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=1660 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[11:56:02] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 26 running... 30s
+[bridge9] cycle 26 running... 60s
+[bridge9] cycle 26 running... 90s
+[bridge9] cycle 26 running... 120s
+[bridge9] cycle 26 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 348s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=1657 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:01:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 27 running... 30s
+[bridge9] cycle 27 running... 60s
+[bridge9] cycle 27 running... 90s
+[bridge9] cycle 27 running... 120s
+[bridge9] cycle 27 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 291s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=1627 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:06:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 347s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=1678 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:12:27] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 29 running... 30s
+[bridge9] cycle 29 running... 60s
+[bridge9] cycle 29 running... 90s
+[bridge9] cycle 29 running... 120s
+[bridge9] cycle 29 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 321s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=1652 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:17:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 191s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=1653 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:21:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 31 running... 30s
+[bridge9] cycle 31 running... 60s
+[bridge9] cycle 31 running... 90s
+[bridge9] cycle 31 running... 120s
+[bridge9] cycle 31 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 285s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=1760 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:25:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 149s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=1615 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:28:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 33 running... 30s
+[bridge9] cycle 33 running... 60s
+[bridge9] cycle 33 running... 90s
+[bridge9] cycle 33 running... 120s
+[bridge9] cycle 33 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 283s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=1629 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:32:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 34 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 199s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=1634 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:36:16] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 35 running... 30s
+[bridge9] cycle 35 running... 60s
+[bridge9] cycle 35 running... 90s
+[bridge9] cycle 35 running... 120s
+[bridge9] cycle 35 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 338s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=1517 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:41:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 36 running... 30s
+[bridge9] cycle 36 running... 60s
+[bridge9] cycle 36 running... 90s
+[bridge9] cycle 36 running... 120s
+[bridge9] cycle 36 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 290s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=1513 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:46:43] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 37 running... 30s
+[bridge9] cycle 37 running... 60s
+[bridge9] cycle 37 running... 90s
+[bridge9] cycle 37 running... 120s
+[bridge9] cycle 37 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 360s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=1420 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:52:43] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 38 running... 30s
+[bridge9] cycle 38 running... 60s
+[bridge9] cycle 38 running... 90s
+[bridge9] cycle 38 running... 120s
+[bridge9] cycle 38 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 261s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=1407 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[12:57:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 39 running... 30s
+[bridge9] cycle 39 running... 60s
+[bridge9] cycle 39 running... 90s
+[bridge9] cycle 39 running... 120s
+[bridge9] cycle 39 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 305s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1450 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:02:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 40 running... 30s
+[bridge9] cycle 40 running... 60s
+[bridge9] cycle 40 running... 90s
+[bridge9] cycle 40 running... 120s
+[bridge9] cycle 40 running... 150s
+[bridge9] cycle 40 running... 180s
+[bridge9] cycle 40 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 386s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=1569 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:08:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 212s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=1496 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:12:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 237s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=1561 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:16:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 262s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=1471 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:20:26] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 44 running... 30s
+[bridge9] cycle 44 running... 60s
+[bridge9] cycle 44 running... 90s
+[bridge9] cycle 44 running... 120s
+[bridge9] cycle 44 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 306s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=1709 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:25:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 45 running... 30s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 219s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[13:29:11] === run_bridge exited (rc=0) — restarting in 10s ===
+[13:29:47] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=1446 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:29:47] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 1 running... 30s
+[bridge9] cycle 1 running... 60s
+[bridge9] cycle 1 running... 90s
+[bridge9] cycle 1 running... 120s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 313s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=1571 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:35:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 2 running... 30s
+[bridge9] cycle 2 running... 60s
+[bridge9] cycle 2 running... 90s
+[bridge9] cycle 2 running... 120s
+[bridge9] cycle 2 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 311s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1500 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:40:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 3 running... 30s
+[bridge9] cycle 3 running... 60s
+[bridge9] cycle 3 running... 90s
+[bridge9] cycle 3 running... 120s
+[bridge9] cycle 3 running... 150s
+[bridge9] cycle 3 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 328s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=1559 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:45:40] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 218s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=1687 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:49:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 194s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=1548 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:52:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 6 running... 30s
+[bridge9] cycle 6 running... 60s
+[bridge9] cycle 6 running... 90s
+[bridge9] cycle 6 running... 120s
+[bridge9] cycle 6 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 350s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=1564 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[13:58:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 7 running... 30s
+[bridge9] cycle 7 running... 60s
+[bridge9] cycle 7 running... 90s
+[bridge9] cycle 7 running... 120s
+[bridge9] cycle 7 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 285s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=1546 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:03:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 160s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=1480 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:05:47] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 189s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=1739 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:08:56] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 114s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=1536 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:10:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 11 running... 30s
+[bridge9] cycle 11 running... 60s
+[bridge9] cycle 11 running... 90s
+[bridge9] cycle 11 running... 120s
+[bridge9] cycle 11 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 319s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=1630 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:16:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 138s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=1453 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:18:27] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 171s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=1533 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:21:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 188s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=1645 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:24:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 15 running... 30s
+[bridge9] cycle 15 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 237s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=1492 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:28:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 213s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=1702 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:32:01] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 207s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=1950 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:35:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 125s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=1668 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:37:27] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 112s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=1585 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:39:19] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 156s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=1684 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:41:55] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 21 running... 30s
+[bridge9] cycle 21 running... 60s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 236s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=1756 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:45:51] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 221s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=1795 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:49:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 177s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=1701 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:52:29] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 120s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=1688 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[14:54:30] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 450s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=1774 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:01:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 142s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=1628 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:04:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 239s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=2256 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:08:20] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 135s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=2069 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:10:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 29 running... 30s
+[bridge9] cycle 29 running... 60s
+[bridge9] cycle 29 running... 90s
+[bridge9] cycle 29 running... 120s
+[bridge9] cycle 29 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 305s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=1600 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:15:40] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 171s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=1765 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:18:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 213s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=1704 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:22:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 189s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=1758 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:25:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 232s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=1682 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:29:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 221s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=2187 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:32:46] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 162s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=2095 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:35:28] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 36 running... 30s
+[bridge9] cycle 36 running... 60s
+[bridge9] cycle 36 running... 90s
+[bridge9] cycle 36 running... 120s
+[bridge9] cycle 36 running... 150s
+[bridge9] cycle 36 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 317s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=1668 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:40:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 37 running... 30s
+[bridge9] cycle 37 running... 60s
+[bridge9] cycle 37 running... 90s
+[bridge9] cycle 37 running... 120s
+[bridge9] cycle 37 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 336s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=1621 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:46:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 179s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=1797 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:49:20] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 285s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1764 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:54:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 268s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=2143 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[15:58:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 41 running... 30s
+[bridge9] cycle 41 running... 60s
+[bridge9] cycle 41 running... 90s
+[bridge9] cycle 41 running... 120s
+[bridge9] cycle 41 running... 150s
+[bridge9] cycle 41 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 509s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=1842 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:07:03] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 233s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=1712 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:10:55] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 289s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=1704 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:15:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 198s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=1851 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:19:02] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 275s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[16:23:37] === run_bridge exited (rc=0) — restarting in 10s ===
+[16:24:10] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=2082 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:24:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 160s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=2242 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:26:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 2 running... 30s
+[bridge9] cycle 2 running... 60s
+[bridge9] cycle 2 running... 90s
+[bridge9] cycle 2 running... 120s
+[bridge9] cycle 2 running... 150s
+[bridge9] cycle 2 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 414s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1881 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:33:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 333s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=2219 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:39:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 4 running... 30s
+[bridge9] cycle 4 running... 60s
+[bridge9] cycle 4 running... 90s
+[bridge9] cycle 4 running... 120s
+[bridge9] cycle 4 running... 150s
+[bridge9] cycle 4 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 510s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=1880 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:47:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 185s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=2169 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:50:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 6 running... 30s
+[bridge9] cycle 6 running... 60s
+[bridge9] cycle 6 running... 90s
+[bridge9] cycle 6 running... 120s
+[bridge9] cycle 6 running... 150s
+[bridge9] cycle 6 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 400s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=2132 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[16:57:34] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 304s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=2208 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:02:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 8 running... 30s
+[bridge9] cycle 8 running... 60s
+[bridge9] cycle 8 running... 90s
+[bridge9] cycle 8 running... 120s
+[bridge9] cycle 8 running... 150s
+[bridge9] cycle 8 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 405s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=2044 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:09:21] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 267s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=2143 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:13:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 10 running... 30s
+[bridge9] cycle 10 running... 60s
+[bridge9] cycle 10 running... 90s
+[bridge9] cycle 10 running... 120s
+[bridge9] cycle 10 running... 150s
+[bridge9] cycle 10 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 378s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=1980 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:20:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 283s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=2125 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:24:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 355s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=2358 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:30:44] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 208s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=2517 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:34:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] cycle 14 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 412s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=2274 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:41:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 15 running... 30s
+[bridge9] cycle 15 running... 60s
+[bridge9] cycle 15 running... 90s
+[bridge9] cycle 15 running... 120s
+[bridge9] cycle 15 running... 150s
+[bridge9] cycle 15 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 511s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=2456 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:49:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 16 running... 30s
+[bridge9] cycle 16 running... 60s
+[bridge9] cycle 16 running... 90s
+[bridge9] cycle 16 running... 120s
+[bridge9] cycle 16 running... 150s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 436s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=2057 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[17:56:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 258s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=2059 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:01:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 212s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=1983 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:04:42] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 286s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=2000 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:09:27] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 263s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=2128 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:13:51] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 365s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=2518 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:19:55] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 130s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=2470 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:22:06] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] cycle 23 running... 60s
+[bridge9] cycle 23 running... 90s
+[bridge9] cycle 23 running... 120s
+[bridge9] cycle 23 running... 150s
+[bridge9] cycle 23 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 437s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=2250 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:29:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 228s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=2532 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:33:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 253s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=2387 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:37:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 209s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=2472 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:40:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 256s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=2473 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:45:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 238s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=2398 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:49:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 231s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=2200 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:52:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 257s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=2239 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[18:57:14] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 229s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=2104 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:01:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 876s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=2095 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:15:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 181s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=2306 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:18:41] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 233s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=2379 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:22:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 205s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=2272 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:25:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 165s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=2035 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:28:43] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 205s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=2274 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:32:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 308s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=2178 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:37:16] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 39 running... 30s
+[bridge9] cycle 39 running... 60s
+[bridge9] cycle 39 running... 90s
+[bridge9] cycle 39 running... 120s
+[bridge9] cycle 39 running... 150s
+[bridge9] cycle 39 running... 180s
+[bridge9] cycle 39 running... 210s
+[bridge9] cycle 39 running... 240s
+[bridge9] WATCHDOG: cycle 39 KILLED at 240s (hung run) — digesting partial evidence
+grep: run.log: No such file or directory
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 422s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1902 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:44:19] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 241s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=2037 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:48:20] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 351s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=2164 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:54:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 297s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=1927 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[19:59:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 263s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=2096 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:03:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 220s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=1895 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:07:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 241s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[20:11:11] === run_bridge exited (rc=0) — restarting in 10s ===
+[20:13:02] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=2040 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:13:03] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 332s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=2167 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:18:37] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 198s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1803 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:21:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 3 running... 30s
+[bridge9] cycle 3 running... 60s
+[bridge9] cycle 3 running... 90s
+[bridge9] cycle 3 running... 120s
+[bridge9] cycle 3 running... 150s
+[bridge9] cycle 3 running... 180s
+[bridge9] cycle 3 running... 210s
+[bridge9] cycle 3 running... 240s
+[bridge9] WATCHDOG: cycle 3 KILLED at 240s (hung run) — digesting partial evidence
+grep: run.log: No such file or directory
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 345s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=1894 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:27:37] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 175s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=1945 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:30:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 218s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=2185 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:34:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=2140 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:37:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 240s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=2438 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:41:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 8 running... 30s
+[bridge9] cycle 8 running... 60s
+[bridge9] cycle 8 running... 90s
+[bridge9] cycle 8 running... 120s
+[bridge9] cycle 8 running... 150s
+[bridge9] cycle 8 running... 180s
+[bridge9] cycle 8 running... 210s
+[bridge9] cycle 8 running... 240s
+[bridge9] WATCHDOG: cycle 8 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] WARN: run.log missing after block eval
+[bridge9] cycle 8 COMPLETE: 408s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=2036 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:48:02] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 119s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=2109 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:50:01] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 157s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=2158 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:52:38] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 206s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=2133 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:56:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 176s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=2157 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[20:59:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 301s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=2411 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:04:01] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] cycle 14 running... 180s
+[bridge9] cycle 14 running... 210s
+[bridge9] cycle 14 running... 240s
+[bridge9] WATCHDOG: cycle 14 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] WARN: run.log missing after block eval
+[bridge9] cycle 14 COMPLETE: 330s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=2117 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:09:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 200s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=1965 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:12:51] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 16 running... 30s
+[bridge9] cycle 16 running... 60s
+[bridge9] cycle 16 running... 90s
+[bridge9] cycle 16 running... 120s
+[bridge9] cycle 16 running... 150s
+[bridge9] cycle 16 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 394s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=2228 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:19:26] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 17 running... 30s
+[bridge9] cycle 17 running... 60s
+[bridge9] cycle 17 running... 90s
+[bridge9] cycle 17 running... 120s
+[bridge9] cycle 17 running... 150s
+[bridge9] cycle 17 running... 180s
+[bridge9] cycle 17 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 392s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=1949 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:25:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 18 running... 30s
+[bridge9] cycle 18 running... 60s
+[bridge9] cycle 18 running... 90s
+[bridge9] cycle 18 running... 120s
+[bridge9] cycle 18 running... 150s
+[bridge9] cycle 18 running... 180s
+[bridge9] cycle 18 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 388s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=2208 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:32:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 19 running... 30s
+[bridge9] cycle 19 running... 60s
+[bridge9] cycle 19 running... 90s
+[bridge9] cycle 19 running... 120s
+[bridge9] cycle 19 running... 150s
+[bridge9] cycle 19 running... 180s
+[bridge9] cycle 19 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 503s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=2254 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:40:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 20 running... 30s
+[bridge9] cycle 20 running... 60s
+[bridge9] cycle 20 running... 90s
+[bridge9] cycle 20 running... 120s
+[bridge9] cycle 20 running... 150s
+[bridge9] cycle 20 running... 180s
+[bridge9] cycle 20 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 388s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=1936 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:47:16] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 21 running... 30s
+[bridge9] cycle 21 running... 60s
+[bridge9] cycle 21 running... 90s
+[bridge9] cycle 21 running... 120s
+[bridge9] cycle 21 running... 150s
+[bridge9] cycle 21 running... 180s
+[bridge9] cycle 21 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 429s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=2263 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[21:54:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 22 running... 30s
+[bridge9] cycle 22 running... 60s
+[bridge9] cycle 22 running... 90s
+[bridge9] cycle 22 running... 120s
+[bridge9] cycle 22 running... 150s
+[bridge9] cycle 22 running... 180s
+[bridge9] cycle 22 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 374s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=1982 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:00:40] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] cycle 23 running... 60s
+[bridge9] cycle 23 running... 90s
+[bridge9] cycle 23 running... 120s
+[bridge9] cycle 23 running... 150s
+[bridge9] cycle 23 running... 180s
+[bridge9] cycle 23 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 451s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=1762 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:08:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 24 running... 30s
+[bridge9] cycle 24 running... 60s
+[bridge9] cycle 24 running... 90s
+[bridge9] cycle 24 running... 120s
+[bridge9] cycle 24 running... 150s
+[bridge9] cycle 24 running... 180s
+[bridge9] cycle 24 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 493s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=1810 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:16:24] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 213s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=1852 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:19:56] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 267s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=2308 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:24:24] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 27 running... 30s
+[bridge9] cycle 27 running... 60s
+[bridge9] cycle 27 running... 90s
+[bridge9] cycle 27 running... 120s
+[bridge9] cycle 27 running... 150s
+[bridge9] cycle 27 running... 180s
+[bridge9] cycle 27 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 403s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=1793 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:31:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 28 running... 30s
+[bridge9] cycle 28 running... 60s
+[bridge9] cycle 28 running... 90s
+[bridge9] cycle 28 running... 120s
+[bridge9] cycle 28 running... 150s
+[bridge9] cycle 28 running... 180s
+[bridge9] cycle 28 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 537s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=2375 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:40:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 29 running... 30s
+[bridge9] cycle 29 running... 60s
+[bridge9] cycle 29 running... 90s
+[bridge9] cycle 29 running... 120s
+[bridge9] cycle 29 running... 150s
+[bridge9] cycle 29 running... 180s
+[bridge9] cycle 29 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 449s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=1746 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:47:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 30 running... 30s
+[bridge9] cycle 30 running... 60s
+[bridge9] cycle 30 running... 90s
+[bridge9] cycle 30 running... 120s
+[bridge9] cycle 30 running... 150s
+[bridge9] cycle 30 running... 180s
+[bridge9] cycle 30 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 485s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=1872 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[22:55:38] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 434s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=2446 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:02:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 32 running... 30s
+[bridge9] cycle 32 running... 60s
+[bridge9] cycle 32 running... 90s
+[bridge9] cycle 32 running... 120s
+[bridge9] cycle 32 running... 150s
+[bridge9] cycle 32 running... 180s
+[bridge9] cycle 32 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 512s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=1775 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:11:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 33 running... 30s
+[bridge9] cycle 33 running... 60s
+[bridge9] cycle 33 running... 90s
+[bridge9] cycle 33 running... 120s
+[bridge9] cycle 33 running... 150s
+[bridge9] cycle 33 running... 180s
+[bridge9] cycle 33 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 460s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=1663 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:19:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 351s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=1873 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:24:55] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 323s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=1814 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:30:18] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 260s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=1951 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:34:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 309s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=1761 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:39:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 288s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=1882 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:44:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 290s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=1933 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:49:25] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 260s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=1989 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:53:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 264s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=1950 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[23:58:09] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 42 running... 30s
+[bridge9] cycle 42 running... 60s
+[bridge9] cycle 42 running... 90s
+[bridge9] cycle 42 running... 120s
+[bridge9] cycle 42 running... 150s
+[bridge9] cycle 42 running... 180s
+[bridge9] cycle 42 running... 210s
+[bridge9] cycle 42 running... 240s
+[bridge9] WATCHDOG: cycle 42 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 384s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=1819 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:04:33] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 216s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=1921 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:08:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 224s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=1845 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:11:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 252s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[00:16:05] === run_bridge exited (rc=0) — restarting in 10s ===
+[00:16:47] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=1888 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:16:48] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 231s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=1935 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:20:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 321s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=1937 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:26:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 250s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=2035 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:30:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 210s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=2023 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:33:39] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 237s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=2038 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:37:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 249s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=2068 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:41:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 231s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=1855 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:45:37] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 298s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=1804 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:50:34] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 337s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=2004 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[00:56:11] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 343s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=2081 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:01:55] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 250s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=1987 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:06:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 12 running... 30s
+[bridge9] cycle 12 running... 60s
+[bridge9] cycle 12 running... 90s
+[bridge9] cycle 12 running... 120s
+[bridge9] cycle 12 running... 150s
+[bridge9] cycle 12 running... 180s
+[bridge9] cycle 12 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 12 COMPLETE: 446s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=1972 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:13:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 203s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=2028 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:16:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] cycle 14 running... 180s
+[bridge9] cycle 14 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 14 COMPLETE: 550s total (incl. agent turn)
+[bridge9] cycle 15: url=26 chars, block=2139 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:26:04] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 15 COMPLETE: 263s total (incl. agent turn)
+[bridge9] cycle 16: url=26 chars, block=2370 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:30:26] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 16 running... 30s
+[bridge9] cycle 16 running... 60s
+[bridge9] cycle 16 running... 90s
+[bridge9] cycle 16 running... 120s
+[bridge9] cycle 16 running... 150s
+[bridge9] cycle 16 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 16 COMPLETE: 393s total (incl. agent turn)
+[bridge9] cycle 17: url=26 chars, block=2013 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:36:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 17 COMPLETE: 477s total (incl. agent turn)
+[bridge9] cycle 18: url=26 chars, block=2377 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:44:57] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 18 COMPLETE: 178s total (incl. agent turn)
+[bridge9] cycle 19: url=26 chars, block=2521 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:47:54] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 19 COMPLETE: 143s total (incl. agent turn)
+[bridge9] cycle 20: url=26 chars, block=2062 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:50:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 20 COMPLETE: 305s total (incl. agent turn)
+[bridge9] cycle 21: url=26 chars, block=2546 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:55:22] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 21 COMPLETE: 176s total (incl. agent turn)
+[bridge9] cycle 22: url=26 chars, block=2136 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[01:58:18] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 22 COMPLETE: 269s total (incl. agent turn)
+[bridge9] cycle 23: url=26 chars, block=2740 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:02:47] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 23 running... 30s
+[bridge9] cycle 23 running... 60s
+[bridge9] cycle 23 running... 90s
+[bridge9] cycle 23 running... 120s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 23 COMPLETE: 263s total (incl. agent turn)
+[bridge9] cycle 24: url=26 chars, block=2306 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:07:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 24 COMPLETE: 117s total (incl. agent turn)
+[bridge9] cycle 25: url=26 chars, block=2470 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:09:07] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 25 COMPLETE: 129s total (incl. agent turn)
+[bridge9] cycle 26: url=26 chars, block=2376 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:11:17] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 26 COMPLETE: 177s total (incl. agent turn)
+[bridge9] cycle 27: url=26 chars, block=2794 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:14:13] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 27 COMPLETE: 136s total (incl. agent turn)
+[bridge9] cycle 28: url=26 chars, block=2903 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:16:29] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 28 COMPLETE: 101s total (incl. agent turn)
+[bridge9] cycle 29: url=26 chars, block=2383 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:18:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 29 COMPLETE: 227s total (incl. agent turn)
+[bridge9] cycle 30: url=26 chars, block=2410 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:21:58] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 30 COMPLETE: 152s total (incl. agent turn)
+[bridge9] cycle 31: url=26 chars, block=2712 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:24:29] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 31 COMPLETE: 161s total (incl. agent turn)
+[bridge9] cycle 32: url=26 chars, block=2510 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:27:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 32 COMPLETE: 155s total (incl. agent turn)
+[bridge9] cycle 33: url=26 chars, block=2499 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:29:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 33 COMPLETE: 209s total (incl. agent turn)
+[bridge9] cycle 34: url=26 chars, block=2599 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:33:14] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 34 COMPLETE: 69s total (incl. agent turn)
+[bridge9] cycle 35: url=26 chars, block=3362 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:34:23] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 35 COMPLETE: 215s total (incl. agent turn)
+[bridge9] cycle 36: url=26 chars, block=3116 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:37:59] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 36 COMPLETE: 333s total (incl. agent turn)
+[bridge9] cycle 37: url=26 chars, block=3017 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:43:32] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 37 COMPLETE: 154s total (incl. agent turn)
+[bridge9] cycle 38: url=26 chars, block=2969 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[02:46:05] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 38 running... 30s
+[bridge9] cycle 38 running... 60s
+[bridge9] cycle 38 running... 90s
+[bridge9] cycle 38 running... 120s
+[bridge9] cycle 38 running... 150s
+[bridge9] cycle 38 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 38 COMPLETE: 1784s total (incl. agent turn)
+[bridge9] cycle 39: url=26 chars, block=2702 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:15:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 39 COMPLETE: 172s total (incl. agent turn)
+[bridge9] cycle 40: url=26 chars, block=3231 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:18:42] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 40 COMPLETE: 175s total (incl. agent turn)
+[bridge9] cycle 41: url=26 chars, block=3119 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:21:36] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 41 COMPLETE: 134s total (incl. agent turn)
+[bridge9] cycle 42: url=26 chars, block=3174 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:23:50] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 42 COMPLETE: 183s total (incl. agent turn)
+[bridge9] cycle 43: url=26 chars, block=3238 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:26:53] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 43 running... 30s
+[bridge9] cycle 43 running... 60s
+[bridge9] cycle 43 running... 90s
+[bridge9] cycle 43 running... 120s
+[bridge9] cycle 43 running... 150s
+[bridge9] cycle 43 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 43 COMPLETE: 338s total (incl. agent turn)
+[bridge9] cycle 44: url=26 chars, block=3040 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:32:31] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 44 COMPLETE: 135s total (incl. agent turn)
+[bridge9] cycle 45: url=26 chars, block=3104 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:34:46] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 45 COMPLETE: 164s total (incl. agent turn)
+[bridge9] cycle limit (45) reached -> parking
+[03:37:30] === run_bridge exited (rc=0) — restarting in 10s ===
+[03:39:00] === xenolift-bridge v9 supervisor: starting run_bridge ===
+[bridge9] cycle 1: url=26 chars, block=3214 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:39:00] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 1 COMPLETE: 176s total (incl. agent turn)
+[bridge9] cycle 2: url=26 chars, block=3128 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:41:56] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 2 running... 30s
+[bridge9] cycle 2 running... 60s
+[bridge9] cycle 2 running... 90s
+[bridge9] cycle 2 running... 120s
+[bridge9] cycle 2 running... 150s
+[bridge9] cycle 2 running... 180s
+[bridge9] cycle 2 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 2 COMPLETE: 348s total (incl. agent turn)
+[bridge9] cycle 3: url=26 chars, block=2486 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:47:45] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 3 COMPLETE: 156s total (incl. agent turn)
+[bridge9] cycle 4: url=26 chars, block=3342 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:50:20] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 4 COMPLETE: 110s total (incl. agent turn)
+[bridge9] cycle 5: url=26 chars, block=3037 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:52:10] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 5 running... 30s
+[bridge9] cycle 5 running... 60s
+[bridge9] cycle 5 running... 90s
+[bridge9] cycle 5 running... 120s
+[bridge9] cycle 5 running... 150s
+[bridge9] cycle 5 running... 180s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 5 COMPLETE: 340s total (incl. agent turn)
+[bridge9] cycle 6: url=26 chars, block=3061 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[03:57:51] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 6 COMPLETE: 167s total (incl. agent turn)
+[bridge9] cycle 7: url=26 chars, block=3164 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:00:38] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 7 COMPLETE: 251s total (incl. agent turn)
+[bridge9] cycle 8: url=26 chars, block=3303 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:04:49] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 8 running... 30s
+[bridge9] cycle 8 running... 60s
+[bridge9] cycle 8 running... 90s
+[bridge9] cycle 8 running... 120s
+[bridge9] cycle 8 running... 150s
+[bridge9] cycle 8 running... 180s
+[bridge9] cycle 8 running... 210s
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 8 COMPLETE: 423s total (incl. agent turn)
+[bridge9] cycle 9: url=26 chars, block=3038 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:11:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 9 COMPLETE: 216s total (incl. agent turn)
+[bridge9] cycle 10: url=26 chars, block=3456 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:15:28] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 10 COMPLETE: 205s total (incl. agent turn)
+[bridge9] cycle 11: url=26 chars, block=3330 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:18:52] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 11 COMPLETE: 222s total (incl. agent turn)
+[bridge9] cycle 12: url=26 chars, block=3601 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:22:35] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — re-posting digest after 30s for a fresh turn
+[bridge9] cycle 12 COMPLETE: 761s total (incl. agent turn)
+[bridge9] cycle 13: url=26 chars, block=1070 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:35:16] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 13 running... 30s
+[bridge9] cycle 13 running... 60s
+[bridge9] cycle 13 running... 90s
+[bridge9] cycle 13 running... 120s
+[bridge9] cycle 13 running... 150s
+[bridge9] cycle 13 running... 180s
+[bridge9] cycle 13 running... 210s
+[bridge9] cycle 13 running... 240s
+[bridge9] WATCHDOG: cycle 13 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] run banner: banner? (archived)
+[bridge9] cycle 13 COMPLETE: 398s total (incl. agent turn)
+[bridge9] cycle 14: url=26 chars, block=1064 chars
+[bridge9] WARN: same package URL as previous cycle (stale race or intentional re-run)
+[04:41:54] downloading package...
+[bridge9] WARN: package fetch issue (continuing with current tree)
+[bridge9] cycle 14 running... 30s
+[bridge9] cycle 14 running... 60s
+[bridge9] cycle 14 running... 90s
+[bridge9] cycle 14 running... 120s
+[bridge9] cycle 14 running... 150s
+[bridge9] cycle 14 running... 180s
+[bridge9] cycle 14 running... 210s
+[bridge9] cycle 14 running... 240s
+[bridge9] WATCHDOG: cycle 14 KILLED at 240s (hung run) — digesting partial evidence
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — re-posting digest after 30s for a fresh turn
+[bridge9] still no directive — v8: NOT parking; re-running current directive next cycle
+[bridge9] cycle 14 COMPLETE: 1644s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 15: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 15 COMPLETE: 642s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 16: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 16 COMPLETE: 663s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 17: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 17 COMPLETE: 644s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 18: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 18 COMPLETE: 647s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 19: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 19 COMPLETE: 665s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 20: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)
+[bridge9] no directive in reply — v8: keeping current directive, looping
+[bridge9] cycle 20 COMPLETE: 657s total (incl. agent turn)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))
+                          ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 2 (char 1)
+[bridge9] cycle 21: url=0 chars, block=0 chars
+[bridge9] run banner: banner? (archived)

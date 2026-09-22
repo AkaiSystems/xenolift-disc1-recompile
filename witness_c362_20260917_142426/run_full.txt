@@ -1,0 +1,529 @@
+[disc] R1236 disc path resolved: /Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin
+[disc] BIN=/Users/joshuaghoreishi/Desktop/PS7Z/PS1Games/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1)/Xenogears (USA) (Disc 1).bin (found)
+--- build ---
+run.sh build R1024
+tool health: exec rc=1 magic=cffaedfe out=[usage: xenolift <psx-exe> [out.c]        xenolift --ftab <psx-exe> [--disc <disc-image>] ]
+cargo: SKIPPED (Rust source content unchanged — md5 gate)
+[timing] cargo build: 0s (cycle total: 0s)
+emit: SKIPPED (capture hash stable — matched emit hash; R1020 gate)
+[emit] R224 guard already present
+[emit] R873 spuerr body stub already present
+[emit] R902 walk terminator guard already present
+[emit] R903 widened guard already present
+[emit] R904 exact-fit guard already present
+[emit] R1202 null-block free guard already present
+[emit] R323 dispatch already pristine
+[emit] R752 no-churn: R758 gated bypass present and healthy - disc1.c untouched (compile cache stays valid)
+overlay module: 135168 bytes mapped at 0x8006F000 (32450 nonzero words)
+overlay fault-capture mapped OVER pre-menu snapshot: 135168 bytes, 31763 nonzero words (R681 real field coordinator)
+overlay coordinator entry 0x80077E88 first words: 8E020050 3C04800A 2484A3F0 00021303 (R682 proof - zeros = blank-page crash recurs)
+overlay stage-2 module: 135168 bytes mapped at 0x801D3000 (33285 nonzero words)
+coverage: 1823516 bytes natively translated total; 453280 within the 512KB exe image (86.5%); 1370236 overlay/extra bytes; 3826 functions
+reference ingest: +943 decomp symbols merged (xenogears-decomp SLUS-006.64; decomp names authoritative)
+symbol map file: disc1.map (1481 named entries)
+symbol map: 1481 named functions
+symbol map file: disc1.map (1481 named entries)
+seams: 210 hardware-touch sites across 44 functions (seams.txt - the HLE contract list v1)
+wrote disc1.c
+coverage: 1823516 bytes natively translated total; 453280 within the 512KB exe image (86.5%); 1370236 overlay/extra bytes; 3826 functions
+seams: 210 hardware-touch sites across 44 functions (seams.txt - the HLE contract list v1)
+[timing] emit: 1s (cycle total: 1s)
+[emit] R923 walk cursor guard already present
+[emit] R925 lzss op-count abort already present (R1011: marker now keyed to the guard CODE text - R1010 checked a string that never matched the emitted comment form R925/R926/R927, my own marker-mismatch repeat of the original bug; the guard code substring g_lzss_overrun_reads > 4096u is form-independent)
+[emit] R926 signature-based abort already present (R1011 code-keyed marker)
+[emit] R927 telemetry already present
+[emit] R928 heap-band guards already present
+[emit] R929 Vsync recursion cap already present
+[emit] R933 CD callback slot heal already present
+[emit] R935 freelist head heal already present
+[emit] R936 DrawPrim camera already present
+[emit] R1051 bodycam 8003342C already present
+[emit] R1051 bodycam 800320A4 already present
+[emit] R1051 bodycam 801D002C already present
+[emit] R1051 bodycam 801D2FE8 already present
+[emit] R1057 archlistcam 80028AC8 already present
+[emit] R1106 menuchain 8001A4B4 already present
+[emit] R1106 menuchain 8001A250 already present
+[emit] R1106 menupunch 8001A344 already present
+[emit] R1111 vsyncguard 57848 already present
+[emit] R1111 vsyncguard 57844 already present
+[emit] R1108 chaincam 80031B10 already present
+[emit] R1108 chaincam 80031A30 already present
+[emit] R1108 chaincam 80035DB0 already present
+[emit] R1108 chaincam 8001996C already present
+[emit] R1115 chaincam 8004293C already present
+[emit] R1060 datacam 800392EC already present
+[emit] R1060 datacam 80039120 already present
+[emit] R1052 bodycam 80077E88 already present
+[emit] R1052 bodycam 80076858 already present
+[emit] R1056 taintheal 801D002C already present
+[emit] R1056 taintheal 801D2FE8 already present
+[ccache] R1157 compile: SKIPPED (disc1.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: FRESH (runtime/runtime.c content hash changed/first build)
+[ccache] R1157 compile: SKIPPED (hle/hle_gpu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_gte.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_spu.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_mdec.c content hash unchanged - cached .o reused)
+[ccache] R1157 compile: SKIPPED (hle/hle_memcard.c content hash unchanged - cached .o reused)
+link: DONE
+banner check: OK (runtime build R1291 in binary)
+[shieldcheck] dmashield PRESENT in binary
+[shieldcheck] mangleguard PRESENT in binary
+[shieldcheck] ringw PRESENT in binary
+[shieldcheck] reqres PRESENT in binary
+[shieldcheck] carve2 PRESENT in binary
+[shieldcheck] frclash PRESENT in binary
+[shieldcheck] descw PRESENT in binary
+[timing] compile+link: 5s (cycle total: 6s)
+--- live viewer ---
+--- run ---
+[firstfault-capture] directory=/Users/joshuaghoreishi/Downloads/xenolift/firstfault.9UMozz executable=xenogears_boot_142433
+[prov] R1200 source archived: prev_run/runtime_last.c sha256=b6874d751e5c7e653f4052ea352ad3cc526c9dd1d50d2e173163169aaf54e92d
+[firstfault-capture] guest_exit=99 full_log=/Users/joshuaghoreishi/Downloads/xenolift/firstfault.9UMozz/firstfault-full.log
+[rungasp] R806 process exit status=99 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[fuse] run fuse cleared (R356: 210s hard kill — digest always generates)
+[macreport] R833 no macOS crash report found in last 15 min (find DiagnosticReports empty)
+run.sh: line 1525: 81321 Terminated: 15          ( sleep $FUSE; kill -9 $RUNPID 2> /dev/null )
+[timing] 15s run: 39s (cycle total: 45s)
+--- digest ---
+[digest] R751 log raw 891456B -> capped  1778760B, assembling (this line visible = if digest is still empty, the block stalled, NOT the log)
+=IRQW=
+run.log:[hook] 0x80068960: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068964: 00000000 -> 00000000 at fn 0x80019524 sw_line=0 sp=00000000 r16=00000000
+run.log:[hook] 0x80068960: 00000000 -> 00010001 at fn 0x800195A4 sw_line=135652 sp=801FFFC8 r16=00000000
+run.log:[hook] 0x80068960: 00010001 -> 00020002 at fn 0x80046EFC sw_line=141394 sp=801FFF78 r16=801FFFD8
+run.log:[hook] 0x80068960: 00020002 -> 00030003 at fn 0x800404D4 sw_line=126772 sp=801FFF88 r16=800625FC
+run.log:[hook] 0x80068960: 00030003 -> 00040004 at fn 0x800404D4 sw_line=160098 sp=801FFFB0 r16=00000001
+run.log:[hook] 0x80068960: 00040004 -> 00050005 at fn 0x8004B8D8 sw_line=151679 sp=801FFF80 r16=00000000
+run.log:[hook] 0x80068960: 00050005 -> 00060006 at fn 0x80019658 sw_line=154159 sp=801FFFC8 r16=800592B8
+run.log:[hook] 0x80068960: 00060006 -> 00070007 at fn 0x800428AC sw_line=131529 sp=801FFF58 r16=00000001
+run.log:[hook] 0x80068960: 00070007 -> 00080008 at fn 0x80042090 sw_line=130749 sp=801FFF58 r16=00000001
+run.log:[hook] 0x80068960: 00080008 -> 00090009 at fn 0x8004B54C sw_line=129273 sp=801FFED8 r16=0000000C
+run.log:[hook] 0x80068960: 00090009 -> 000A000A at fn 0x80041BA8 sw_line=129345 sp=801FFED8 r16=0000000C
+=EMITAUDIT=
+[emitaudit] disc1.c printf-family call count: 1
+257380:   R988 (b8-c99): the two fprintf(stderr,...) calls that lived here were THE hidden libc print entry (EMITAUDIT c99: "disc1.c printf-family call count: 2", both this fragment) behind the 10-cycle exit-134 class (macreport: __stack_chk_fail <- __xvprintf <- vfprintf_l <- fprintf attributed to real_main). Now routed through xenolift_receipt (runtime.c, non-static wrapper over xl_format + write(2)) - ZERO libc print machinery reachable from the guest binary. */
+[emitaudit] R926 target present: 0
+=EXITDIAG=
+=COORDERA=
+run.log:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801ED934 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801ED934 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801ED934 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:[ovlcb] overlay fn 0x800737EC entered: a0=0xFFE00000 a1=0x801ED934 a2=0xFE1FFFFF a3=0x01E00000 caller=0x80019C0C
+run.log.d:10  xenogears_boot_142433               0x00000001018e85b6 xl_main_thread + 70
+run.log.d:11  libsystem_pthread.dylib             0x00007ff80c8d518b _pthread_start + 99
+run.log.d:12  libsystem_pthread.dylib             0x00007ff80c8d0ae3 thread_start + 15
+run.log.d:[firstfault] R1172 GUEST-FAULT STOP complete; exit=99; no legacy recovery entered
+run.log.d:[rungasp] R806 process exit status=99 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+run.log.d:[wedge] R1196 executed-binary xenogears_boot_142433 sha256=5ebbb65c6ae9d915682eb637f8f64f581916a49fff3be6c12a68552710e160ab dSYM=prev_run/last.dSYM
+run.log.d:[macreport] R833 no macOS crash report found in last 15 min (find DiagnosticReports empty)
+run.log.d:[logcap] end tail
+=SPXW=
+=SNDREG=
+run.log:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=0s
+run.log:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=0s
+run.log.d:[sndinit] R966 SoundInitialize entry #1 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=0s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=0s
+run.log.d:[sndinit] R966 SoundInitialize entry #1 a0=0x00000000 a1=0x00008000 r31=0x80019670 heapHead(59410)=0x00000000
+run.log.d:[sndinit] R1012 SoundInitialize ENTRY: gate(957C)=0000 head(9410)=00000000 end(95E4)=00000000 size(951C)=00000000 a0=00000000 @t=0s
+run.log.d:[sndinit] R1012 SoundHeapInitialize CALLED: start(a0)=80065B0C size(a1)=00006300 (static contract: 0x80065B0C, 0x6300) @t=0s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=800596E0 r5=00000000 @t=0s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=0s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005A238 r5=02000000 @t=0s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=0s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=801FFF3C r5=00000000 @t=0s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=0s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=8005968C r5=00000000 @t=0s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=0s
+run.log.d:[gpu2reg] R1013 0x800465EC ENTRY: 69A4=1F801814 69A8=1F8010A0 69AC=1F8010A4 69B0=1F8010A8 A238w0=05FFFFFF r4=800596E0 r5=00000000 @t=0s
+run.log.d:[gpu2reg] R1013 @DMA2-install: 69A4=1F801814 69A8=1F8010A0 A238w0=05FFFFFF @t=0s
+=GATEMISS=
+run.log:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=00000000 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=00000000 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x72) v0=1 a0=8005890C a1=800578A8 a2=00000000 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4A) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: B0(0x4B) v0=1 a0=00000001 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+run.log.d:[cardgate] R1018 card gate serviced: A0(0x70) v0=1 a0=00000002 a1=00000004 a2=8005A1C4 (psyq libapi.h:110 card-init family; c132 gatemiss receipts) @t=0s
+=COORDW=
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 3FFCCCE1 B142E144 46430232 D0DDE103 at fn 0x800381F4 r31=80037FF4 (old 00000000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 3E8CA23B 448C0008 7C14B824 40282112 at fn 0x8004196C r31=80028A74 (old 00000000) @t=31s
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 3FFCCCE1 B142E144 46430232 D0DDE103 at fn 0x800381F4 r31=80037FF4 (old 00000000) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=0s
+run.log:[coordw] R1000 entry 0x80077E88: 3E8CA23B 448C0008 7C14B824 40282112 at fn 0x8004196C r31=80028A74 (old 00000000) @t=31s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 3FFCCCE1 B142E144 46430232 D0DDE103 at fn 0x800381F4 r31=80037FF4 (old 00000000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 3E8CA23B 448C0008 7C14B824 40282112 at fn 0x8004196C r31=80028A74 (old 00000000) @t=31s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019524 r31=00000000 (old DEAD0000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 3FFCCCE1 B142E144 46430232 D0DDE103 at fn 0x800381F4 r31=80037FF4 (old 00000000) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 00000000 00000000 00000000 00000000 at fn 0x80019548 r31=80019BD8 (old 3FFCCCE1) @t=0s
+run.log.d:[coordw] R1000 entry 0x80077E88: 3E8CA23B 448C0008 7C14B824 40282112 at fn 0x8004196C r31=80028A74 (old 00000000) @t=31s
+=UNPACKW=
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=8004EABC a1=801F1C68 a2=00200000 a3=FE1FFFFF r31=80019D74 src[0..3]=00000000 000010A0 00040800 8000082C dst[0..3]=00000010 00000008 0000002C 01E00000 @t=0s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=801ED934 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=00000000 01000804 00020200 6E006152 dst[0..3]=00000008 00020200 646E6152 4D206D6F @t=0s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=80050240 a1=8006FAF8 a2=8006FF0C a3=80000000 r31=800375C4 src[0..3]=00000000 09010200 EEEEEC08 FC800004 dst[0..3]=08090102 04EEEEEC 008CFC80 00EFEEFE @t=0s
+run.log:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=FFFF9C30 0702D0FF 414D300D 58495254 dst[0..3]=8006FF0C 84000000 25900024 3C8C2470 @t=31s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00C00000 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F34B4 a2=00200000 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=8004EABC a1=801F1C68 a2=00200000 a3=FE1FFFFF r31=80019D74 src[0..3]=00000000 000010A0 00040800 8000082C dst[0..3]=00000010 00000008 0000002C 01E00000 @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801ED934 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=00000000 01000804 00020200 6E006152 dst[0..3]=00000008 00020200 646E6152 4D206D6F @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=80050240 a1=8006FAF8 a2=8006FF0C a3=80000000 r31=800375C4 src[0..3]=00000000 09010200 EEEEEC08 FC800004 dst[0..3]=08090102 04EEEEEC 008CFC80 00EFEEFE @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=FFFF9C30 0702D0FF 414D300D 58495254 dst[0..3]=8006FF0C 84000000 25900024 3C8C2470 @t=31s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800AFC98 a1=801FA634 a2=00C00000 a3=FE1FFFFF r31=800197D0 src[0..3]=00000000 0E013A00 7400FE00 0051E014 dst[0..3]=000E013A 147400FE 00000051 00000010 @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=800B0704 a1=801F34B4 a2=00200000 a3=FE1FFFFF r31=80019828 src[0..3]=00000000 00003520 0004DC00 0080016C dst[0..3]=00000035 000000DC 0000016C 0000023C @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=8004EABC a1=801F1C68 a2=00200000 a3=FE1FFFFF r31=80019D74 src[0..3]=00000000 000010A0 00040800 8000082C dst[0..3]=00000010 00000008 0000002C 01E00000 @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801ED934 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=00000000 01000804 00020200 6E006152 dst[0..3]=00000008 00020200 646E6152 4D206D6F @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=80050240 a1=8006FAF8 a2=8006FF0C a3=80000000 r31=800375C4 src[0..3]=00000000 09010200 EEEEEC08 FC800004 dst[0..3]=08090102 04EEEEEC 008CFC80 00EFEEFE @t=0s
+run.log.d:[unpackw] R1001 UnpackCompressedBuffer a0=801DD680 a1=8006FAF0 a2=800566F8 a3=80018E20 r31=80019B98 src[0..3]=FFFF9C30 0702D0FF 414D300D 58495254 dst[0..3]=8006FF0C 84000000 25900024 3C8C2470 @t=31s
+=MODMISS=
+=MODEXEC=
+=GPULIVE=
+=ARCHREQ=
+[archreq] R953 cell 0x8005FDF8: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000001 at fn 0x8004247C
+[archreq] R953 cell 0x8006A22C: 00000001 -> 00000002 at fn 0x8004247C
+[archreq] R953 cell 0x8005FDF8: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000001 at fn 0x8004247C
+[archreq] R953 cell 0x8006A22C: 00000001 -> 00000002 at fn 0x8004247C
+[archreq] R953 cell 0x8005FDF8: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000001 at fn 0x8004247C
+[archreq] R953 cell 0x8006A22C: 00000001 -> 00000002 at fn 0x8004247C
+[archreq] R953 cell 0x8005FDF8: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000000 at fn 0x80019524
+[archreq] R953 cell 0x8006A22C: 00000000 -> 00000001 at fn 0x8004247C
+[archreq] R953 cell 0x8006A22C: 00000001 -> 00000002 at fn 0x8004247C
+[b2x] R722 pristine exe image captured @first entry (0x80010000..0x8006F000, 389120 bytes) - relays restore this like a real shell re-load
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=24576 FE1C=2)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=102400 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=106496 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=110592 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=114688 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=118784 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=122880 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=126976 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=131072 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=135168 FE1C=1)
+[cd] mv-conv: converting pending INT (3) via handler pair (movie-loop ctx, n=139264 FE1C=1)
+[bp] DATA HANDLER enter a0=00000001 a1=8005A218 slot=0 | FE34=00000000 FE08=8007EBF0 FDF8=00025DF0 FE04=0001A8F1 FE38=00000000 FDFC=00000000 A22C=00000000 dstw0=00000000
+[bp] DATA HANDLER enter a0=00000001 a1=8005A218 slot=0 | FE34=00000000 FE08=8007F3F0 FDF8=000255F0 FE04=0001A8F2 FE38=00000000 FDFC=00000000 A22C=00000000 dstw0=00000000
+[bp] DATA HANDLER enter a0=00000001 a1=8005A218 slot=0 | FE34=00000000 FE08=8007FBF0 FDF8=00024DF0 FE04=0001A8F3 FE38=00000000 FDFC=00000000 A22C=00000000 dstw0=00000000
+[bp] DATA HANDLER enter a0=00000001 a1=8005A218 slot=0 | FE34=00000000 FE08=800803F0 FDF8=000245F0 FE04=0001A8F4 FE38=000[digestcap] R865: digest was   385194B - kept head 16KB + DEATH EVIDENCE + tail 12KB (death receipts must survive the cap - c454's EXITTAIL was cut by the middle-capper and the death went unnamed)
+=WEDGECAM=
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log:[ringw] #1 0x8004FE08: 0x00000000 -> 0x8006FAF8 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #2 0x8004FE10: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #3 0x8004FE0C: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #4 0x8004FE08: 0x8006FAF8 -> 0x8007EBF0 r31=80029670 r16=00000001 @t=0s
+run.log:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=8002B084 (r32 hits=424404 wrap-aware | ORIGIN guest=64 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8004247C (r32 hits=595907 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=800286CC (r32 hits=122814809 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log:[ringw] #1 0x8004FE08: 0x00000000 -> 0x8006FAF8 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #2 0x8004FE10: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #3 0x8004FE0C: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log:[ringw] #4 0x8004FE08: 0x8006FAF8 -> 0x8007EBF0 r31=80029670 r16=00000001 @t=0s
+run.log:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=8002B084 (r32 hits=424404 wrap-aware | ORIGIN guest=64 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8004247C (r32 hits=595907 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=800286CC (r32 hits=122814809 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log.d:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log.d:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log.d:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log.d:[ringw] #1 0x8004FE08: 0x00000000 -> 0x8006FAF8 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #2 0x8004FE10: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #3 0x8004FE0C: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #4 0x8004FE08: 0x8006FAF8 -> 0x8007EBF0 r31=80029670 r16=00000001 @t=0s
+run.log.d:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=8002B084 (r32 hits=424404 wrap-aware | ORIGIN guest=64 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log.d:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8004247C (r32 hits=595907 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=800286CC (r32 hits=122814809 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A228 off=0x0006A228 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A230 off=0x0006A230 old=00000000 arg=00000000 after=00000000 | store=MACRO-ATTRIBUTED (guest SW/SH/SB call site) line=21310 | cur_fn=80019524(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[hle-spu] reg write #1 0x1F801D80 = 0x0000
+run.log.d:[hle-spu] reg write #2 0x1F801D82 = 0x0000
+run.log.d:[hle-spu] reg write #3 0x1F801DAA = 0x0000
+run.log.d:[nullbase] R978 pump null-base @80041C64 door: A228=00000000 A22C=00000000 A230=00000000 | queue 18088=00000000 1808C=8001A4B4 18098=00000000 1809C=80077E88 180A8=00000001 | irqstruct 5A200=00000000 800409E4 80040A4C | Intr=80056788 w0=00000002 | reg0=1F801800
+run.log.d:[ringw] #1 0x8004FE08: 0x00000000 -> 0x8006FAF8 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #2 0x8004FE10: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #3 0x8004FE0C: 0x00000000 -> 0x00000000 r31=80029670 r16=00000001 @t=0s
+run.log.d:[ringw] #4 0x8004FE08: 0x8006FAF8 -> 0x8007EBF0 r31=80029670 r16=00000001 @t=0s
+run.log.d:[pollkick] R1196 kick #1 serviced at A22C poll cur_fn=8002B084 (r32 hits=424404 wrap-aware | ORIGIN guest=64 host=0 | OUTCOME blocked=0 svc-ent=1 svc-ret=1)
+run.log.d:[pollkick] R1196 kick #2 serviced at A22C poll cur_fn=8004247C (r32 hits=595907 wrap-aware | ORIGIN guest=128 host=0 | OUTCOME blocked=0 svc-ent=2 svc-ret=2)
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000000 arg=00000001 after=00000001 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041B24(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[tblw] R1197 COMMITTED w4 ea=0x8006A22C off=0x0006A22C old=00000001 arg=00000002 after=00000002 | store=runtime/unknown (entry sw_active==0: direct or hook-nested runtime write, never auto-labeled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=800286CC (r32 hits=122814809 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+=DEATHREC=
+--- EXITTAIL (run.log last 96) ---
+[firstfault-raw] code-ra 80019B98=0C011174
+[firstfault-raw] code-ra 80019B9C=00002021
+[firstfault-raw] code-ra 80019BA0=0C012D53
+[firstfault-raw] code-ra 80019BA4=00002021
+[firstfault-raw] code-ra 80019BA8=0C010135
+[firstfault-raw] code-ra 80019BAC=00000000
+[firstfault-raw] code-ra 80019BB0=0C011174
+[firstfault-raw] code-ra 80019BB4=00002021
+[firstfault-raw] code-ra 80019BB8=0C012D53
+[firstfault-raw] code-ra 80019BBC=00002021
+[firstfault-raw] code-ra 80019BC0=0C010115
+[firstfault-raw] code-ra 80019BC4=00000000
+[firstfault-raw] code-ra 80019BC8=0C010139
+[firstfault-raw] code-ra 80019BCC=00000000
+[firstfault-raw] code-ra 80019BD0=0C006552
+[firstfault-raw] code-ra 80019BD4=00000000
+[firstfault-raw] code-ra 80019BD8=8E240008
+[firstfault-raw] code-ra 80019BDC=0C00C6C4
+[firstfault-raw] code-ra 80019BE0=24840004
+[firstfault-raw] code-ra 80019BE4=0C00C68C
+[firstfault-raw] code-ra 80019BE8=00000000
+[firstfault-raw] code-ra 80019BEC=0C00D76C
+[firstfault-raw] code-ra 80019BF0=00000000
+[firstfault-raw] code-ra 80019BF4=0C00665B
+[firstfault-raw] code-ra 80019BF8=00002021
+[firstfault-raw] code-ra 80019BFC=8E220000
+[firstfault-raw] code-ra 80019C00=00000000
+[firstfault-raw] code-ra 80019C04=0040F809
+[firstfault-raw] code-ra 80019C08=00000000
+[firstfault-raw] code-ra 80019C0C=0C0066B3
+[firstfault-raw] code-ra 80019C10=00002021
+[firstfault-raw] code-ra 80019C14=8FBF0028
+[firstfault-raw] data-a0 @802FFFFF unavailable
+[firstfault-raw] request-4F 8004FDF8=00000000
+[firstfault-raw] request-4F 8004FDFC=00000000
+[firstfault-raw] request-4F 8004FE00=00000000
+[firstfault-raw] request-4F 8004FE04=00000000
+[firstfault-raw] request-4F 8004FE08=8007F2F8
+[firstfault-raw] request-4F 8004FE0C=00000000
+[firstfault-raw] request-4F 8004FE10=00000000
+[firstfault-raw] request-4F 8004FE14=00000A21
+[firstfault-raw] request-4F 8004FE18=00000017
+[firstfault-raw] request-4F 8004FE1C=00000000
+[firstfault-raw] request-4F 8004FE20=00000003
+[firstfault-raw] request-4F 8004FE24=00000000
+[firstfault-raw] request-4F 8004FE28=00000000
+[firstfault-raw] request-4F 8004FE2C=00000000
+[firstfault-raw] request-4F 8004FE30=00000000
+[firstfault-raw] request-4F 8004FE34=00000000
+[firstfault-raw] request-4F 8004FE38=00000000
+[firstfault-raw] request-4F 8004FE3C=00000000
+[firstfault-raw] request-4F 8004FE40=00000000
+[firstfault-raw] request-4F 8004FE44=00011001
+[firstfault-raw] request-5F 8005FDF8=00000000
+[firstfault-raw] request-5F 8005FDFC=00000000
+[firstfault-raw] request-5F 8005FE00=00000000
+[firstfault-raw] request-5F 8005FE04=00000000
+[firstfault-raw] request-5F 8005FE08=00000000
+[firstfault-raw] request-5F 8005FE0C=00000000
+[firstfault-raw] request-5F 8005FE10=00000000
+[firstfault-raw] request-5F 8005FE14=00000000
+[firstfault-raw] request-5F 8005FE18=00000000
+[firstfault-raw] request-5F 8005FE1C=00000000
+[firstfault-raw] request-5F 8005FE20=00000000
+[firstfault-raw] request-5F 8005FE24=00000000
+[firstfault-raw] request-5F 8005FE28=00000000
+[firstfault-raw] request-5F 8005FE2C=00000000
+[firstfault-raw] request-5F 8005FE30=00000000
+[firstfault-raw] request-5F 8005FE34=00000000
+[firstfault-raw] request-5F 8005FE38=00000000
+[firstfault-raw] request-5F 8005FE3C=00000000
+[firstfault-raw] request-5F 8005FE40=00000000
+[firstfault-raw] request-5F 8005FE44=00000000
+[firstfault-raw] walk-5F 8005FAEC=00000000
+[firstfault-raw] walk-5F 8005FAF0=00000000
+[firstfault-raw] file 80059F0C=0000000E
+[firstfault-raw] file 80059F10=00201524
+[firstfault-backtrace] frames=13; return PCs may follow the offending call
+0   xenogears_boot_142433               0x00000001018c0ec4 r1172_guest_stop + 1028
+1   xenogears_boot_142433               0x00000001018b6f44 r1177_door_stop + 148
+2   xenogears_boot_142433               0x00000001018bcd3b xenolift_mem_read8 + 2955
+3   xenogears_boot_142433               0x000000010171e6cd xenolift_fn_80032EB4_LZSSDecompress + 349
+4   xenogears_boot_142433               0x0000000101693fd6 xenolift_fn_80019B88 + 86
+5   xenogears_boot_142433               0x000000010169a527 xenolift_fn_8001A4B4_KernelMenuMain + 2103
+6   xenogears_boot_142433               0x0000000101694a28 xenolift_fn_80019BFC + 56
+7   xenogears_boot_142433               0x0000000101694b14 xenolift_fn_80019BFC + 292
+8   xenogears_boot_142433               0x000000010168f3ab xenolift_fn_80019934 + 267
+9   xenogears_boot_142433               0x00000001018e8ec2 xenolift_real_main + 2290
+10  xenogears_boot_142433               0x00000001018e85b6 xl_main_thread + 70
+11  libsystem_pthread.dylib             0x00007ff80c8d518b _pthread_start + 99
+12  libsystem_pthread.dylib             0x00007ff80c8d0ae3 thread_start + 15
+[firstfault] R1172 GUEST-FAULT STOP complete; exit=99; no legacy recovery entered
+[rungasp] R806 process exit status=99 (0=clean main-return; 99=kit/exitdiag door _exit; 9=fuse SIGKILL; 11/139=host SIGSEGV; 10/138=SIGBUS; 6=SIGABRT) - the silent-death class camera (c385-390: runs died at 10-32s with NO crash dump, NO exit receipt; the wait status names the door)
+[wedge] R1196 executed-binary xenogears_boot_142433 sha256=5ebbb65c6ae9d915682eb637f8f64f581916a49fff3be6c12a68552710e160ab dSYM=prev_run/last.dSYM
+[macreport] R833 no macOS crash report found in last 15 min (find DiagnosticReports empty)
+[logcap] end tail
+--- asan ---
+--- canaryrec ---
+--- abrtrec ---
+--- segvdie ---
+--- segvrec ---
+eled a guest store) line=130407 | cur_fn=80041C68(LAST DISPATCHED only) | SOURCE-scan candidates separate via SRC probe
+run.log.d:[pollkick] R1196 kick #3 serviced at A22C poll cur_fn=800286CC (r32 hits=122814809 wrap-aware | ORIGIN guest=192 host=0 | OUTCOME blocked=0 svc-ent=3 svc-ret=3)
+=FLDFRZ2=
+run.log:[fldfrz2] t=31s sectors=102 | seek=108933 pend=3 sched=1 act=0 arm1=0 loaded=0 data=0/0 cmd=02 resp=3/0 | FDF8=125304 FE04=0001a985 FE1C=1 FE20=0 FDE4=00000000 FDE8=00000000 | batch FE08=801dd680 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00331424/00000001 q18=000000a0/02020202 | rs+18=00331424 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=1 sched=1 act=0 arm1=1 loaded=0 data=0/0 cmd=01 resp=1/0 | FDF8=0 FE04=0001a9c3 FE1C=10 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=1 sched=1 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=0001a9c3 FE1C=10 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=3 sched=0 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=00000000 FE1C=0 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=3 sched=0 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=00000000 FE1C=0 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108933 pend=3 sched=1 act=0 arm1=0 loaded=0 data=0/0 cmd=02 resp=3/0 | FDF8=125304 FE04=0001a985 FE1C=1 FE20=0 FDE4=00000000 FDE8=00000000 | batch FE08=801dd680 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00331424/00000001 q18=000000a0/02020202 | rs+18=00331424 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=1 sched=1 act=0 arm1=1 loaded=0 data=0/0 cmd=01 resp=1/0 | FDF8=0 FE04=0001a9c3 FE1C=10 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=1 sched=1 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=0001a9c3 FE1C=10 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=3 sched=0 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=00000000 FE1C=0 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+run.log:[fldfrz2] t=31s sectors=102 | seek=108995 pend=3 sched=0 act=0 arm1=0 loaded=1 data=0/2060 cmd=01 resp=0/0 | FDF8=0 FE04=00000000 FE1C=0 FE20=3 FDE4=00000001 FDE8=00000000 | batch FE08=8007f2f8 FE0C=00000000 FE10=00000000 FE34=00000000 | q10=00201524/00000001 q18=000000a0/02020202 | rs+18=00201524 rs+1C=00000001 FE28=00000000 FE2C=00000000
+=FLDFRZ=
+=ABORTMSG=
+=STATESTAMP=
+=DEV=
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801803 = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801801 = 0x00000001
+run.log:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=9)
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=10)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=11)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=12)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=13)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=14)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=24)
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000000 (n=2)
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801803 = 0x00000000
+run.log:[dev] write 0x1F801800 = 0x00000000
+run.log:[dev] write 0x1F801801 = 0x00000001
+run.log:[dev] read  0x1F801800 = 0x00000024 (n=7)
+run.log:[dev] write 0x1F801800 = 0x00000001
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=9)
+run.log:[dev] read  0x1F801803 = 0x00000003 (n=10)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=11)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=12)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=13)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=14)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=15)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=16)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=17)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=18)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=19)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=20)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=21)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=22)
+run.log:[dev] read  0x1F801800 = 0x00000025 (n=23)
+run.log:[dev] read  0x1F801801 = 0x00000002 (n=24)
+=DIR2=
+=BANKW=
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #1: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #2: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F34B4 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F1154 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CD0 <- 84000000 writer_fn=800320E8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801ED934 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800C4A6C <- 800CC270 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800C4A6C <- 8006FF0C writer_fn=80031FF8 (bank3)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #1: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3260 <- 801FBFF8 writer_fn=80031C58 (bank1)
+[bankw] R778 BANK WRITE 800B3264 <- 840A0001 writer_fn=80031C58 (bank1)
+[bankheal] R900 bank head SEEDED @allocator door #2: 800B3260 0 -> 801FBFF8, 800B3264 -> 840A0001 (the allocator's own healthy [bankw] write pattern; walk sees a real list instead of null)
+[bankw] R778 BANK WRITE 800B3CCC <- 801FA634 writer_fn=80031E6C (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F34B4 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801F1154 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800B3CD0 <- 84000000 writer_fn=800320E8 (bank1)
+[bankw] R778 BANK WRITE 800B3CCC <- 801ED934 writer_fn=80031DA8 (bank1)
+[bankw] R778 BANK WRITE 800C4A6C <- 800CC270 writer_fn=8003223C (bank3)
+[bankw] R778 BANK WRITE 800C4A70 <- 84000000 writer_fn=8003223C (bank3)
+=FTAB2=
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+[ftab] file#=4 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100BA bytes=3DA901C05C0000 -> LBA=108861 size=23744
+[ftab] file#=5 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C1 bytes=49A901E0550000 -> LBA=108873 size=21984
+[ftab] file#=6 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100C8 bytes=54A901640A0000 -> LBA=108884 size=2660
+[ftab] file#=7 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100CF bytes=56A901C8350000 -> LBA=108886 size=13768
+[ftab] file#=3 base=0x80010004 off=2593 gate48=0x00000000 entry=0x800146F9 bytes=D5A60358230000 -> LBA=239317 size=9048
+[ftab] size-lookup fn_80028738(file#=18) caller=0x80019A48
+[ftab] file#=18 base=0x80010004 off=23 gate48=0x00000000 entry=0x8001011C bytes=66AA0118380000 -> LBA=109158 size=14360
+[ftab] FAT neighborhood (base=0x80010004 off=23)
+[ftab] file#=1: LBA=108754 size=-6  <== DIRECTORY MARKER
+[ftab] file#=2: LBA=108754 size=61680
+[ftab] file#=3: LBA=108785 size=155120
+[ftab] file#=4: LBA=108861 size=23744
+[ftab] file#=5: LBA=108873 size=21984
+[ftab] file#=6: LBA=108884 size=2660
+[ftab] file#=7: LBA=108886 size=13768
+[ftab] file#=8: LBA=0 size=0
+[ftab] file#=9: LBA=0 size=0
+[ftab] file#=10: LBA=0 size=0
+[ftab] file#=11: LBA=0 size=0
+[ftab] file#=12: LBA=108893 size=-6  <== DIRECTORY MARKER
+[ftab] file#=13: LBA=108893 size=80284
+[ftab] file#=14: LBA=108933 size=125304
+[ftab] file#=15: LBA=108995 size=92180
+[ftab] file#=16: LBA=109041 size=166564
+[ftab] file#=17: LBA=109123 size=70944
+[ftab] file#=18: LBA=109158 size=14360
+[ftab] size-lookup fn_80028738(file#=18) caller=0x8002960C
+[ftab] size-lookup fn_80028738(file#=18) caller=0x800288FC
+[ftab] READ ISSUED fn_80029690(file#=18 dst=0x801ED934 a2=0x00000000 a3=0x00000000) LBA cell FE04=0x0001AA66 size cell FDF8=14360
+[ftab] size-lookup fn_80028738(file#=14) caller=0x80019A48
+[ftab] file#=14 base=0x80010004 off=23 gate48=0x00000000 entry=0x80010100 bytes=85A90178E90100 -> LBA=108933 size=125304
+[ftab] size-lookup fn_80028738(file#=14) caller=0x8002960C
+[ftab] size-lookup fn_80028738(file#=14) caller=0x800288FC
+[ftab] READ ISSUED fn_80029690(file#=14 dst=0x801DD680 a2=0x00000000 a3=0x00000000) LBA cell FE04=0x0001A985 size cell FDF8=125304
+[archbase] R1100 archive base cell 4FDF0 00000000 -> 80010004 (wipe class R1014/R1067 + R1133 degenerate-small class: c314 archw receipted writer v_wait 0x8004B694 storing 1, timeout[] is a stack local per decomp psyq/libetc/vsync.c - misdirected store; healthy value receipted [ftab]/[stab] every cycle)
+[ftab] file#=2 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100AC bytes=D2A801F0F00000 -> LBA=108754 size=61680
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)

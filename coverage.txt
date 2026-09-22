@@ -1,0 +1,6 @@
+translated_bytes 1868816
+image_bytes 524288
+in_image_bytes 449696
+overlay_extra_bytes 1419120
+translated_functions 3601
+coverage_pct 85.8

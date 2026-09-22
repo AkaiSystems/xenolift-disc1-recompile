@@ -1,0 +1,42 @@
+SRC_SHA=01b37d7c7252f8a29650cf8f0a27875a0ef1ea15dc62870a55417a77b194daa6
+BASELINE_VERIFIED (the R1386 tree)
+===PREGATE469=== pre-existence gates (fail-closed)
+arm-gate sites: 1 (expect 1)
+R1386 markers: 3 (expect 3)
+R1387 marker: 0 (expect 0)
+g_r1385_armed refs: 0 (expect 0)
+R879 decl line: 1 (expect 1)
+mvloop print tail: 1 (expect 1)
+in-block watcher gate: 1 (expect 1)
+===APPLY469=== strict shape gate + apply
+R879 decl line: 1 (expect 1)
+fire line: 1 (expect 1)
+in-block watcher gate: 1 (expect 1)
+watcher span: 17 lines
+block decl line: 1 (expect 1)
+mvloop print tail: 1 (expect 1)
+APPLIED: R1387 re-homed announcement watcher
+===POSTGATE469=== post-apply marker gates (explicit, full patterns)
+R1387 markers: 3 (expect 3)
+f15post R1387 print: 1 (expect 1)
+f15post R1386 print: 0 (expect 0)
+g_r1385_armed refs: 4 (expect 4)
+g_r1385_seen_live refs: 4 (expect 4)
+g_r1385_announced refs: 4 (expect 4)
+old block statics: 0 (expect 0)
+old watcher gate: 0 (expect 0)
+R1386 markers: 1 (expect 1)
+arm-gate intact: 1 (expect 1)
+bell line: 1 (expect 1)
+f15near total: 2 (expect 2)
+PATCHED_TREE_SHA=d86f3deb57aed5b0921ab3a82867dea3a1e1d9960028e360bed8d9bdc90d45f8
+===BUILD469=== compile the patched runtime (NO RUN - the run-only cycle follows)
+BUILD OK
+[ftab] file#=3 base=0x80010004 off=23 gate48=0x00000000 entry=0x800100B3 bytes=F1A801F05D0200 -> LBA=108785 size=155120
+=FTAB2=
+[emitgate] R1020 post-run capture hash stamped to .run.md5 (alternate gate match; c135/c136 infinite fresh-emit fix)
+--- tree shas:
+baseline=01b37d7c7252f8a29650cf8f0a27875a0ef1ea15dc62870a55417a77b194daa6
+patched=d86f3deb57aed5b0921ab3a82867dea3a1e1d9960028e360bed8d9bdc90d45f8
+d86f3deb57aed5b0921ab3a82867dea3a1e1d9960028e360bed8d9bdc90d45f8
+===PRESERVE469=== the receipts + build output

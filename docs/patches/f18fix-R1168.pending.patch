@@ -1,0 +1,61 @@
+# PARKED EXPERIMENT - f18fix (R1168) - NOT SHIPPED pending Jos's verification gates
+# Status: plausible experiment, NOT a proven fix. Before dispatching at
+# PollArchiveTransfer (0x800286CC) verify:
+#   (a) the pending event belongs to the CURRENT request (LBA/cmd match via
+#       R1167 pend provenance receipts);
+#   (b) the handler cannot re-enter itself (f18_busy guard exists) nor deliver
+#       the same event twice (conversion must consume cd_pending; receipts must
+#       show single ack per armed event).
+# Re-integrate only after the fault#1 evidence review.
+# Context: c354 receipts - file#18 Setloc(02, LBA 109158) freeze, FE1C=1
+# static t=72-167s, armed events 0 pumps for 145s, arm->ack-discard ~200x.
+# The pattern copied is the PROVEN R394 movie-era conversion (c151 class).
+---
+        /* R1168 (b8-c354, diagnostic receipts): the file#18 Setloc freeze
+         * named by the c354 diagnostic — dirack4 primed+armed 56x, yet
+         * g_pend_pumps==0 for 145s, FE1C=1 static t=72-167s, FDF8=14360
+         * static, and the pendclr receipts show the arm->ack-discard
+         * cycle spinning ~200x: every existing conversion context (pump
+         * at CD_sync 0x80041B3C, hook at 0x800415B4, fd-tick, movie-conv)
+         * is dead in the PollArchiveTransfer/LegacyCdDataWait loop. This
+         * is the SAME class the R394 movie-era fix solved (c151: primed
+         * Setloc answer + pending unconsumed, every conversion context
+         * dead in that loop) - re-place that PROVEN conversion at THIS
+         * door, which the receipts prove fires every poll of the frozen
+         * loop (R917 camera + R870 loop-id + mvloop counters). Convert
+         * via the proven handler triple with full register save/restore
+         * and cd_restore_pend (R394 pattern verbatim), gated on the
+         * receipted freeze signature. Anti-replay (R1115): converts ONLY
+         * the currently-armed event the receipts prove was never
+         * converted (0 pumps since the last stamped arm); if FDF8 stays
+         * static after a conversion, the next digest receipts it and
+         * this reverts. Rate 1/s, budget 200, log head 12. */
+        if (a == 0x800286CCu && cd_pending != 0u && cd_arm_int1_pending == 0u
+            && g_pend_pumps == 0u && cd_read_active
+            && cd_last_cmd == 0x02u && cd_seek_lba >= 108900u
+            && xenolift_mem_read32(0x8004FE1Cu) == 1u
+            && xenolift_mem_read32(0x8004FDF8u) != 0u) {
+            static time_t f18_last; static uint32_t f18_budget = 200u;
+            static int f18_logged; static int f18_busy;
+            if (f18_budget > 0u && !f18_busy
+                && (xl_wall() - f18_last) >= 1) {
+                uint32_t sr[32]; uint32_t shi, slo;
+                f18_busy = 1;
+                memcpy(sr, r, sizeof r); shi = hi; slo = lo;
+                r[4] = 0; r[5] = 0;
+                cd_restore_pend();
+                f18_last = xl_wall(); f18_budget--;
+                if (f18_logged < 12) {
+                    f18_logged++;
+                    xenolift_receipt("[f18fix] R1168 converting pending INT%u at PollArchiveTransfer door (FE1C=1 cmd=02 seek=%u FDF8=%u resp=%u/%u pumps=%u - every other conversion context dead in this loop; R394 pattern; anti-replay: armed + never-pumped only)\n",
+                            (unsigned)cd_pending, cd_seek_lba,
+                            xenolift_mem_read32(0x8004FDF8u),
+                            cd_resp_n, cd_resp_pos, g_pend_pumps);
+                }
+                g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--;
+                g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--;
+                g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--;
+                memcpy(r, sr, sizeof r); hi = shi; lo = slo;
+                f18_busy = 0;
+            }
+        }

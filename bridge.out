@@ -1,0 +1,95 @@
+[bridge5] === v5 auto-lab start Thu Sep 17 05:13:11 CDT 2026 cycles=45 conv=6aa26c825d5b4135ae6b48b5 ===
+[bridge5] cycle 1: url=26 chars, block=1954 chars
+[bridge5] WARN: package fetch issue (continuing with current tree)
+[bridge5] run banner: banner? (archived)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'message': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'content': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'text': sys.stdin.read()}))
+                                              ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'message': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'content': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'text': sys.stdin.read()}))
+                                              ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'message': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'content': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'text': sys.stdin.read()}))
+                                              ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'message': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'content': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'text': sys.stdin.read()}))
+                                              ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'message': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'content': sys.stdin.read()}))
+                                                 ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;print(json.dumps({'text': sys.stdin.read()}))
+                                              ~~~~~~~~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 43028: invalid continuation byte
+[bridge5] digest post failed after retries — digest archived; relaunch bridge to resume
