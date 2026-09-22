@@ -3382,6 +3382,50 @@ static uint32_t cd_read_impl(uint32_t p)
         }
     }
 }
+
+{ /* R1473 (Nasir/DIRECTOR): PAUSE-SCHEDULED ARMSTART, PEND-ADMIT + TIME CONFIRM. Digest pacing-vs-stall: terminal sched=1 pend=3 act=0 cmd=09 FDF8=2048 FE1C=6 at ~108905; R1464C refuses pend!=0; R1467A refuses sched/pend; cmd flutter resets 2M polls. Twin: admit pend>=1, 2s wall hold on (seek,FDF8,sched) only — cmd excluded from reset (R1464B lesson). Fire = R1298/R1464C composite. FE1C stays ==6 (no OR). Budget 8. PASS = [pausepend] R1473 fire + FDF8 drain/seek advance. REVERT = fire + zero consumption. Forbidden: R1467A edits; FE1C 6||0 re-apply; blind 2M shrink. */
+    static time_t r1473_hold_t0;
+    static uint32_t r1473_hseek = 1u, r1473_hf8 = 1u, r1473_hsched = 1u;
+    static uint32_t r1473_fires = 0;
+    uint32_t r1473_f8 = xenolift_mem_read32(0x8004FDF8u);
+    uint32_t r1473_fe04 = xenolift_mem_read32(0x8004FE04u);
+    uint32_t r1473_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+    uint32_t r1473_sched = cd_scheduled ? 1u : 0u;
+    int r1473_match =
+        (cd_seek_lba >= 100000u && cd_seek_lba < 300000u)
+        && r1473_fe04 == (uint32_t)cd_seek_lba
+        && r1473_f8 >= 2048u && r1473_f8 <= 125304u
+        && cd_read_active == 0
+        && cd_arm_int1_pending == 0
+        && r1473_sched == 1u
+        && cd_last_cmd == 0x09u
+        && r1473_fe1c == 6u
+        && cd_pending >= 1u;
+    if (r1473_match) {
+        if (r1473_hseek != (uint32_t)cd_seek_lba || r1473_hf8 != r1473_f8 || r1473_hsched != r1473_sched) {
+            r1473_hseek = (uint32_t)cd_seek_lba;
+            r1473_hf8 = r1473_f8;
+            r1473_hsched = r1473_sched;
+            r1473_hold_t0 = xl_wall();
+        } else if (r1473_fires < 8u && (xl_wall() - r1473_hold_t0) >= 2) {
+            r1473_fires++;
+            r1473_hold_t0 = xl_wall();
+            cd_read_active = 1;
+            cd_data_loaded = 0;
+            cd_data_load();
+            cd_pending = 1;
+            cd_force_deliver_int1("r1473-pausepend");
+            r861_out("[pausepend] R1473 fire %u/8 @t=%lds seek=%u FDF8=%u sched=1 pend>=1 cmd=09 FE1C=6 - act=1 + staged + pend + INT1 (time-held; cmd churn ignored)\n",
+                     r1473_fires, (long)(xl_wall() - g_boot_wall_t0),
+                     (unsigned)cd_seek_lba, (unsigned)r1473_f8);
+        }
+    } else {
+        r1473_hseek = 1u;
+        r1473_hf8 = 1u;
+        r1473_hsched = 1u;
+    }
+}
+
         { /* R1452 (c1060): THE COMPLETED-READ FE1C CLEAR. The c1059 receipts: the file-18 read COMPLETED (R1422A 8 sectors stuffed to 801EF300, FDF8=0) but the state cell FE1C held 1 forever - the game LegacyCdDataWait exit needs FE1C==0 (the waitbr receipts name it: ret=0 + FDFC==0 + FE1C=1 = the ONLY failing term, 245M polls) until the model watchdog-alarm exited cleanly at 216s with every other drive term dead (kickterms/schclr/park: act=0 pend=0 arm1=0 sched=0 resp_n=0 data_n=0 FDF8=0). The R1428A/R1429A stuck-state seam-clears are the proven direct-FE1C-write vehicle (10+ fires, the game walked on); this sibling clears the completed-read stale state: the drive fully idle but FE1C=1 through 2M polls = stale by definition. Budget 8, counter resets per fire. */
             static uint32_t r1452_polls, r1452_fires;
             if (r1452_fires < 8u
