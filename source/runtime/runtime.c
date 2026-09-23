@@ -3426,6 +3426,59 @@ static uint32_t cd_read_impl(uint32_t p)
     }
 }
 
+{ /* R1474 (Nasir/DIRECTOR): PLATEAU CYCLING CAMERA — ZERO BEHAVIORAL.
+ * Digest pacing-definitively-ruled-out: 120s-900s same seek ceiling
+ * ~108886-108907; R1473 0/8 on 120/180/600 (not 900s); churn continues.
+ * HOLD stillness/armstart. Camera-only: while seek sits in the plateau
+ * band, log cmd + FE1C + r31 on-change (debounced) and a 2s heartbeat
+ * with cumulative pump-context counters (r31 0x80041CA0 fd-processor /
+ * 0x80041BB0 pump per PROJECT_LOG / pump-invocation-rarity-lead).
+ * No armstart, no stillness confirm, no FE1C OR, no pend/sched gate
+ * change. reapply_OR_forbidden=YES. */
+    static uint32_t r1474_prints = 0;
+    static uint32_t r1474_lcmd = 0xFFFFFFFFu;
+    static uint32_t r1474_lfe1c = 0xFFFFFFFFu;
+    static uint32_t r1474_lr31 = 0xFFFFFFFFu;
+    static uint32_t r1474_evals = 0;
+    static uint32_t r1474_last_print_eval = 0;
+    static uint32_t r1474_n_ca0 = 0;   /* r31 == 0x80041CA0 */
+    static uint32_t r1474_n_bb0 = 0;   /* r31 == 0x80041BB0 */
+    static uint32_t r1474_n_other = 0;
+    static time_t r1474_last_hb = 0;
+    if (cd_seek_lba >= 108880u && cd_seek_lba <= 108920u) {
+        uint32_t pc_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+        uint32_t pc_r31 = r[31];
+        uint32_t pc_fdf8 = xenolift_mem_read32(0x8004FDF8u);
+        time_t now = xl_wall();
+        int changed = (cd_last_cmd != r1474_lcmd)
+            || (pc_fe1c != r1474_lfe1c)
+            || (pc_r31 != r1474_lr31);
+        int debounced = ((r1474_evals - r1474_last_print_eval) >= 1024u);
+        int heartbeat = (r1474_last_hb == 0 || (now - r1474_last_hb) >= 2);
+        r1474_evals++;
+        if (pc_r31 == 0x80041CA0u) r1474_n_ca0++;
+        else if (pc_r31 == 0x80041BB0u) r1474_n_bb0++;
+        else r1474_n_other++;
+        if (r1474_prints < 384u && ((changed && debounced) || heartbeat)) {
+            const char *kind = (changed && debounced) ? "chg" : "hb";
+            r1474_prints++;
+            r1474_last_print_eval = r1474_evals;
+            r1474_lcmd = cd_last_cmd;
+            r1474_lfe1c = pc_fe1c;
+            r1474_lr31 = pc_r31;
+            if (heartbeat) r1474_last_hb = now;
+            r861_out("[platcam] R1474 %s #%u @t=%lds seek=%u cmd=%02X FE1C=%u r31=%08X cur_fn=%08X FDF8=%u pend=%u sched=%d act=%d | ctx ca0=%u bb0=%u other=%u evals=%u\n",
+                     kind, r1474_prints, (long)(now - g_boot_wall_t0),
+                     (unsigned)cd_seek_lba, (unsigned)cd_last_cmd,
+                     (unsigned)pc_fe1c, (unsigned)pc_r31,
+                     (unsigned)xenolift_cur_fn, (unsigned)pc_fdf8,
+                     (unsigned)cd_pending, (int)(cd_scheduled ? 1 : 0),
+                     (int)cd_read_active,
+                     r1474_n_ca0, r1474_n_bb0, r1474_n_other, r1474_evals);
+        }
+    }
+}
+
         { /* R1452 (c1060): THE COMPLETED-READ FE1C CLEAR. The c1059 receipts: the file-18 read COMPLETED (R1422A 8 sectors stuffed to 801EF300, FDF8=0) but the state cell FE1C held 1 forever - the game LegacyCdDataWait exit needs FE1C==0 (the waitbr receipts name it: ret=0 + FDFC==0 + FE1C=1 = the ONLY failing term, 245M polls) until the model watchdog-alarm exited cleanly at 216s with every other drive term dead (kickterms/schclr/park: act=0 pend=0 arm1=0 sched=0 resp_n=0 data_n=0 FDF8=0). The R1428A/R1429A stuck-state seam-clears are the proven direct-FE1C-write vehicle (10+ fires, the game walked on); this sibling clears the completed-read stale state: the drive fully idle but FE1C=1 through 2M polls = stale by definition. Budget 8, counter resets per fire. */
             static uint32_t r1452_polls, r1452_fires;
             if (r1452_fires < 8u
