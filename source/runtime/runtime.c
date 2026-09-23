@@ -25376,6 +25376,27 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
                     if (cd_seek_lba < 250000u || cd_seek_lba > 252000u) zrfD2S_armed = 0;
                 }
             }
+            /* JOSH-DIAG churn tracker: edge-triggered on cmd/FE1C CHANGE only (not every poll),
+             * so a fixed line budget covers far more wall-clock time than the periodic fld2sig
+             * camera. Answers: how often does cmd/FE1C actually change at the plateau, what
+             * values does it cycle through, how long does each hold, and what guest context
+             * (r31) is live when it happens. Budget 2000 - large enough to span a full 120s+
+             * run at the observed churn rate without hitting the fld2sig-style early cutoff. */
+            {
+                static uint32_t jc_n; static uint32_t jc_last_cmd = 0xFFu, jc_last_fe1c = 0xFFFFFFFFu;
+                static time_t jc_last_t;
+                uint32_t jc_cmd = cd_last_cmd;
+                uint32_t jc_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+                if ((jc_cmd != jc_last_cmd || jc_fe1c != jc_last_fe1c) && jc_n < 2000u) {
+                    time_t jc_now = xl_wall();
+                    long jc_held = jc_last_t ? (long)(jc_now - jc_last_t) : 0;
+                    jc_n++;
+                    r861_out("[churn] JOSH-DIAG #%u @t=%lds seek=%u cmd %02x->%02x FE1C %u->%u held=%lds r31=%08X\n",
+                            jc_n, (long)(jc_now - g_boot_wall_t0), cd_seek_lba,
+                            jc_last_cmd, jc_cmd, jc_last_fe1c, jc_fe1c, jc_held, r[31]);
+                    jc_last_cmd = jc_cmd; jc_last_fe1c = jc_fe1c; jc_last_t = jc_now;
+                }
+            }
             static uint32_t fld2sig_n;
             if (fld2sig_n < 200u) {
                 r861_out("[fld2sig] sched=1 seek=%u pend=%u arm1=%u loaded=%u data=%u/%u cmd=%02x FDF8=%u FE04=%08x FDFC=%u FE1C=%u FE20=%u resp_n=%u\n",
