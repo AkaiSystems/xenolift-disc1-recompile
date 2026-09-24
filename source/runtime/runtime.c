@@ -1669,6 +1669,26 @@ static uint32_t cd_data_pos, cd_data_n;
  * Zero behavior. Caps live at the print sites. */
 static uint32_t g_r1479_fire_n, g_r1479_clear_n, g_r1479_drain_n, g_r1479_stuck_n;
 
+/* R1480 [xcam]: last-N=16 DMA/[fldsec] sector deliveries before stream stop.
+ * Camera only — zero behavior. Stall-dump when fldsec frozen >=3s in seek
+ * band [108880, 109050]; cap 8 dumps/run. Ring is static 16 slots. */
+#define R1480_XCAM_N 16u
+typedef struct {
+    long t;
+    uint32_t fldsec_n;
+    uint32_t lba;
+    uint32_t madr;
+    uint32_t bytes;
+    uint32_t fifo_pos, fifo_n;
+    uint32_t fdf8, fe1c, fe20, a22c;
+    uint8_t cmd, act, pend, sched;
+    uint16_t flag578A6;
+    uint32_t cur_fn, r31;
+} r1480_xcam_slot_t;
+static r1480_xcam_slot_t g_r1480_xcam[R1480_XCAM_N];
+static uint32_t g_r1480_xcam_n;       /* total pushes (wraps via %) */
+static uint32_t g_r1480_xcam_stall_n; /* stall dumps this run (cap 8) */
+
 static uint32_t cd_bcd(uint8_t x) { return ((x >> 4) & 15u) * 10u + (x & 15u); }
 static FILE *g_disc = NULL; static uint32_t g_sec_bytes = 2048u; /* R262: hoisted decls (used by cd_cmd GetTD) */
 
@@ -6239,6 +6259,30 @@ static int io_special_write(uint32_t p, uint32_t v)
                         long fel = (g_boot_wall_t0 ? (long)(xl_wall() - g_boot_wall_t0) : 0);
                         fldsec_n++; g_fldsec_total++;
                         if (cd_seek_lba >= 108754u) g_stream_era = 1u; /* R823: historical latch */
+                        { /* R1480 [xcam]: push delivery into last-N ring (camera only). */
+                            r1480_xcam_slot_t *xs = &g_r1480_xcam[g_r1480_xcam_n % R1480_XCAM_N];
+                            uint16_t x578 = 0;
+                            memcpy(&x578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                            xs->t = fel;
+                            xs->fldsec_n = fldsec_n;
+                            xs->lba = cd_seek_lba;
+                            xs->madr = madr;
+                            xs->bytes = n;
+                            xs->fifo_pos = cd_data_pos;
+                            xs->fifo_n = cd_data_n;
+                            xs->fdf8 = xenolift_mem_read32(0x8004FDF8u);
+                            xs->fe1c = xenolift_mem_read32(0x8004FE1Cu);
+                            xs->fe20 = xenolift_mem_read32(0x8004FE20u);
+                            xs->a22c = xenolift_mem_read32(0x8006A22Cu);
+                            xs->cmd = cd_last_cmd;
+                            xs->act = cd_read_active ? 1u : 0u;
+                            xs->pend = cd_pending;
+                            xs->sched = cd_scheduled;
+                            xs->flag578A6 = x578;
+                            xs->cur_fn = (uint32_t)xenolift_cur_fn;
+                            xs->r31 = r[31];
+                            g_r1480_xcam_n++;
+                        }
                         if (fldsec_n <= 4u || (fldsec_n % 8u) == 0u)
                             r861_out("[fldsec] #%u LBA %u consumed @t=%lds fifo=%u/%u ring_n=%d dring=%d\n",
                                     fldsec_n, cd_seek_lba, fel, cd_data_pos, cd_data_n,
@@ -13784,6 +13828,50 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                         xenolift_mem_read32(0x80059F0Cu),
                         xenolift_mem_read32(0x80059F10u));
                 frz_last_chg = run_now; frz_n++;
+            }
+        }
+        { /* R1480 [xcam] STALL: fldsec frozen >=3s in seek band [108880,109050].
+           * Cap 8 dumps/run. Camera only — dump last-N ring oldest->newest. */
+            static time_t xcam_last_chg; static uint32_t xcam_last_cnt;
+            static time_t xcam_last_dump;
+            if (g_fldsec_total != xcam_last_cnt) {
+                xcam_last_cnt = g_fldsec_total; xcam_last_chg = run_now;
+            } else if (g_r1480_xcam_stall_n < 8u
+                       && cd_seek_lba >= 108880u && cd_seek_lba <= 109050u
+                       && xcam_last_chg != 0
+                       && (run_now - xcam_last_chg) >= 3
+                       && (xcam_last_dump == 0 || (run_now - xcam_last_dump) >= 3)) {
+                uint16_t x578 = 0;
+                uint32_t have = (g_r1480_xcam_n < R1480_XCAM_N) ? g_r1480_xcam_n : R1480_XCAM_N;
+                uint32_t start = (g_r1480_xcam_n < R1480_XCAM_N) ? 0u : (g_r1480_xcam_n % R1480_XCAM_N);
+                uint32_t xi;
+                memcpy(&x578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                g_r1480_xcam_stall_n++;
+                xcam_last_dump = run_now;
+                r861_out("[xcam] STALL #%u @t=%lds seek=%u FDF8=%u FE1C=%u FE20=%u act=%u pend=%u sched=%u cmd=%02X A22C=%u flag578A6=%u cur_fn=%08X r31=%08X | ring=%u/%u dumps=%u/8\n",
+                        g_r1480_xcam_stall_n,
+                        (long)(run_now - g_boot_wall_t0),
+                        cd_seek_lba,
+                        xenolift_mem_read32(0x8004FDF8u),
+                        xenolift_mem_read32(0x8004FE1Cu),
+                        xenolift_mem_read32(0x8004FE20u),
+                        (unsigned)(cd_read_active ? 1 : 0),
+                        (unsigned)cd_pending, (unsigned)cd_scheduled,
+                        (unsigned)cd_last_cmd,
+                        xenolift_mem_read32(0x8006A22Cu),
+                        (unsigned)x578,
+                        (unsigned)xenolift_cur_fn, (unsigned)r[31],
+                        have, R1480_XCAM_N, g_r1480_xcam_stall_n);
+                for (xi = 0u; xi < have; xi++) {
+                    const r1480_xcam_slot_t *xs = &g_r1480_xcam[(start + xi) % R1480_XCAM_N];
+                    uint32_t age = have - 1u - xi; /* N-0 = newest */
+                    r861_out("[xcam] N-%u: t=%lds fldsec=#%u LBA=%u madr=%08X bytes=%u fifo=%u/%u FDF8=%u FE1C=%u FE20=%u A22C=%u cmd=%02X act=%u pend=%u sched=%u flag578A6=%u cur_fn=%08X r31=%08X\n",
+                            age, xs->t, xs->fldsec_n, xs->lba, xs->madr, xs->bytes,
+                            xs->fifo_pos, xs->fifo_n, xs->fdf8, xs->fe1c, xs->fe20, xs->a22c,
+                            (unsigned)xs->cmd, (unsigned)xs->act, (unsigned)xs->pend,
+                            (unsigned)xs->sched, (unsigned)xs->flag578A6,
+                            xs->cur_fn, xs->r31);
+                }
             }
         }
     /* R521[dirack] — c88 verdict: THE GLYPH WALL IS DEAD (glyphguard
