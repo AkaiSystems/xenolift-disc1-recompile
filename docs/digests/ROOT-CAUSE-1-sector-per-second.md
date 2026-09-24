@@ -69,3 +69,62 @@ observed in the first seconds, which would cross the 11,734-sector gap in roughl
 Verification bar for any such fix: the rate profile above should stop reading
 1.00/s. That is a direct, unambiguous pass/fail signal - no stillness heuristics
 or receipt archaeology required.
+
+---
+
+## ADDENDUM (same session, after further digging) - corrections + the real mechanism
+
+### Correction to my own A22C claim above
+I cited the A22C census (353 zeros vs ~27 nonzero) as evidence the announce never
+lands. That was overstated. A22C reading 0 is equally consistent with the flag
+being *consumed* promptly by the guest. The census is suggestive, not proof.
+There are also already ~9 separate A22C announce sites in runtime.c, so "just post
+the announce" has been attempted repeatedly - any fix here must explain why those
+did not already solve it.
+
+### Also ruled out
+- R1466B's 1s same-LBA guard: its fires are ~1/sector at distinct NEW seeks, so
+  the instant path is taken. Not the throttle.
+- R477/R1470B's 1s guard (line ~17892): budget is `r472_fires < 5`, far too small
+  to pace ~300 sectors.
+
+### The actual mechanism, in the project's own words
+`runtime.c` R361 (field-stream liveness), which has been in the tree since ~cycle
+109:
+```
+/* R361: FIELD-STREAM LIVENESS - the file-14 stream advances ~1 sector
+ * per poll round (consumer-driven; cycle-109: 27 sectors in 61s). */
+```
+and the watchdog defers carry:
+```
+alarm(2); /* R452: was 15 - round cadence is the field sector clock */
+```
+
+So: the rate is **consumer-driven** - the guest's own CD wait loop only requests
+the next sector after its wait cadence elapses (~1-2s), and the runtime's alarm
+round is explicitly described as "the field sector clock." 27 sectors in 61s at
+cycle-109 is the same ~0.4-1.0/s being measured now.
+
+### The significant realization
+This rate has been **known and treated as normal since cycle ~109**, and roughly
+1,100 subsequent revisions of stall-rescue machinery were built on top of that
+assumption - including watchdog defer budgets (up to 120 defers) specifically so
+runs would not be killed while crawling. Nobody appears to have questioned whether
+~1 sector/sec is itself the defect. A 2x PS1 streams ~300 sectors/sec; this is
+~300x slow, and it is sufficient on its own to make the 120634 door unreachable
+in any practical budget.
+
+### Where a fix has to aim
+Not at "force-start the stuck read" (nothing is stuck). Either:
+(A) make the guest's CD waiter exit early on data-arrival instead of riding its
+    timeout - the A22C announce path, noting ~9 prior attempts, so the subtlety is
+    in *when* the waiter samples it, not whether we post it; or
+(B) batch-deliver multiple sectors per poll round rather than one, so the
+    consumer's cadence stops being the bottleneck.
+
+(B) is likely lower-risk than changing alarm/timer semantics, which the watchdog,
+park detection and fuse logic all depend on.
+
+### Unambiguous pass/fail for any attempt
+Re-measure the rate profile. If it still reads ~1.00 LBA/s after t=10s, the fix
+did not work - no receipt archaeology needed.
