@@ -26342,7 +26342,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
 { static uint32_t r1406_n; if (a == 0x800286CCu) { r1406_n++;
   if (r1406_n <= 16u || (r1406_n % 65536u) == 0u) r861_out("[schclr21506] R1406 L21506-clear eval at 286CC n=%u: sched=%u pend=%u act=%d FDF8=%08X FE1C=%08X FE04=%08X seek=%u arm1=%u\n", r1406_n, (unsigned)cd_scheduled, (unsigned)cd_pending, cd_read_active?1:0, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FE04u), cd_seek_lba, (unsigned)cd_arm_int1_pending);
 } }
-{ /* R1461S v8 (c1112): THE STREAM SERVE, FINAL-PARTIAL SIZE-WINDOW WIDEN. c1111 receipts: THE ARMSTART FIRED (R1464B @1432seam t=12s seek=120597 FDF8=28560) and the field file DRAINED 13/14 sectors - v7 fires 7/48..14/48 walking 120602..120609, the game's armer consuming each serve ([req]: FDF8 0x6F90->0x790 in exact 2048 steps, FE04 D71F->D721, FE08 800C9278->800CAA78, fldsec consumed 120599/120607) - then the drain STOPPED at the final partial: 1936 bytes owed (28560 mod 2048 = 1936, the file's non-sector-multiple tail), the terminal holds act=1 loaded=1 pend=0 FDF8=0x790 FE1C=1 (waitbr verbatim, r1432seam #2-#5 t=31-121s) and the v7 REFUSES IT: the FDF8 lower bound >=2048 (inherited from the R1298 armstart range) EXCLUDES THE REMAINDER - every file whose size is not a sector multiple can never finish its drain. v8: the lower bound 2048->64 (a real remainder can be any 1..2048; the c1061 negative-remainder garbage 0xFFFFFDE0 stays excluded by the upper bound 125304; the stuck-confirm 65536 evals + FE04==seek + act!=0 + all-dead terms still gate every fire). THE COMPOSITE IS PROVEN 14x THIS RUN - this widens only the size window (the c930 band-widen precedent applied to the size axis). PASS = the serve fires at 120609 with FDF8=1936 -> the game consumes the final chunk -> FDF8->0 -> the completed-read transition clears FE1C -> the waiter exits -> the game advances past the field file. REVERT = fire with zero consumption. */
+{ /* R1461S v8 (c1112) + R1476 [fldbatch] K=8 burst on fire body (gates unchanged): THE STREAM SERVE, FINAL-PARTIAL SIZE-WINDOW WIDEN. c1111 receipts: THE ARMSTART FIRED (R1464B @1432seam t=12s seek=120597 FDF8=28560) and the field file DRAINED 13/14 sectors - v7 fires 7/48..14/48 walking 120602..120609, the game's armer consuming each serve ([req]: FDF8 0x6F90->0x790 in exact 2048 steps, FE04 D71F->D721, FE08 800C9278->800CAA78, fldsec consumed 120599/120607) - then the drain STOPPED at the final partial: 1936 bytes owed (28560 mod 2048 = 1936, the file's non-sector-multiple tail), the terminal holds act=1 loaded=1 pend=0 FDF8=0x790 FE1C=1 (waitbr verbatim, r1432seam #2-#5 t=31-121s) and the v7 REFUSES IT: the FDF8 lower bound >=2048 (inherited from the R1298 armstart range) EXCLUDES THE REMAINDER - every file whose size is not a sector multiple can never finish its drain. v8: the lower bound 2048->64 (a real remainder can be any 1..2048; the c1061 negative-remainder garbage 0xFFFFFDE0 stays excluded by the upper bound 125304; the stuck-confirm 65536 evals + FE04==seek + act!=0 + all-dead terms still gate every fire). THE COMPOSITE IS PROVEN 14x THIS RUN - this widens only the size window (the c930 band-widen precedent applied to the size axis). PASS = the serve fires at 120609 with FDF8=1936 -> the game consumes the final chunk -> FDF8->0 -> the completed-read transition clears FE1C -> the waiter exits -> the game advances past the field file. REVERT = fire with zero consumption. */
     static uint32_t r1461s_stuck = 0; static int r1461s_budget = 48;
     static uint32_t r1461s_seen = 0, r1461s_decl = 0, r1461s_dc = 0;
     if (a == 0x800286CCu) {
@@ -26368,12 +26368,33 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                 && cd_arm_int1_pending == 0
                 && cd_scheduled == 0) {
                 if (++r1461s_stuck >= 65536u) {
+                    /* R1476 [fldbatch]: multi-sector poll burst (FIX B). Gates
+                     * unchanged; replace one-sector body with K=8 load+pend+INT1
+                     * iterations + R958-style FDF8 progress-break. Consumer
+                     * metronome (~1 LBA/s) is the ROOT-CAUSE; batching raises
+                     * sectors-per-stuck-fire without FE1C OR / alarm / stillness. */
                     r1461s_stuck = 0u; r1461s_budget--;
-                    cd_data_loaded = 0;
-                    cd_data_load();
-                    cd_pending = 1;
-                    cd_force_deliver_int1("r1461sv8stream");
-                    r861_out("[fstrfd] R1461S v8 stream-serve fire %d/48 (seek=%u cmd=%02X FDF8=%u FE08=%08X) - staged + pend + INT1\n",
+                    {
+                        const unsigned k_fldbatch = 8u;
+                        unsigned i_fb;
+                        for (i_fb = 0u; i_fb < k_fldbatch; i_fb++) {
+                            uint32_t fdf8_before = xenolift_mem_read32(0x8004FDF8u);
+                            uint32_t fdf8_after;
+                            if (fdf8_before < 64u) break;
+                            cd_data_loaded = 0;
+                            cd_data_load();
+                            cd_pending = 1;
+                            cd_force_deliver_int1("fldbatch");
+                            fdf8_after = xenolift_mem_read32(0x8004FDF8u);
+                            r861_out("[fldbatch] %u/%u seek=%u FDF8 %u->%u FE04=%08X FE08=%08X\n",
+                                     i_fb + 1u, k_fldbatch, cd_seek_lba,
+                                     fdf8_before, fdf8_after,
+                                     xenolift_mem_read32(0x8004FE04u),
+                                     xenolift_mem_read32(0x8004FE08u));
+                            if (fdf8_after == fdf8_before) break; /* R958 progress-break */
+                        }
+                    }
+                    r861_out("[fstrfd] R1461S v8+R1476 fldbatch fire %d/48 (seek=%u cmd=%02X FDF8=%u FE08=%08X) - K=8 burst on stuck-fire\n",
                              48 - r1461s_budget, cd_seek_lba, (unsigned)cd_last_cmd,
                              xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE08u));
                 }
