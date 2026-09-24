@@ -8588,8 +8588,37 @@ static void xenolift_kick(void)
 
 static volatile uint32_t xenolift_kick_due; /* R859: serviced at park ticks (safe boundary) */
 static volatile uint32_t xenolift_kick_raised; /* R860: tally only - NO print in the read hook (R859 rule); the park tick prints the tally at the safe boundary */
+static uint32_t g_hbcam_calls, g_hbcam_past_hb;
 static void xenolift_vblank_heartbeat(void)
 {
+    /* R1478 (JOSH-DIAG) HEARTBEAT DECLINE CAMERA: R1477 landed in the binary
+     * (verified: fldaccel string present, source sha == prev_run archive sha)
+     * and fired ZERO times while the rate stayed exactly 1000ms/sector. Rather
+     * than guess which term declines, name it - the R1432B decline-camera
+     * technique. Prints every 2 wall-seconds, cap 24, with EVERY gate term live
+     * plus two call counters: g_hbcam_calls (function entered at all) and
+     * g_hbcam_past_hb (survived the hb_active early-return). If calls==0 the
+     * heartbeat is not on this era's rail at all and the 1s pacer is elsewhere;
+     * if calls>0 but past_hb==0 then hb_active is pinned; otherwise the printed
+     * terms say which of fe20/fdf8/act/band declines. Zero behavioral change. */
+    g_hbcam_calls++;
+    {
+        static time_t r1478_last; static uint32_t r1478_seen = 0;
+        time_t r1478_now = xl_wall();
+        if (r1478_seen < 24u && (r1478_last == 0 || (r1478_now - r1478_last) >= 2)) {
+            uint32_t c_fe20 = 0, c_fdf8 = 0;
+            memcpy(&c_fe20, xenolift_mem + 0x4FE20, 4);
+            memcpy(&c_fdf8, xenolift_mem + 0x4FDF8, 4);
+            r1478_last = r1478_now; r1478_seen++;
+            r861_out("[hbcam] R1478 #%u: calls=%u past_hb=%u hb_active=%d vb_polls=%u | act=%d FE20=%u FDF8=%u seek=%u | R448term(fdf8>100000)=%d R1477term(0<fdf8<=2048)=%d bandterm=%d eraterm(act&&fe20==3)=%d\n",
+                     r1478_seen, g_hbcam_calls, g_hbcam_past_hb, hb_active, g_vb_polls,
+                     cd_read_active ? 1 : 0, c_fe20, c_fdf8, cd_seek_lba,
+                     (c_fdf8 > 100000u) ? 1 : 0,
+                     (c_fdf8 > 0u && c_fdf8 <= 2048u) ? 1 : 0,
+                     (cd_seek_lba >= 100000u && cd_seek_lba < 300000u) ? 1 : 0,
+                     (cd_read_active && c_fe20 == 3u) ? 1 : 0);
+        }
+    }
     /* R1227 (c66): SCREEN SAMPLER ON THE TRUE ALWAYS-HOT RAIL. Three
      * placement lessons (R1224 kick-heartbeat - era-dependent; R1225
      * SIGALRM - deferred mid-guest-step; R1226 timer2 case - hot only
@@ -8607,6 +8636,7 @@ static void xenolift_vblank_heartbeat(void)
         }
     }
     if (hb_active) return;
+    g_hbcam_past_hb++; /* R1478 camera: survived the hb_active early-return */
     /* R448 FIELD-LOAD FRAME ACCELERATION (c207 data): each field sector
      * costs the guest only ~9 dispatches ([fldsec] dring) — the 1.9s/sector
      * wall time IS the frame clock: one heartbeat round per frame, ~0.53
@@ -8622,6 +8652,53 @@ static void xenolift_vblank_heartbeat(void)
         memcpy(&fdf8, xenolift_mem + 0x4FDF8, 4);
         if (cd_read_active && fe20 == 3u && fdf8 > 100000u)
             vb_thresh = 64u;
+        /* R1477 (JOSH-DIAG): THE SINGLE-SECTOR-STAGED FIELD WALK ACCELERATION -
+         * R448's gate widened to the posture the runtime's own healers create.
+         *
+         * THE RECEIPT (ms-resolution [mscycle] camera, this session, 180s trial):
+         *   [mscycle] #270 t=111995ms A22C 115->115 FDF8 2048->0 seek ...->108990 act=1 cmd=06 FE1C=0
+         *   [mscycle] #271 t=111995ms A22C 115->116 FDF8 0->2048 seek 108990->108990 act=1 cmd=06 FE1C=0
+         *   [mscycle] #272 t=112995ms A22C 116->116 FDF8 2048->0 seek 108990->108991 ...
+         * The next sector is STAGED IN THE SAME MILLISECOND the previous one is
+         * consumed (FDF8 0->2048 at t=111995), and then nothing happens for
+         * exactly 1000ms. Jitter-free, phase-locked to :995 every second. The
+         * guest is never data-starved and FE1C==0 THE WHOLE TIME - the waiter's
+         * only failing exit term in every prior cycle is already satisfied here.
+         * A guest timeout would drift; a 1000ms jitter-free period is a HOST
+         * cadence. R448's own comment names it: "one heartbeat round per frame",
+         * "the game loads ONE SECTOR PER FRAME by design", 3000 polls per round.
+         *
+         * THE SINGLE FAILING TERM: R448 accelerates 3000->64 polls per round only
+         * when fdf8 > 100000 - the bulk multi-sector read posture of its own era
+         * (c207). In THIS era the field walk is fed one sector at a time by the
+         * runtime's own healers (R1466B/R722D stage FDF8=2048 per sector), so
+         * FDF8 holds ONLY 0 or 2048 and NEVER exceeds 100000. Log census of this
+         * trial: FE20=3 (176 samples, the era gate HOLDS), act=1 (holds), and
+         * fdf8 > 100000 is the ONE term that fails. R448 has therefore been dead
+         * code through the entire field era - the runtime's own single-sector
+         * staging defeats the runtime's own acceleration.
+         *
+         * THE WIDEN: same era gate (cd_read_active + FE20==3), same proven
+         * vb_thresh=64, but also accept the staged-single-sector form - FDF8 in
+         * (0,2048] inside the field LBA band 100000..299999. Boot and menu
+         * trajectories stay untouched exactly as R448 requires (FE20!=3 and the
+         * band gate both exclude them).
+         *
+         * PASS = the [mscycle] gaps stop reading 1000ms and the rate profile
+         * stops reading 1.00 LBA/s after t=10s (the unambiguous ROOT-CAUSE bar -
+         * no receipt archaeology needed). REVERT = the accel camera fires and the
+         * rate is still 1.00/s (then the round is not the pacer). */
+        if (cd_read_active && fe20 == 3u && vb_thresh != 64u
+            && fdf8 > 0u && fdf8 <= 2048u
+            && cd_seek_lba >= 100000u && cd_seek_lba < 300000u) {
+            static uint32_t r1477_seen = 0;
+            vb_thresh = 64u;
+            if (r1477_seen < 8u) {
+                r1477_seen++;
+                r861_out("[fldaccel] R1477 #%u: single-sector-staged field walk - frame clock 3000->64 polls/round (seek=%u FDF8=%u FE20=%u act=1)\n",
+                         r1477_seen, cd_seek_lba, fdf8, fe20);
+            }
+        }
     }
     if (++g_vb_polls < vb_thresh) return;
     g_vb_polls = 0;
@@ -17161,6 +17238,34 @@ void xenolift_trace(uint32_t a)
     }
 }
 
+{ /* JOSH-DIAG MSCYCLE: millisecond-resolution sector-handshake trace. The 1.00
+ * sector/sec plateau is measured but the ~1000ms is unattributed - xl_wall()
+ * only has 1s granularity so it cannot show WHERE inside a sector cycle the
+ * time goes. This logs every transition of the three cells that define the
+ * handshake (A22C data-arrived flag, FDF8 bytes-remaining, seek) with a
+ * CLOCK_MONOTONIC ms stamp, so the gaps between transitions name the slow
+ * segment directly. Camera only - no writes, no behavior. Budget 400 lines. */
+    static uint32_t jms_lastA = 0xFFFFFFFFu, jms_lastF8 = 0xFFFFFFFFu, jms_lastSeek = 0xFFFFFFFFu;
+    static uint32_t jms_t0 = 0, jms_n = 0;
+    if (cd_seek_lba >= 108850u && cd_seek_lba <= 109250u && jms_n < 400u) {
+        uint32_t jms_a = xenolift_mem_read32(0x8006A22Cu);
+        uint32_t jms_f8 = xenolift_mem_read32(0x8004FDF8u);
+        uint32_t jms_sk = (uint32_t)cd_seek_lba;
+        if (jms_a != jms_lastA || jms_f8 != jms_lastF8 || jms_sk != jms_lastSeek) {
+            struct timespec jms_ts; clock_gettime(CLOCK_MONOTONIC, &jms_ts);
+            uint32_t jms_now = (uint32_t)((uint32_t)jms_ts.tv_sec * 1000u + (uint32_t)(jms_ts.tv_nsec / 1000000L));
+            if (jms_t0 == 0u) jms_t0 = jms_now;
+            jms_n++;
+            r861_out("[mscycle] #%u t=%ums A22C %u->%u FDF8 %u->%u seek %u->%u act=%d pend=%u cmd=%02X FE1C=%u\n",
+                     jms_n, jms_now - jms_t0,
+                     jms_lastA, jms_a, jms_lastF8, jms_f8, jms_lastSeek, jms_sk,
+                     cd_read_active ? 1 : 0, (unsigned)cd_pending,
+                     (unsigned)cd_last_cmd, xenolift_mem_read32(0x8004FE1Cu));
+            jms_lastA = jms_a; jms_lastF8 = jms_f8; jms_lastSeek = jms_sk;
+        }
+    }
+}
+
 { /* R1466B v4 (c1130): THE FIELD-BAND ZERO-LENGTH HEAL, CMD-09 WIDENED. c1129 receipts: the chronic heal WORKED - 15+ fires walked the game through the whole band (entry fires at 108862/108995/120610, sequential sector fires 120598->120603, the game's own armer resumed stepping FE04 per sector, fldsec consumed 120596/120600/120604/120612) - then the walk parked on THE PAUSE-SETTLE VARIANT: the game's per-sector dance is 06 (ReadS) -> 09 (pause) -> 02 (ReadN) -> 06, and at 120604 the 09 landed in the all-dead never-armed posture and STAYED (frozen t=61-121s: cmd=09 FDF8=0 act=0 loaded=0 pend=0 arm1=0 FE04==seek FE1C=0, the mvloop R870 receipts) - the v3 cmd {02,06} gate correctly refuses a pause command. THE WIDEN: admit cmd 09 - (1) the healthy dance's pauses resolve in well under 2s (every sector 120598-120603 passed through a 09 and advanced), so the 2s window only admits a STUCK pause; (2) the c1065 precedent: the zrfB fired at exactly this pause-parked all-dead posture and the game walked on. Same fire composite (FDF8 0->2048 + act=1 + same-poll cd_data_load + pend=1 + force INT1 = the data-ready bell that releases the waiter), same gates otherwise, budget 256. PASS = the stuck pause at 120604 (or deeper) resolves, the dance resumes, the walk continues to the file end. REVERT = fire with zero consumption. */
     static time_t r1466b_alast; static int r1466b_budget = 2048; /* R1466B v6 (c1158): the budget raise - c1157 exhausted 256/256 at the file band (all fires consumed, the bulk drain receipted); the file band needs ~200/pass x2-3 passes + the field walk ~56-100 + the deep band; 2048 = 4x headroom, the 1s backup makes a no-consume terminal self-limiting */ static uint32_t r1466b_lastfired = 0xFFFFFFFFu; /* R1466B v5 (c1157): the per-seek one-shot - a NEW seek fires instantly, the 1s window is only the same-LBA re-request backup; FDF8!=0 post-fire is the real one-shot */
     static uint32_t r1466b_seen = 0;
@@ -17202,6 +17307,66 @@ void xenolift_trace(uint32_t a)
                  xenolift_mem_read32(0x8004FE1Cu));
     }
 }
+
+#if 0 /* R1476 REVERTED (JOSH-DIAG, same session it was written): fired exactly ONCE
+ * and changed nothing - the mscycle trace still read a jitter-free 1000ms/sector.
+ * WHY IT FAILED, and why this matters more than the fix would have: the gate
+ * required A22C==0, on the theory that the guest clears the flag at wait-entry.
+ * It does not. A22C increments monotonically all run (109->110->...->119) and is
+ * NEVER cleared - nothing in runtime.c writes it to zero, and disc1.c references
+ * 0x8006A22C exactly once. So A22C is effectively a WRITE-ONLY COUNTER that the
+ * runtime increments and the guest does not consume. It was nonzero for the whole
+ * crawl and the guest still waited its full 1000ms every sector.
+ * CONSEQUENCE: the guest is not waking on A22C at all, which invalidates the
+ * premise behind ~9 existing runtime announce sites (and this one). The comment at
+ * R879 calling A22C "the CD-data-arrived flag LegacyCdDataWait polls" does not hold
+ * in this path. Whatever LegacyCdDataWait actually waits on, it is not this cell.
+ * Kept here #if 0'd as a signpost so the next person does not re-derive the same
+ * dead end a tenth time. The mscycle camera above is the useful survivor. */
+{ /* R1476 (JOSH-DIAG): THE DOORBELL RE-ARM - fixes announce TIMING, not content.
+ * ROOT CAUSE (mscycle ms-resolution trace, this session): the field crawl runs at
+ * a jitter-free 1000ms/sector = exactly 60 vblanks, i.e. the guest rides its full
+ * VSync timeout for EVERY sector. The trace shows why:
+ *     t=1996ms  A22C 24->25, FDF8 0->2048   <- we arm AND ring the doorbell
+ *     t=2997ms  FDF8 2048->0, seek advances <- guest consumes, exactly 1000ms later
+ * The announce is posted at ARM time, before the guest enters its wait. The guest
+ * then begins waiting and clears the flag as part of its own clear-then-wait entry,
+ * so by the time it is actually blocked there is no doorbell left to see, and it
+ * rides the full 60-frame timeout. Per this file's own R879 note, on hardware the
+ * guest's event chain posts this flag WHEN A SECTOR LANDS; "in this era that chain
+ * never dispatches", which is why ~9 runtime announce sites exist - all of them
+ * post at the wrong moment, which is why none of them fixed the rate.
+ * THE FIX: re-arm the doorbell whenever a staged, unconsumed sector is sitting and
+ * the flag reads ZERO. Firing only on zero means we never inflate the counter - we
+ * simply restore the flag after the guest's wait-entry clears it, which is exactly
+ * what the missing hardware event chain would have done. Truthful: we only ring it
+ * while data genuinely IS staged and unconsumed. Posts the same composite R1466B
+ * posts (A22C + slot bits + 578A6), since the hardware chain sets all three.
+ * No timers touched, no destination guessed, no read force-started.
+ * PASS = the mscycle gaps stop reading 1000ms and the rate profile leaves 1.00/s.
+ * REVERT = rate still 1.00/s (then the waiter polls something else entirely). */
+    static uint32_t r1476_fires = 0, r1476_seen = 0;
+    if (cd_seek_lba >= 100000u && cd_seek_lba < 300000u
+        && cd_data_loaded
+        && xenolift_mem_read32(0x8004FDF8u) > 0u
+        && xenolift_mem_read32(0x8006A22Cu) == 0u) {
+        r1476_fires++;
+        xenolift_mem_write32(0x8006A22Cu, 1u);
+        { uint32_t r1476_sb = xenolift_mem_read32(0x80056788u);
+          xenolift_mem_write32(0x80056788u, r1476_sb | 6u); }
+        { uint16_t r1476_one = 1;
+          memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &r1476_one, 2); }
+        if (r1476_seen < 32u) {
+            r1476_seen++;
+            r861_out("[doorbell] R1476 re-arm #%u (total %u): staged sector unconsumed with A22C==0 - re-posting arrival (seek=%u FDF8=%u cmd=%02X FE1C=%u act=%d pend=%u)\n",
+                     r1476_seen, r1476_fires, cd_seek_lba,
+                     xenolift_mem_read32(0x8004FDF8u), (unsigned)cd_last_cmd,
+                     xenolift_mem_read32(0x8004FE1Cu),
+                     cd_read_active ? 1 : 0, (unsigned)cd_pending);
+        }
+    }
+}
+#endif /* R1476 REVERTED */
 { /* R1466W (c1187): THE 108832-CLASS NEVER-ARMED READN ZERO-LENGTH HEAL TWIN. The c1185-run receipts (TWO consecutive runs): the walk parked at seek=108832 frozen t=61-181s at act=1 loaded=0 pend=0 arm1=0 cmd=02 FDF8=0 NEVER-ARMED FE1C=6 (the waiter's ONLY failing exit term) FE04=0001A90D behind-seek A22C=0 FDFC=0, the R1432C seam camera printing live every 30s = the seam HOT through the freeze; the drain never evaluates (sched=0), zrfG declines (FDF8=0), the R1427A declines (FDF8==0, FE04!=seek), the R1466B declines (its fires all at cmd=09-class postures). THE CURE RECEIPTED IN-FAMILY AND IN-RUN: the R1466B heal fired 659x this run at seek=108934 (FDF8 0->2048, act + staged + pend + INT1) and the zrfB composite cured the identical never-armed class at seek=0/1 (c1065). THIS twin rings that exact composite at the 108832-class posture: cmd==0x02, FDF8==0, FE1C==6, act==1, loaded==0, pend==0, arm1==0, sched==0, band 100000..299999, 2s held-confirm, budget 16. PASS = the read arms, the game's own drain consumes, FE1C leaves 6, the walk continues at 108832+. REVERT = fires with zero consumption. */
     static time_t r1466w_hold; static int r1466w_budget = 16; static uint32_t r1466w_seen = 0;
     if (r1466w_budget > 0
