@@ -3426,6 +3426,59 @@ static uint32_t cd_read_impl(uint32_t p)
     }
 }
 
+{ /* R1475 (JOSH-DIAG): PAUSE-SCHEDULED ARMSTART, SCHED-FLAP-TOLERANT TWIN OF R1473.
+ * Direct log evidence (sched-toggle-correction digest): at the SAME LBA (109005),
+ * within a single ~1s window, [cmdtl] shows sched=0 while [fld2sig] shows sched=1 -
+ * cd_scheduled itself toggles 0/1 even while seek/FDF8 hold still. R1473's hold-reset
+ * tracks (seek,FDF8,sched) as a triple and wipes its 2s timer on ANY change including
+ * sched flapping - so the 2s window is never reached even during genuine 75+ second
+ * near-stalls, because sched keeps re-triggering the reset. This is the SAME class
+ * R1464B already carved out for cmd (the "flap-tolerant" lesson) - just not yet
+ * extended to sched. FIX SHAPE: hold-track (seek,FDF8) ONLY; sched is read fresh at
+ * fire time (still required ==1 to actually arm, so we never force-start a read the
+ * game hasn't scheduled) but no longer resets the accumulated hold. Same composite
+ * action as R1473, own counters/budget (independent fire cap 8) so this can be
+ * measured separately. FE1C stays ==6 (no OR, reapply_OR_forbidden=YES honored).
+ * REVERT = fires with zero consumption (seek/FDF8 unchanged after fire). */
+    static time_t r1475_hold_t0;
+    static uint32_t r1475_hseek = 1u, r1475_hf8 = 1u;
+    static uint32_t r1475_fires = 0;
+    uint32_t r1475_f8 = xenolift_mem_read32(0x8004FDF8u);
+    uint32_t r1475_fe04 = xenolift_mem_read32(0x8004FE04u);
+    uint32_t r1475_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+    int r1475_match =
+        (cd_seek_lba >= 100000u && cd_seek_lba < 300000u)
+        && r1475_fe04 == (uint32_t)cd_seek_lba
+        && r1475_f8 >= 2048u && r1475_f8 <= 125304u
+        && cd_read_active == 0
+        && cd_arm_int1_pending == 0
+        && cd_last_cmd == 0x09u
+        && r1475_fe1c == 6u
+        && cd_pending >= 1u;
+    if (r1475_match) {
+        if (r1475_hseek != (uint32_t)cd_seek_lba || r1475_hf8 != r1475_f8) {
+            r1475_hseek = (uint32_t)cd_seek_lba;
+            r1475_hf8 = r1475_f8;
+            r1475_hold_t0 = xl_wall();
+        } else if (r1475_fires < 8u && cd_scheduled != 0
+                   && (xl_wall() - r1475_hold_t0) >= 2) {
+            r1475_fires++;
+            r1475_hold_t0 = xl_wall();
+            cd_read_active = 1;
+            cd_data_loaded = 0;
+            cd_data_load();
+            cd_pending = 1;
+            cd_force_deliver_int1("r1475-schedflap");
+            r861_out("[schedflap] R1475 fire %u/8 @t=%lds seek=%u FDF8=%u sched=1-at-fire pend>=1 cmd=09 FE1C=6 - act=1 + staged + pend + INT1 (sched EXCLUDED from hold-reset, only checked at fire)\n",
+                     r1475_fires, (long)(xl_wall() - g_boot_wall_t0),
+                     (unsigned)cd_seek_lba, (unsigned)r1475_f8);
+        }
+    } else {
+        r1475_hseek = 1u;
+        r1475_hf8 = 1u;
+    }
+}
+
 { /* R1474 (Nasir/DIRECTOR): PLATEAU CYCLING CAMERA — ZERO BEHAVIORAL.
  * Digest pacing-definitively-ruled-out: 120s-900s same seek ceiling
  * ~108886-108907; R1473 0/8 on 120/180/600 (not 900s); churn continues.
