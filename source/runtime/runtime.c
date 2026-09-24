@@ -1665,6 +1665,9 @@ static uint8_t g_slot4_dispatch_pending; /* INT1 collected, handler not yet run 
 static uint8_t g_cd_irq_force; /* R101: INT1 armed -> dispatch the registered CD IRQ handler pair at the next wait tick */
 static uint8_t cd_arm_int1_pending; /* arm INT1 after the 802-ack of the pair */
 static uint32_t cd_data_pos, cd_data_n;
+/* R1479 [r96cam]: camera-only tallies correlating R96 INT1 re-arm / 578A6 clear / FIFO drain.
+ * Zero behavior. Caps live at the print sites. */
+static uint32_t g_r1479_fire_n, g_r1479_clear_n, g_r1479_drain_n, g_r1479_stuck_n;
 
 static uint32_t cd_bcd(uint8_t x) { return ((x >> 4) & 15u) * 10u + (x & 15u); }
 static FILE *g_disc = NULL; static uint32_t g_sec_bytes = 2048u; /* R262: hoisted decls (used by cd_cmd GetTD) */
@@ -4903,6 +4906,29 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                  * the event pump then exits via its slot check while the
                  * slot byte still holds the GetStat success value (2). */
                 uint16_t zero = 0;
+                { /* R1479 [r96cam] CLEAR: 578A6 clear at response-consume (camera only). Cap 64 field-band. */
+                    uint16_t r1479_f578 = 0;
+                    memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                    /* Prefer R96-path or nonzero-flag clears so GetStat noise
+                     * does not exhaust the 64-cap before a multi-minute stop. */
+                    if (g_r1479_clear_n < 64u
+                        && cd_seek_lba >= 108700u && cd_seek_lba < 300000u
+                        && (r1479_f578 != 0u
+                            || ((cd_last_cmd == 0x06u || cd_last_cmd == 0x09u)
+                                && cd_read_active))) {
+                        g_r1479_clear_n++;
+                        r861_out("[r96cam] CLEAR #%u: seek=%u cmd=%02X act=%d flag578A6 %u->0 "
+                                 "data=%u/%u loaded=%d pend=%u FE1C=%u FDF8=%u "
+                                 "(fires=%u drains=%u)\n",
+                                 g_r1479_clear_n, cd_seek_lba, (unsigned)cd_last_cmd,
+                                 cd_read_active ? 1 : 0, (unsigned)r1479_f578,
+                                 (unsigned)cd_data_pos, (unsigned)cd_data_n,
+                                 cd_data_loaded ? 1 : 0, (unsigned)cd_pending,
+                                 xenolift_mem_read32(0x8004FE1Cu),
+                                 xenolift_mem_read32(0x8004FDF8u),
+                                 g_r1479_fire_n, g_r1479_drain_n);
+                    }
+                }
                 memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &zero, 2);
                 r861_out("[cd] response consumed — op flag cleared\n");
                 /* R285: LADDER-COMPLETION SYNC DISPATCH. Cycle-31/32/33
@@ -5035,6 +5061,26 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                     cd_pending = 1;
                     r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
                     g_cd_irq_force = 1;
+                    { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
+                        uint16_t r1479_f578 = 0;
+                        memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                        if (g_r1479_fire_n < 64u
+                            && cd_seek_lba >= 108700u && cd_seek_lba < 300000u) {
+                            g_r1479_fire_n++;
+                            r861_out("[r96cam] FIRE #%u: seek=%u cmd=%02X act=%d pend=%u "
+                                     "data=%u/%u loaded=%d FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
+                                     "(clears=%u drains=%u)\n",
+                                     g_r1479_fire_n, cd_seek_lba, (unsigned)cd_last_cmd,
+                                     cd_read_active ? 1 : 0, (unsigned)cd_pending,
+                                     (unsigned)cd_data_pos, (unsigned)cd_data_n,
+                                     cd_data_loaded ? 1 : 0,
+                                     xenolift_mem_read32(0x8004FDF8u),
+                                     xenolift_mem_read32(0x8004FE1Cu),
+                                     xenolift_mem_read32(0x8006A22Cu),
+                                     (unsigned)r1479_f578,
+                                     g_r1479_clear_n, g_r1479_drain_n);
+                        }
+                    }
                 }
             }
             return b;
@@ -5062,7 +5108,26 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                 if (!cd_data_loaded || cd_data_pos >= cd_data_n)
                     cd_data_load();
                 if (cd_data_pos < cd_data_n) {
+                    uint32_t r1479_pos_before = cd_data_pos;
                     uint8_t b = cd_data[cd_data_pos++];
+                    /* R1479 [r96cam] DRAIN: edge on first-byte (pos 0->1) or sector-complete.
+                     * Cap 64 field-band. Camera only — no behavior change. */
+                    if (g_r1479_drain_n < 64u
+                        && cd_seek_lba >= 108700u && cd_seek_lba < 300000u
+                        && (r1479_pos_before == 0u || cd_data_pos == cd_data_n)) {
+                        g_r1479_drain_n++;
+                        r861_out("[r96cam] DRAIN #%u: seek=%u pos %u->%u/%u loaded=%d "
+                                 "pend=%u cmd=%02X FDF8=%u FE1C=%u "
+                                 "(fires=%u clears=%u)\n",
+                                 g_r1479_drain_n, cd_seek_lba,
+                                 (unsigned)r1479_pos_before, (unsigned)cd_data_pos,
+                                 (unsigned)cd_data_n,
+                                 cd_data_loaded ? 1 : 0, (unsigned)cd_pending,
+                                 (unsigned)cd_last_cmd,
+                                 xenolift_mem_read32(0x8004FDF8u),
+                                 xenolift_mem_read32(0x8004FE1Cu),
+                                 g_r1479_fire_n, g_r1479_clear_n);
+                    }
                     if (cd_data_pos == cd_data_n) {
                         /* sector fully consumed: advance and raise INT1
                          * for the next one (delivered silently — the
@@ -12481,6 +12546,31 @@ static void on_alarm_ctx(int sig, siginfo_t *si, void *uc)
         if (run_now - r1225_last >= 4) {
             r1225_last = run_now;
             gpu_screen_receipts();
+        }
+    }
+    { /* R1479 [r96cam] STUCK: 30s sample while FIFO staged-empty (loaded && pos==0 && FDF8>0) in field band. Cap 8. Camera only. */
+        static time_t r1479_stuck_last;
+        if (g_r1479_stuck_n < 8u
+            && cd_seek_lba >= 108700u && cd_seek_lba < 300000u
+            && cd_data_loaded && cd_data_pos == 0u && cd_data_n > 0u
+            && xenolift_mem_read32(0x8004FDF8u) > 0u
+            && (r1479_stuck_last == 0 || (run_now - r1479_stuck_last) >= 30)) {
+            uint16_t r1479_f578 = 0;
+            memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+            g_r1479_stuck_n++;
+            r1479_stuck_last = run_now;
+            r861_out("[r96cam] STUCK #%u @t=%lds: seek=%u cmd=%02X pend=%u act=%d "
+                     "data=%u/%u loaded=1 FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
+                     "| tallies FIRE=%u CLEAR=%u DRAIN=%u\n",
+                     g_r1479_stuck_n, (long)(run_now - g_boot_wall_t0),
+                     cd_seek_lba, (unsigned)cd_last_cmd, (unsigned)cd_pending,
+                     cd_read_active ? 1 : 0,
+                     (unsigned)cd_data_pos, (unsigned)cd_data_n,
+                     xenolift_mem_read32(0x8004FDF8u),
+                     xenolift_mem_read32(0x8004FE1Cu),
+                     xenolift_mem_read32(0x8006A22Cu),
+                     (unsigned)r1479_f578,
+                     g_r1479_fire_n, g_r1479_clear_n, g_r1479_drain_n);
         }
     }
         }
