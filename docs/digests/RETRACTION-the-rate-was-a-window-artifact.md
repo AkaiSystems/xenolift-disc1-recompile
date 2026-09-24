@@ -174,3 +174,61 @@ with an external `sleep N; pkill -9` killer.
   is **not a valid bar** - it only samples a burst window. The valid bar is the
   **[mscycle] gap distribution over a run of 1500s or more**: a fix works if the
   >100,000 ms gaps disappear.
+
+---
+
+# SAME-SESSION CORRECTION to this document: R1477 DID fire
+
+Above I reported R1477 as "zero fires." **That was wrong, and it was wrong for
+the same reason Retraction 1 was wrong: I read a truncated log.**
+
+`run.log` is capped to the **first 16,000 + last 16,000 lines**
+(`[logcap] R751`). The R1477 prints in the first trial fell in the discarded
+middle. A later trial, where they landed at lines 9997-10070 (safely inside the
+kept head), shows R1477 firing its full 8-print budget:
+```
+[fldaccel] R1477 #1: single-sector-staged field walk - frame clock 3000->64 polls/round (seek=108896 FDF8=2048 FE20=3 act=1)
+```
+
+So the R448 analysis was mechanically correct: `FE20==3` and `act==1` hold,
+`FDF8 > 100000` was the single failing term, R448 had been dead code in the field
+era, and widening the gate does make it engage.
+
+**It changed nothing.** The run froze at the identical posture:
+```
+[platcam] R1474 chg #158 @t=13s seek=108910 cmd=06 FE1C=0 r31=80041CA0
+          cur_fn=800415B4 FDF8=2048 pend=1 sched=0 act=1
+```
+All logging stops at t=13s; hard-killed at 300s; max seek 109004. Fires with zero
+consumption change, so **R1477 is REVERTED** per the project rule. The frame clock
+is not the pacer - the freeze is.
+
+## Methodological warning, stated plainly
+Twice in one session I drew a confident conclusion from a partial view of the
+data: once from a 180-second window of a much longer run, once from the discarded
+middle of a capped log. **Absence of a log line in `run.log` is not evidence the
+code did not run.** Before concluding "fired zero times," check the line number
+against the 16,000-line cap boundary, or instrument with a counter that is printed
+from a site you know survives the cap.
+
+## The freeze, now precisely characterized and reproducible
+Identical across both runs:
+```
+act=1  loaded=1  pos=0/2060  pend=1  sched=0  arm1=0
+cmd=06 FE1C=0    FDF8=2048   FE04==seek       seek~108910
+cur_fn=800415B4 (getintr)    r31=80041CA0
+```
+- Data is staged and the guest never reads it (`pos=0/2060`).
+- `FE1C==0` - the waiter's historically-failing exit term is satisfied.
+- The guest is hot-spinning, not stopped (`r32 hits` -> 604,607,318).
+- `1F801803` reads `1` (INT1 data-ready) persistently.
+- It ends only when R1283/R473 force-completes one sector, ~1184s later.
+
+## Unresolved inconsistency (flagged, not explained)
+The R1478 camera sits in `xenolift_vblank_heartbeat()` **before** the
+`if (hb_active) return;` early-out; R1477's print sat **after** it. The camera
+should therefore print at least as often. It printed **once** (line 161) while
+R1477 printed **eight** times (lines 9997-10070), both inside the kept head of the
+log. I do not have an explanation for this and am not going to invent one. The
+R1477 verdict above does not depend on it. Anyone picking this up should resolve
+it before trusting heartbeat-call-rate claims in either direction.

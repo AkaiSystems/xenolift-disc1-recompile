@@ -8652,53 +8652,16 @@ static void xenolift_vblank_heartbeat(void)
         memcpy(&fdf8, xenolift_mem + 0x4FDF8, 4);
         if (cd_read_active && fe20 == 3u && fdf8 > 100000u)
             vb_thresh = 64u;
-        /* R1477 (JOSH-DIAG): THE SINGLE-SECTOR-STAGED FIELD WALK ACCELERATION -
-         * R448's gate widened to the posture the runtime's own healers create.
-         *
-         * THE RECEIPT (ms-resolution [mscycle] camera, this session, 180s trial):
-         *   [mscycle] #270 t=111995ms A22C 115->115 FDF8 2048->0 seek ...->108990 act=1 cmd=06 FE1C=0
-         *   [mscycle] #271 t=111995ms A22C 115->116 FDF8 0->2048 seek 108990->108990 act=1 cmd=06 FE1C=0
-         *   [mscycle] #272 t=112995ms A22C 116->116 FDF8 2048->0 seek 108990->108991 ...
-         * The next sector is STAGED IN THE SAME MILLISECOND the previous one is
-         * consumed (FDF8 0->2048 at t=111995), and then nothing happens for
-         * exactly 1000ms. Jitter-free, phase-locked to :995 every second. The
-         * guest is never data-starved and FE1C==0 THE WHOLE TIME - the waiter's
-         * only failing exit term in every prior cycle is already satisfied here.
-         * A guest timeout would drift; a 1000ms jitter-free period is a HOST
-         * cadence. R448's own comment names it: "one heartbeat round per frame",
-         * "the game loads ONE SECTOR PER FRAME by design", 3000 polls per round.
-         *
-         * THE SINGLE FAILING TERM: R448 accelerates 3000->64 polls per round only
-         * when fdf8 > 100000 - the bulk multi-sector read posture of its own era
-         * (c207). In THIS era the field walk is fed one sector at a time by the
-         * runtime's own healers (R1466B/R722D stage FDF8=2048 per sector), so
-         * FDF8 holds ONLY 0 or 2048 and NEVER exceeds 100000. Log census of this
-         * trial: FE20=3 (176 samples, the era gate HOLDS), act=1 (holds), and
-         * fdf8 > 100000 is the ONE term that fails. R448 has therefore been dead
-         * code through the entire field era - the runtime's own single-sector
-         * staging defeats the runtime's own acceleration.
-         *
-         * THE WIDEN: same era gate (cd_read_active + FE20==3), same proven
-         * vb_thresh=64, but also accept the staged-single-sector form - FDF8 in
-         * (0,2048] inside the field LBA band 100000..299999. Boot and menu
-         * trajectories stay untouched exactly as R448 requires (FE20!=3 and the
-         * band gate both exclude them).
-         *
-         * PASS = the [mscycle] gaps stop reading 1000ms and the rate profile
-         * stops reading 1.00 LBA/s after t=10s (the unambiguous ROOT-CAUSE bar -
-         * no receipt archaeology needed). REVERT = the accel camera fires and the
-         * rate is still 1.00/s (then the round is not the pacer). */
-        if (cd_read_active && fe20 == 3u && vb_thresh != 64u
-            && fdf8 > 0u && fdf8 <= 2048u
-            && cd_seek_lba >= 100000u && cd_seek_lba < 300000u) {
-            static uint32_t r1477_seen = 0;
-            vb_thresh = 64u;
-            if (r1477_seen < 8u) {
-                r1477_seen++;
-                r861_out("[fldaccel] R1477 #%u: single-sector-staged field walk - frame clock 3000->64 polls/round (seek=%u FDF8=%u FE20=%u act=1)\n",
-                         r1477_seen, cd_seek_lba, fdf8, fe20);
-            }
-        }
+        /* R1477 REVERTED (JOSH-DIAG, same session): R448's accel gate widened to
+         * the staged-single-sector field posture. It ENGAGED (8 [fldaccel] fires
+         * receipted at seek=108896, FDF8=2048 FE20=3 act=1 - so the widen was
+         * mechanically correct and R448 had indeed been dead code in this era),
+         * but the run froze at the IDENTICAL posture anyway: seek=108910 cmd=06
+         * FE1C=0 FDF8=2048 pend=1 sched=0 act=1 cur_fn=800415B4 r31=80041CA0,
+         * all logging stopped at t=13s, hard-killed at 300s, max seek 109004.
+         * Fires with zero consumption change = REVERT per the project rule. The
+         * frame clock is NOT the pacer; the freeze is. Do not re-land this
+         * without first explaining the freeze. */
     }
     if (++g_vb_polls < vb_thresh) return;
     g_vb_polls = 0;
