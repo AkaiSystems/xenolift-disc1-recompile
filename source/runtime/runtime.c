@@ -5088,9 +5088,29 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                      * after the INT3 ack; the data-ready INT1 goes
                      * pending NOW (the kernel polls 1F801803 idx1 for
                      * it before draining the FIFO at 802 idx0). */
+                    /* R96 + R1481 [r96gate] (GROK LANE, commit 87ee454) - RESTORED.
+                     * I clobbered this change: my workflow did `git merge` and then
+                     * `cp ~/Downloads/xenolift/runtime/runtime.c` over the merged
+                     * file, which silently reverted it with no conflict. Restored
+                     * verbatim in intent here. Their reasoning, kept as written:
+                     * "Unconditional R96 re-arm starved CD_flush (fn_0x8004252C)
+                     * exit. Hardware: flag stays clear until a staged sector is
+                     * actually waiting. INT3->INT1 ack-pair and DMA next-sector arm
+                     * remain the other legitimate arms - untouched."
+                     *
+                     * ACCURACY NOTE for that lane: this gate was written from my
+                     * ROOT-CAUSE digest, which misattributed the storm to R96. The
+                     * exhaustive __LINE__ stamp later showed R96 is armline=5091
+                     * with 6 clears, while the real source was armline=7357 (the
+                     * R411 FE1C bell, fixed in R1482). So this gate is NOT what
+                     * broke the deadlock - but it is still hardware-correct on its
+                     * own terms and is kept for that reason, not discarded. */
+                    int r1481_sector_ready = (cd_data_loaded && cd_data_pos < cd_data_n);
+                    if (r1481_sector_ready && cd_pending == 0) {
                     cd_pending = 1, g_pend_line = __LINE__;
                     r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
                     g_cd_irq_force = 1;
+                    }
                     { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
                         uint16_t r1479_f578 = 0;
                         memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
