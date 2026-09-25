@@ -99,3 +99,72 @@ Camera only, no behaviour.
 ## Note on numbering
 R1476 was used twice (my reverted doorbell re-arm, and `[fldbatch]`). Please take
 numbers from R1485 upward to avoid a third collision.
+
+---
+
+# ADDENDUM — the brief above is partly STALE as of `9e76fe6`
+
+A task brief circulating against tip `43e4456` / land `988285f` predates the
+following. **Task A and Task B are unchanged and still correct.** The lane
+assignment and the numeric bars are not.
+
+## 1. Your R1481 `[r96gate]` was destroyed by me, and is now restored
+Commit `87ee454` was silently reverted by my workflow (`git merge`, then a
+whole-file `cp` over `source/runtime/runtime.c` that bypassed the merge). Restored
+in `9e76fe6`. I have stopped cp-ing that file. **R1481 is also a number
+collision** — your `[r96gate]` and my exhaustive `__LINE__` arm-stamp both claim
+it. Number from **R1485** up.
+
+Accuracy note I owe you: `r96gate` was written from my ROOT-CAUSE digest, which
+**misattributed** the acknowledgement storm to R96. The `__LINE__` stamp proved
+R96 is `armline=5091` with 6 clears; the real source was `armline=7357` (the R411
+FE1C bell, fixed by R1482). So `r96gate` is not what broke the CD_flush deadlock.
+It is kept because it is hardware-correct on its own terms — and because,
+combined with R1482, it is load-bearing (below).
+
+## 2. The ~109,442 ceiling NO LONGER EXISTS — do not tune against it
+R1482 + restored R1481 together (700s run, `run.log.raw`):
+
+```
+max seek            109443 -> 250369
+consumed bands      all in 100000-109999
+                    -> 7 at TOC, 94 in the field band, 2 at 230000+
+last sector         LBA 239326 @ t=233s   (the movie band)
+[mvloop]            192 -> 198,180,864 pre-movie polls
+[pendclr]           32   (storm has not returned)
+```
+
+Any bar phrased as "seek past ~109442 toward ~120634" is satisfied. The field-band
+blockage is cleared. **Neither change alone does this** — R1482 alone stopped at
+109443.
+
+## 3. The Pause wedge is GONE — that lane item is void
+`fn_0x80042090` / `cmd=09` / `sched=1` was the wedge two runs ago. It is no longer
+reached. The terminal is now:
+
+```
+[wedge] R967 STUCK 80s in fn 0x80042AA8   (CD_getsector)
+  cells c0=02 c1=01 c2=00 c3=02 c4=02 c5=02 c6=00 c7=00 c8=00
+  CD FE1C=00 FE04=00000000 FDF8=00000000 FDFC=00000000 A22C=00000000 flag578A6=00
+  DRV act=0 loaded=0 pos=0/2060 sched=0 pend=0 cmd=02
+[mvloop] pre-movie polling n=198180864 ... loop-id fn=800320E8 r31=80032284
+```
+
+Every CD cell is **zero** and the drive is fully idle while the guest spins 198
+million times in the pre-movie poll. That is the Claude lane's new target.
+
+## 4. Task A just got STRONGER evidence — please prioritise it
+The alarmguard now defers at **different `cur_fn` values run to run**:
+`8004252C` (CD_flush) -> `8004247C` -> `8004B55C` / `80041C68`. Three wedges, three
+contexts, same blackout. This is conclusive that it is structural and recurring:
+fix one spin and the next spin re-creates the blackout. Your migration work is the
+durable fix, not a cleanup task.
+
+The HARD constraint stands: **do not touch R885/alarmguard.** The deferral is
+correct (it prevents the R350 SIGSEGV + canary class). Placement of the rescues is
+the bug.
+
+## 5. Task B is unchanged and now more likely to fire
+`nonblank` is still 0%, `dma2_sends` 3, `vram_writes` 552960 = three black
+384x480 `GP0 02` fills. No primitive has ever been submitted. But the load now
+reaches the movie band, so the tripwire may actually trigger — worth landing soon.
