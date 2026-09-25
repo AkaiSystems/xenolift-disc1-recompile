@@ -3245,6 +3245,65 @@ static uint32_t cd_read_impl(uint32_t p)
                         xenolift_mem_read32(0x8004FE08u), xenolift_mem_read32(0x80059EF8u));
             }
         }
+        { /* R1487: [c2door] GUEST-READ TWIN of R1191. Alarm copy (on_alarm_ctx
+             * ~L13851) uses c191_ticks >= 5 alarm rounds and is unreachable at
+             * depth>0 under R885/alarmguard. This twin serves INLINE on status
+             * 0x1F801800 polls (R1160/c345 shape), sibling of [spinpost]. Stuck
+             * fence = consecutive polls holding the same FE04/FDF8 posture —
+             * N=131072 from R1451's receipted posture-poll confirm on this same
+             * case (not alarm ticks). Cell predicates + delivery + completion
+             * stamps unchanged from R1191. Alarm copy KEPT; no R885 touch. */
+            static uint32_t c1487_lba, c1487_fdf8, c1487_polls, c1487_fired_lba;
+            uint32_t c1487_fe04 = xenolift_mem_read32(0x8004FE04u);
+            uint32_t c1487_f8 = xenolift_mem_read32(0x8004FDF8u);
+            uint32_t c1487_fe1c = xenolift_mem_read32(0x8004FE1Cu);
+            if (c1487_fe1c == 1u && c1487_f8 != 0u && cd_seek_lba == 0u && cd_pending == 0u
+                && !cd_read_active && !cd_scheduled) {
+                if (c1487_fe04 == c1487_lba && c1487_f8 == c1487_fdf8) {
+                    if (c1487_polls < 0xFFFFFFu) c1487_polls++;
+                } else {
+                    c1487_lba = c1487_fe04; c1487_fdf8 = c1487_f8;
+                    c1487_polls = 0; c1487_fired_lba = 0;
+                }
+                static const struct { uint32_t lba, size; } c1487_tab[] = {
+                    {108754u, 61680u},  {108785u, 155120u}, {108861u, 23744u},
+                    {108873u, 21984u},  {108884u, 2660u},   {108886u, 13768u},
+                    {108893u, 80284u},  {108933u, 125304u}, {108995u, 92180u},
+                    {109041u, 166564u}, {109123u, 70944u},  {109158u, 14360u},
+                };
+                uint32_t c1487_tsz = 0u; unsigned c1487_ti;
+                for (c1487_ti = 0u; c1487_ti < sizeof c1487_tab / sizeof c1487_tab[0]; c1487_ti++)
+                    if (c1487_tab[c1487_ti].lba == c1487_fe04 && c1487_tab[c1487_ti].size == c1487_f8) {
+                        c1487_tsz = c1487_f8; break;
+                    }
+                /* N=131072: R1451 receipted frozen-poll fence on case 1800 */
+                if (c1487_tsz != 0u && c1487_polls >= 131072u && c1487_fe04 != c1487_fired_lba) {
+                    uint32_t c1487_dst = xenolift_mem_read32(0x8004FE08u);
+                    if (c1487_dst >= 0x80010000u && c1487_dst < 0x801F0000u && (c1487_dst & 3u) == 0u) {
+                        uint32_t c1487_nsec = (c1487_tsz + 2047u) / 2048u, c1487_i;
+                        for (c1487_i = 0u; c1487_i < c1487_nsec; c1487_i++)
+                            disc_read_lba(c1487_fe04 + c1487_i,
+                                xenolift_mem + (c1487_dst - 0x80000000u) + c1487_i * 2048u);
+                        xenolift_mem_write32(0x8006A22Cu,
+                            xenolift_mem_read32(0x8006A22Cu) + 1u);
+                        uint32_t c1487_sb = xenolift_mem_read32(0x80056788u);
+                        xenolift_mem_write32(0x80056788u, c1487_sb | 6u);
+                        { uint16_t c1487_one = 1;
+                          memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &c1487_one, 2); }
+                        xenolift_mem_write32(0x8005FDFCu, 0u);
+                        xenolift_mem_write32(0x8005FE48u, 1u);
+                        xenolift_mem_write32(0x8004FDF8u, 0u);
+                        xenolift_mem_write32(0x8004FE1Cu, 0u);
+                        xenolift_mem_write32(0x8004FE04u, 0u);
+                        c1487_fired_lba = c1487_fe04;
+                        r861_out("[c2door] R1487 guest-read twin: LBA %u size %u -> %u sectors to dst %08X (stuck %u polls N=131072; completion stamps per R896/R897)\n",
+                                c1487_fe04, c1487_tsz, c1487_nsec, c1487_dst, c1487_polls);
+                    }
+                }
+            } else if (c1487_fe1c == 0u) {
+                c1487_polls = 0; c1487_lba = 0; c1487_fdf8 = 0; c1487_fired_lba = 0;
+            }
+        }
         { /* R1451 (c1057): THE STALLED-RESPONSE DISCARD v3 - THE POSTURE-PERSISTENCE WIDEN. The c1054/c1055 receipts: TWO frozen variants at the same 408M-poll fd-processor spin (80042AA8) - (v1) seek=0 sched=0 resp_n=3, (v2) seek=3 sched=1 resp_n=1 (a scheduled TOC-era read; the single response byte queued at pos=0 through 2M+ polls while the game INT3 handler that would pop it is starved, pumps-since-armed=0 receipted) - a response that sits FULLY UNPOPPED through millions of polls is starved-stale at ANY drive posture; the c1054 fire proved the discard unblocks the waiter and the game suite re-issues fresh acks. Common receipted terms: act=0 pend=0 arm1=0 FDF8=0 pos=0 lt n. v3 drops the sched/seek terms, gates on the frozen-pos proof, budget 8. */
             static uint32_t r1449_polls, r1449_fires;
             if (r1449_fires < 64u
