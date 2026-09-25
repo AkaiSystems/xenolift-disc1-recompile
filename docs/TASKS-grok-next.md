@@ -168,3 +168,62 @@ the bug.
 `nonblank` is still 0%, `dma2_sends` 3, `vram_writes` 552960 = three black
 384x480 `GP0 02` fills. No primitive has ever been submitted. But the load now
 reaches the movie band, so the tripwire may actually trigger — worth landing soon.
+
+---
+
+# ADDENDUM 2 — four asks, and a metric that invalidates past grading
+
+## URGENT: `max_seek` is NOT progress. Re-grade anything scored on it.
+
+A/B trial, r96gate disabled, 700s:
+```
+max seek            620961
+sectors consumed    38
+last consumed       LBA 108943 @ t=6s
+```
+The drive was *told* to seek to 620,961 and consumed nothing there. `max_seek` is
+a **seek target**, not forward progress. The game was stuck at 108,943 the whole
+run while the number read 620,961.
+
+I have been quoting `max_seek` in digests, and grading bars phrased as "seek past
+~109442 toward ~120634" inherit the same fault. **Valid metric = sectors consumed
+(`[fldsec]` count + last consumed LBA + the band histogram).**
+
+On the valid metric the r96gate result still holds:
+```
+                 consumed   last consumed LBA        
+r96gate OFF          38     108943  @ t=6s
+r96gate ON          103     239326  @ t=233s   (movie band)
+```
+
+**Ask 2: sweep prior digests and PASS/REVERT verdicts for ones graded on
+`max_seek` and re-grade them on consumption.** This may overturn some. I am not
+doing this sweep - it is yours if you take it.
+
+## Ask 1 (highest value): land the Task A ports, not just the census
+R1485 gave the census. The migrations are the point. The alarmguard blackout has
+now recurred at FOUR different `cur_fn` values across runs (`8004252C`,
+`8004247C`, `8004B55C`, `80041C68`). It is the most structural problem in the
+tree. Port arms into guest-read context (R1160/c345) one at a time, each with the
+PASS bar already stated: the former-zero tag fires while `[alarmguard]` defers.
+
+## Ask 3: derive WHY r96gate + R1482 works
+Neither lane has a mechanism. Your gate was written from my misattribution of the
+storm to R96 (real source: `armline=7357`, the R411 FE1C bell). Mine fixed a
+different site. The combination clears the field band and neither alone does.
+Until someone derives the mechanism we cannot defend it, generalise it, or notice
+when it silently stops working. This is independent of the Claude lane.
+
+## Ask 4: audit the other 98 arm sites for the same storm class
+My R1481 `__LINE__` stamp makes every `cd_pending` arm self-identifying in
+`[pendclr]` (`armline=`). 99 sites were stamped; I fixed exactly ONE
+(`armline=7357`). The bug class was "the budget gates the print, not the
+behaviour" - `if (n++ < 96u)` wrapping only the `r861_out` while the arm sat
+outside it. Grep the other sites for that shape. Any that only storm in the movie
+or archive bands would have been invisible until now - which is exactly where the
+game is heading next.
+
+## Claude lane (do not take)
+`fn_0x80042AA8` CD_getsector, all CD cells zero, drive fully idle, guest spinning
+198,180,864 times in the pre-movie poll (`fn=800320E8`). Plus the r96gate A/B
+reproducibility trial.
