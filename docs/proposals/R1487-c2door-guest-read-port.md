@@ -10,8 +10,8 @@
 ## Why this one FIRST
 
 Task A (ELEVATED) asks for the first **behavioural** rescue to migrate out of
-`on_alarm_ctx` into guest-read (R1160/c345), so escape stops depending on lucky
-depth==0 drain windows. Chosen arm:
+`on_alarm_ctx` into guest-read (R1160/c345), addressing the alarmguard blackout
+without claiming that the port predicts escape. Chosen arm:
 
 **`[c2door]` R1191 — cell-anchored file delivery**
 
@@ -31,9 +31,11 @@ Rationale (≤3):
    `fn_0x80042AA8` / `dirack2` dual-land — this is a general request-cell stuck
    delivery door, not Claude's Pause/GetStat FIX.
 
-Correlation caveat (board): escape tracks alarm-ctx liveness across 6 runs;
-`ab_off` had liveness without escape. This port aims to make **rescue reachability**
-deterministic under depth>0 spin. Do **not** claim proven mechanism from one land.
+Retraction 2: liveness does **not** predict escape. `[wd]` and `[halt]` are
+support meters only, not escape predictors. Task A priority-via-escape-rate is
+**VOID**; Task A still stands on the alarmguard blackout alone. This port tests
+rescue reachability under depth>0 spin; do **not** claim an escape-rate effect
+or a proven mechanism from one land.
 
 ## Exact guest-read hook placement
 
@@ -66,11 +68,13 @@ because that is the receipted spin poll for this arm's class.
 
 1. Ported tag appears while `[alarmguard]` is deferring
    (`grep '[c2door]'` co-temporal with `[alarmguard]` in `run.log.raw`).
-2. Escape meter (binary, not rate):  
-   `grep -cE 'LBA 2[0-9]{5} consumed'` — non-zero = escaped field→movie band.
-3. Leading indicator still useful: `[wd]`+`[halt]` counts (alarm liveness) —
-   correlation-aware; do not overclaim mechanism if escape rises while liveness
-   stays flat (that would support the placement story) or vice versa.
+2. Escape, scored by timeline (not by a grep count): a **movie-band read at or
+   after the last field-band read**. The former
+   `grep -cE 'LBA 2[0-9]{5} consumed'` detector is **WRONG**: it matches the
+   boot-era FMV probe at about t=2s and can produce a false positive. Do not
+   use it.
+3. `[wd]` and `[halt]` are support meters only. **Liveness ≠ escape**; they are
+   not predictors and must not be used to claim an escape effect.
 4. Protocol: serialized, n≥5, interleave, ~90s budgets OK (stall decided ~35s).
 
 **Revert if:**
@@ -91,11 +95,13 @@ because that is the receipted spin poll for this arm's class.
 - No fldbatch revive, no R1477 re-land
 - No reclaiming r96gate as confirmed causal (keep gate; variance retracted the A/B)
 - No R885 "fixes", no pile of arms, no camera-only first when Task A asks behavioural
-- No sectors-as-rate metric (SUPERSEDED); primary = binary escape grep above
+- No sectors-as-rate metric (SUPERSEDED); primary = the corrected timeline
+  escape definition above
 - HOLDs otherwise; R1486 awaits Mac; R1482 stands
 
 ## One-at-a-time rule
 
 This is the **first** nominated behavioural port. Do not stack `[cbheal]`,
 `[f14pump]`, `[parkclose]`, or camera twins in the same land. Next candidate
-only after Mac receipts + DIRECTOR next-GO.
+only after Mac receipts + DIRECTOR next-GO; no second behavioural port until
+that next GO.

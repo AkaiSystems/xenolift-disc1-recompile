@@ -25,9 +25,18 @@ Cell predicates + delivery + R896/R897 completion stamps: same intent as alarm R
 
 1. `[c2door]` co-temporal with `[alarmguard]` deferring in `run.log.raw`  
    (`rg '\[c2door\]' run.log.raw` near `rg '\[alarmguard\]'` while depth>0 spin).
-2. Binary escape (not rate):  
-   `grep -cE 'LBA 2[0-9]{5} consumed'` — distribution under serialize **n≥5**, interleave, **~90s** budgets.
-3. Report `[wd]`+`[halt]` as **leading only** (correlation-aware; do not overclaim mechanism).
+2. Escape, scored by timeline (not by a grep count): a **movie-band read at or
+   after the last field-band read**. The former
+   `grep -cE 'LBA 2[0-9]{5} consumed'` detector is **WRONG**: it matches the
+   boot-era FMV probe at about t=2s and can produce a false positive. Do not
+   use it.
+3. `[wd]` and `[halt]` are support meters only. **Liveness ≠ escape**; they
+   are not predictors of escape and must not be presented as such.
+
+**Retraction 2 interpretation:** Task A priority-via-escape-rate is **VOID**.
+Task A still stands on the alarmguard blackout alone. The `[c2door]` pass bar
+below remains independent: it must be co-temporal with `[alarmguard]`
+deferring. No second behavioural port until the next DIRECTOR GO.
 
 **REVERT if:**
 
@@ -42,8 +51,10 @@ Cell predicates + delivery + R896/R897 completion stamps: same intent as alarm R
 # build as usual, run ~90s serialize n>=5 interleaved vs control tip
 rg '\[c2door\]' run.log.raw
 rg '\[alarmguard\]' run.log.raw   # expect deferring while twin can still fire
-grep -cE 'LBA 2[0-9]{5} consumed' run.log.raw
-rg -c '\[wd\]|\[halt\]' run.log.raw   # leading only
+# score escape from the read timeline: movie-band read at/after the last
+# field-band read; do NOT use the retired boot-era-FMV grep detector
+rg -n 'field band|movie band|LBA' run.log.raw
+rg -c '\[wd\]|\[halt\]' run.log.raw   # support meter only, not a predictor
 
 # source gates
 rg -n 'R1487 guest-read twin|N=131072' source/runtime/runtime.c
