@@ -5074,32 +5074,51 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                     }
                 }
                 if ((cd_last_cmd == 0x06u || cd_last_cmd == 0x09u) && cd_read_active) {
-                    /* R96: ReadN — the drive reads the sector immediately
-                     * after the INT3 ack; the data-ready INT1 goes
-                     * pending NOW (the kernel polls 1F801803 idx1 for
-                     * it before draining the FIFO at 802 idx0). */
-                    cd_pending = 1;
-                    r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
-                    g_cd_irq_force = 1;
-                    { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
-                        uint16_t r1479_f578 = 0;
-                        memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
-                        if (g_r1479_fire_n < 64u
-                            && cd_seek_lba >= 108700u && cd_seek_lba < 300000u) {
-                            g_r1479_fire_n++;
-                            r861_out("[r96cam] FIRE #%u: seek=%u cmd=%02X act=%d pend=%u "
-                                     "data=%u/%u loaded=%d FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
-                                     "(clears=%u drains=%u)\n",
-                                     g_r1479_fire_n, cd_seek_lba, (unsigned)cd_last_cmd,
-                                     cd_read_active ? 1 : 0, (unsigned)cd_pending,
-                                     (unsigned)cd_data_pos, (unsigned)cd_data_n,
-                                     cd_data_loaded ? 1 : 0,
-                                     xenolift_mem_read32(0x8004FDF8u),
-                                     xenolift_mem_read32(0x8004FE1Cu),
-                                     xenolift_mem_read32(0x8006A22Cu),
-                                     (unsigned)r1479_f578,
-                                     g_r1479_clear_n, g_r1479_drain_n);
+                    /* R96 + R1481 [r96gate]: ReadN data-ready INT1 after response
+                     * consume. Unconditional R96 re-arm starved CD_flush
+                     * (fn_0x8004252C) exit — ROOT-CAUSE-cdflush-alarmguard-
+                     * deadlock.md (~1.03B pendclr). Hardware: flag stays clear
+                     * until a staged sector is actually waiting. INT3→INT1
+                     * ack-pair (~L2402) and DMA next-sector arm (~L6250) remain
+                     * the other legitimate arms — untouched. */
+                    int r1481_sector_ready = (cd_data_loaded && cd_data_pos < cd_data_n);
+                    if (r1481_sector_ready && cd_pending == 0) {
+                        cd_pending = 1;
+                        g_cd_irq_force = 1;
+                        r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
+                        { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
+                            uint16_t r1479_f578 = 0;
+                            memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                            if (g_r1479_fire_n < 64u
+                                && cd_seek_lba >= 108700u && cd_seek_lba < 300000u) {
+                                g_r1479_fire_n++;
+                                r861_out("[r96cam] FIRE #%u: seek=%u cmd=%02X act=%d pend=%u "
+                                         "data=%u/%u loaded=%d FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
+                                         "(clears=%u drains=%u)\n",
+                                         g_r1479_fire_n, cd_seek_lba, (unsigned)cd_last_cmd,
+                                         cd_read_active ? 1 : 0, (unsigned)cd_pending,
+                                         (unsigned)cd_data_pos, (unsigned)cd_data_n,
+                                         cd_data_loaded ? 1 : 0,
+                                         xenolift_mem_read32(0x8004FDF8u),
+                                         xenolift_mem_read32(0x8004FE1Cu),
+                                         xenolift_mem_read32(0x8006A22Cu),
+                                         (unsigned)r1479_f578,
+                                         g_r1479_clear_n, g_r1479_drain_n);
+                            }
                         }
+                    } else {
+                        static uint32_t r1481_sup_n;
+                        if (r1481_sup_n < 32u
+                            || (r1481_sup_n & 0xFFFFu) == 0u) {
+                            r861_out("[r96gate] R1481 SUPPRESS #%u: seek=%u cmd=%02X act=%d "
+                                     "loaded=%d pos=%u/%u pend=%u cur_fn=%08X "
+                                     "(no new sector — CD_flush exit)\n",
+                                     r1481_sup_n + 1u, cd_seek_lba, (unsigned)cd_last_cmd,
+                                     cd_read_active ? 1 : 0, cd_data_loaded ? 1 : 0,
+                                     (unsigned)cd_data_pos, (unsigned)cd_data_n,
+                                     (unsigned)cd_pending, (unsigned)xenolift_cur_fn);
+                        }
+                        r1481_sup_n++;
                     }
                 }
             }
