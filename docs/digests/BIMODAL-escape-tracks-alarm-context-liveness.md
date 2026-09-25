@@ -83,3 +83,66 @@ Six runs, one escape. Everything above is a correlation with an obvious causal
 story, not a demonstrated mechanism. The corrected protocol (serialized, n>=5,
 interleaved arms, distributions not single runs) still applies — but it is now
 affordable, because the runs got 8x shorter.
+
+---
+
+# RETRACTION 2 — liveness does NOT predict escape. Escape rate is 1/12.
+
+The correlation claimed above is **withdrawn**. A serialized 6-trial protocol
+(300s budget, nothing else running on the machine, scored only after all runs
+finished) refutes it.
+
+## Escape rate, correctly scored
+
+An escape is a movie-band read occurring **at or after** the last field-band
+read. My first detector — `grep -cE 'LBA 2[0-9]{5} consumed'` — was wrong: it
+also matches the **boot-era FMV probe at t=2s**, which happens *before* the field
+walk and is not progress. Trial 6 scored as an escape under that detector and is
+a false positive.
+
+```
+run           result   lastField(t)  escape(t,LBA)     early-boot movie reads
+ab_on         ESCAPE   256           (256, 239323)     0
+trial_1..6    no       36/179/7/171/7/35   -           0,0,0,0,0,2
+ab_off        no       6             -                 0
+ab_off2       no       20            -                 0
+base3         no       1             -                 0
+r1490/b       no       2 / 35        -                 0
+
+ESCAPE RATE: 1 / 12      (serialized protocol alone: 0 / 6)
+```
+
+## The liveness hypothesis is dead
+```
+trial 2   [wd]=77  [halt]=81   -> NO escape   (highest liveness measured)
+trial 5   [wd]=79  [halt]=43   -> NO escape
+trial 4   [wd]=17  [halt]=15   -> NO escape
+ab_on     [wd]=30  [halt]=31   -> ESCAPE      (the only one)
+```
+The two highest-liveness runs did not escape, and trials 1/3/6 escaped-or-not
+with zero liveness. Alarm-context liveness does **not** predict escape. The
+6-run correlation that suggested it was an artifact of a small sample, and I
+should not have written it up as "makes Task A the highest-value work" on that
+basis.
+
+## What this does and does not change
+
+- **Task A is still worth doing.** The alarmguard blackout is real, measured at
+  four distinct `cur_fn` values, and it does make large parts of the tree
+  unreachable. That stands on its own evidence.
+- **But the justification I gave for prioritising it is void.** "It converts a
+  2-in-6 lucky escape into a deterministic one" is unsupported. Do not plan
+  around that claim.
+- **Reaching the movie band is a rare event: 1 in 12 runs, 0 in 6 under the
+  clean protocol.** The single escape (`ab_on`) may be a fluke. An earlier run
+  that appeared to escape cannot be re-scored — its raw log was not preserved —
+  so it is not counted.
+- **The current build does not reliably progress past the field band.** Any
+  claim resting on "we now reach the movie band" should be treated as unproven.
+
+## Method note
+Three detectors in this project have now produced confidently wrong answers:
+`max_seek` (a seek target, not progress), sectors-consumed (a rate corrupted by
+CPU-share), and this escape regex (matched a boot-era probe). Each looked
+reasonable. Define the detector against a known-good and a known-bad run before
+trusting it.
