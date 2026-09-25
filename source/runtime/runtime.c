@@ -855,6 +855,16 @@ static uint32_t cd_seek_lba;
  * force-complete, 7=INT3 archive/Setloc force (0x800286CC path). */
 static time_t g_pend_set_t; static uint32_t g_pend_pumps;
 static uint8_t g_pend_level, g_pend_site, g_pend_cmd, g_pend_clears;
+/* R1481 (JOSH-DIAG) EXHAUSTIVE ARM-SITE LINE STAMP. The c-this-session receipts:
+ * [pendclr] reports ~1.03 billion INT1 acknowledgements (15,699 prints under the
+ * R714C cap of first-32-then-1-per-65536) while the ONLY stamped site in the log
+ * is site=6, which sets cd_pending=3 (INT3) - so g_pend_site was STALE at every
+ * one of those clears and names nothing. There are 86 unstamped `cd_pending = 1`
+ * arms; attributing the storm to any one of them by reading (I first blamed R96,
+ * whose own print appears just 840 times) is a guess. This stamp is mechanical and
+ * exhaustive: EVERY arm records its own __LINE__, so one run names the exact line
+ * instead of a hypothesis. Camera only - no gate, no behavior change. */
+static uint32_t g_pend_line;
 static uint32_t g_r714c_n; /* R714C (c714) the pendclr print-cap counter, file-scope per the c604 block-static clobber lesson */
 static uint32_t g_pend_lba;
 static int g_firstfault_stop; /* R1167: set from env at startup */
@@ -1128,7 +1138,7 @@ static void *r825_frz_watch(void *unused)
                         && fdf8M != 0u && fdf8M < 400000u
                         && zrfD2M_fires < 24u) {
                         zrfD2M_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("zrfD2M");
                         r861_out("[zrfD2M] R1419F file-18 retired-hold force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u) - the R835P vehicle at the mvdoor seam\n",
                                 zrfD2M_fires, cd_seek_lba, fdf8M, xenolift_mem_read32(0x8004FE1Cu));
@@ -2407,7 +2417,7 @@ static int cd_write(uint32_t p, uint32_t v)
             cd_resp[0] = 0x02; /* data-ready status byte */
             cd_resp_n = 1;
             cd_resp_pos = 0;
-            cd_pending = 1; cd_pending_stamp(1u, 1u);
+            cd_pending = 1, g_pend_line = __LINE__; cd_pending_stamp(1u, 1u);
             if (!cd_data_loaded)
                 cd_data_load();
             r861_out("[cd] ReadN ack pair done -> INT1 armed (LBA %u, %u bytes)\n",
@@ -2441,8 +2451,8 @@ static int cd_write(uint32_t p, uint32_t v)
             if (was_pending) { /* R1167: cleared-line - acknowledged? */
                 g_r714c_n++;
                 if (g_r714c_n <= 32u || ((g_r714c_n & 0xFFFFu) == 1u)) { /* R714C (c714) THE PENDCLR PRINT CAP - the c690c/c712 storms: this camera printed the 1.3GB and 1.27GB raw-log floods, 12.7M lines over the parked-pause era at ~100k ack-writes per second, and the uint8 g_pend_clears wraps at 256, the receipted 98-137-216-98 sequence. First 32 prints plus one sample per 65536 clears; the clear itself always happens and always counts in g_pend_clears - only the receipt is bounded. Pure camera, zero behavioral change. */
-                xenolift_receipt("[pendclr] R1167 pending INT%u (site=%u cmd=%02X LBA=%u) CLEARED @t=%lds, %lds after armed, %u pumps since set, clears=%u\n",
-                    (unsigned)was_level, (unsigned)g_pend_site, (unsigned)g_pend_cmd,
+                xenolift_receipt("[pendclr] R1167 pending INT%u (site=%u armline=%u cmd=%02X LBA=%u) CLEARED @t=%lds, %lds after armed, %u pumps since set, clears=%u\n",
+                    (unsigned)was_level, (unsigned)g_pend_site, (unsigned)g_pend_line, (unsigned)g_pend_cmd,
                     g_pend_lba, (long)(xl_wall() - g_boot_wall_t0),
                     (long)(xl_wall() - g_pend_set_t), g_pend_pumps, g_pend_clears);
                 }
@@ -2485,7 +2495,7 @@ static int cd_write(uint32_t p, uint32_t v)
                 cd_resp[0] = 0x02u; /* motor on, Read cleared */
                 cd_resp_n = 1;
                 cd_resp_pos = 0;
-                cd_pending = 2; cd_pending_stamp(2u, 2u); /* INT2: Complete */
+                cd_pending = 2, g_pend_line = __LINE__; cd_pending_stamp(2u, 2u); /* INT2: Complete */
                 if (cd_last_cmd == 0x1Au) { /* GetID INT2: stat, flags, type(0x20=mode2 licensed), atip, "SCEA" */
                     cd_resp[1] = 0x00u; cd_resp[2] = 0x20u; cd_resp[3] = 0x00u;
                     cd_resp[4] = 'S'; cd_resp[5] = 'C'; cd_resp[6] = 'E'; cd_resp[7] = 'A';
@@ -2668,7 +2678,7 @@ static void cd_sched_poll_release(void)
                     cd_last_cmd, cd_resp[0], cd_seek_lba, xenolift_mem_read32(0x8004FE04u)); } }
         cd_scheduled = 0;
                         { static int sdw_2333; if (sdw_2333 < 2) { sdw_2333++; r861_out("[schdw] R1291 CLEAR site L2333 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-        cd_pending = 3; cd_pending_stamp(3u, 3u); /* INT3: response ready in the FIFO */
+        cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 3u); /* INT3: response ready in the FIFO */
     }
     if (cd_scheduled && cd_pending == 0u
         && (r611_end
@@ -2864,7 +2874,7 @@ static void cd_sched_poll_release(void)
                     cd_last_cmd, cd_resp[0], xenolift_mem_read32(0x8004FE1Cu), cd_seek_lba); } }
         cd_scheduled = 0;
                         { static int sdw_2378; if (sdw_2378 < 2) { sdw_2378++; r861_out("[schdw] R1291 CLEAR site L2378 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-        cd_pending = 3; cd_pending_stamp(3u, 4u); /* INT3: response ready in the FIFO */
+        cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 4u); /* INT3: response ready in the FIFO */
         uint16_t one = 1;
         memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
         /* R613 EVENT LEG (c180: 426 GetStat answers popped, waiter STILL
@@ -3023,7 +3033,7 @@ static void cd_sched_poll_release(void)
       && fdf8R != 0u && fdf8R < 400000u
       && cd_data_n >= 2048u && zrfD2R_fires < 24u) {
       zrfD2R_fires++;
-      cd_pending = 1;
+      cd_pending = 1, g_pend_line = __LINE__;
       cd_force_deliver_int1("zrfD2R");
       r861_out("[zrfD2R] R1419D settled-posture force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u) - the R835P vehicle at the release seam\n",
               zrfD2R_fires, cd_seek_lba, fdf8R, xenolift_mem_read32(0x8004FE1Cu));
@@ -3045,7 +3055,7 @@ static void cd_sched_poll_release(void)
         cd_resp[0] = 0x22u;
         cd_resp_n = 1;
         cd_resp_pos = 0;
-        cd_pending = 1;
+        cd_pending = 1, g_pend_line = __LINE__;
         cd_force_deliver_int1("getstat22V");
         r861_out("[R1419V] release-seam answer-prime fire #%d (seek=%u cmd=%02X FDF8=%u resp_n=%u) - the 0x22 receipt at the hot seam\n",
                 r1419v_fires, cd_seek_lba, (unsigned)cd_last_cmd, fdf8V, (unsigned)cd_resp_n);
@@ -3276,7 +3286,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1459v-schedstart");
             r861_out("[schedstart] R1459V fire %u/8 (seek=%u sched=1 resp=%u/%u) - stamped FE04=seek + serve + pend + INT1, the scheduled read STARTS, the pop chain pumps\n",
                      r1459v_fires, (unsigned)cd_seek_lba, (unsigned)cd_resp_pos, (unsigned)cd_resp_n);
@@ -3305,7 +3315,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1459x-flutterstart");
             r861_out("[flutterstart] R1459X fire %u/64 (seek=%u sched=1 resp=%u/%u pend=%u cmd=%02X) - FE04 stamp + serve + pend + INT1, the scheduled file-band read STARTS, the pop chain pumps\n",
                      r1459x_fires, (unsigned)cd_seek_lba, (unsigned)cd_resp_pos, (unsigned)cd_resp_n, (unsigned)cd_pending, (unsigned)cd_last_cmd);
@@ -3340,7 +3350,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1467a-pausestart");
             r861_out("[pausestart] R1467A fire %u/2048 @t=%lds seek=%u FDF8=%u FE1C-in-0-6 cmd=09 armed-stamped all-dead - act=1 + same-poll serve + pend + INT1; consumption receipts decide: fldsec at %u+, FDF8 drain below %u\n",
                      r1467a_fires, (long)(xl_wall() - g_boot_wall_t0), (unsigned)cd_seek_lba, (unsigned)r1467a_tfdf8, (unsigned)cd_seek_lba, (unsigned)r1467a_tfdf8);
@@ -3398,7 +3408,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1464c-pausearm");
             r861_out("[pausearm] R1464C fire %u/8 (seek=%u FDF8=%u sched=1 cmd=09 FE1C=6) - act=1 + staged + pend + INT1, the paused scheduled read STARTS, the v8 carries the drain\n",
                      r1464c_fires, (unsigned)cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
@@ -3436,7 +3446,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1473-pausepend");
             r861_out("[pausepend] R1473 fire %u/8 @t=%lds seek=%u FDF8=%u sched=1 pend>=1 cmd=09 FE1C=6 - act=1 + staged + pend + INT1 (time-held; cmd churn ignored)\n",
                      r1473_fires, (long)(xl_wall() - g_boot_wall_t0),
@@ -3490,7 +3500,7 @@ static uint32_t cd_read_impl(uint32_t p)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1475-schedflap");
             r861_out("[schedflap] R1475 fire %u/8 @t=%lds seek=%u FDF8=%u sched=1-at-fire pend>=1 cmd=09 FE1C=6 - act=1 + staged + pend + INT1 (sched EXCLUDED from hold-reset, only checked at fire)\n",
                      r1475_fires, (long)(xl_wall() - g_boot_wall_t0),
@@ -3600,7 +3610,7 @@ static uint32_t cd_read_impl(uint32_t p)
                             cd_read_active = 1;
                             cd_data_loaded = 0;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("r1464i-seam-mirror-armstart");
                         }
                     }
@@ -3635,7 +3645,7 @@ static uint32_t cd_read_impl(uint32_t p)
                     cd_read_active = 1;
                     cd_data_loaded = 0;
                     cd_data_load();
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("r1464j-hot-seam-heal");
                     xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
                     { uint32_t r1464j_sb = xenolift_mem_read32(0x80056788u);
@@ -3663,7 +3673,7 @@ static uint32_t cd_read_impl(uint32_t p)
                     cd_read_active = 1;
                     cd_data_loaded = 0;
                     cd_data_load();
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("r1467m-pause-bell");
                     xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
                     { uint32_t r1467m_sb = xenolift_mem_read32(0x80056788u);
@@ -3721,7 +3731,7 @@ static uint32_t cd_read_impl(uint32_t p)
                         cd_data_loaded = 0;
                         cd_data_load();
                     }
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("r1467n2-scheduled-bell");
                     xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
                     { uint32_t r1467n2_sb = xenolift_mem_read32(0x80056788u);
@@ -3762,7 +3772,7 @@ static uint32_t cd_read_impl(uint32_t p)
                         xenolift_mem_write32(0x8004FE04u, cd_seek_lba);
                         cd_read_active = 1; cd_data_loaded = 0;
                         cd_data_load(); /* same-poll serve: the request own sector */
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("r1453filestream");
                         r861_out("[fstrsv] R1453 bell fire %u/8 (seek=%u FDF8=%u FE08=%08X)\n",
                                 r1453_fires, cd_seek_lba, r1453_f, (unsigned)xenolift_mem_read32(0x8004FE08u));
@@ -3795,7 +3805,7 @@ static uint32_t cd_read_impl(uint32_t p)
                         xenolift_mem_write32(0x8004FE04u, cd_seek_lba);
                         cd_read_active = 1; cd_data_loaded = 0;
                         cd_data_load(); /* same-poll serve: the request own sector */
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("r1454neverarmed");
                         r861_out("[fneverarm] R1454 heal fire %u/8 (seek=%u FDF8 0->2048)\n", r1454_fires, cd_seek_lba);
                     }
@@ -3825,7 +3835,7 @@ static uint32_t cd_read_impl(uint32_t p)
                     xenolift_mem_write32(0x8004FE04u, cd_seek_lba);
                     cd_read_active = 1; cd_data_loaded = 0;
                     cd_data_load(); /* same-poll serve: the request own sector */
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("r1455sysbell");
                     r861_out("[sysbell] R1455 fire %u/8 (seek=%u FDF8=%u FE08=%08X) - same-poll serve + pend + force INT1\n",
                             r1455_fires, cd_seek_lba, r1455_f, (unsigned)xenolift_mem_read32(0x8004FE08u));
@@ -3861,7 +3871,7 @@ static uint32_t cd_read_impl(uint32_t p)
                         xenolift_mem_write32(0x8004FE04u, (uint32_t)cd_seek_lba);
                         cd_read_active = 1u; cd_data_loaded = 0u;
                         if (r1458_f8 == 0u) { cd_data_load(); }
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("r1458rearm");
                         r861_out("[r1458] RE-ARM (seek=%u sched!=0) - FE04 stamp + act + same-poll cd_data_load + pend + force INT1\n", (unsigned)cd_seek_lba);
                     }
@@ -3890,7 +3900,7 @@ static uint32_t cd_read_impl(uint32_t p)
                     r1459t_fires++; r1459t_polls = 0;
                     xenolift_mem_write32(0x8004FE04u, (uint32_t)cd_seek_lba);
                     cd_data_load();
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("r1459tserve");
                     xenolift_mem_write32(0x8004FE1Cu, 0u);
                     r861_out("[tocserve] R1459T fire %u/8 (seek=%u cmd=%02X FDF8=%u FE04=0->seek FE1C=%u->0) - TOC armed-serve: sector staged + pend + INT1 + FE1C clear\n", r1459t_fires, (unsigned)cd_seek_lba, (unsigned)cd_last_cmd, (unsigned)r1459t_f8, (unsigned)r1459t_e1c);
@@ -3923,7 +3933,7 @@ static uint32_t cd_read_impl(uint32_t p)
                      r1459u_e04, (unsigned)cd_seek_lba, r1459u_f8, cd_last_cmd);
             cd_seek_lba = r1459u_e04;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1459utocwalked");
             xenolift_mem_write32(0x8004FE1Cu, 0u);
             r861_out("[tocwsrv] R1459U fire %u/8 (req=%u stamped-seek=%u FDF8=%u) - serve + pend + INT1 + FE1C->0, the waiter exits\n",
@@ -3954,7 +3964,7 @@ static uint32_t cd_read_impl(uint32_t p)
             r1465a_fires++; r1465a_polls = 0;
             xenolift_mem_write32(0x8004FE04u, (uint32_t)cd_seek_lba);
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1465aserve");
             xenolift_mem_write32(0x8004FE1Cu, 0u);
             r861_out("[fbserve] R1465A fire %u/8 (seek=%u cmd=%02X FDF8=%u FE04->seek FE1C=%u->0) - file-band armed-serve: sector staged + pend + INT1 + FE1C clear\n",
@@ -3989,7 +3999,7 @@ static uint32_t cd_read_impl(uint32_t p)
         cd_read_active = 1;
         cd_data_loaded = 0;
         cd_data_load();
-        cd_pending = 1;
+        cd_pending = 1, g_pend_line = __LINE__;
         cd_force_deliver_int1("r1466a-v5-heal");
         r861_out("[zlheal] R1466A v5 fire %d/8 @1800 (seek=%u cmd=%02X FDF8 0->2048 FE1C=%u) - act=1 + staged + pend + INT1 - the never-armed read started\n",
                  8 - r1466a_budget, cd_seek_lba, (unsigned)cd_last_cmd,
@@ -4237,7 +4247,7 @@ static uint32_t cd_read_impl(uint32_t p)
                         cd_resp_n = 3u; cd_resp_pos = 0u;
                         memcpy(cd_last_full, cd_resp, sizeof cd_resp);
                         cd_last_full_n = 3u;
-                        cd_pending = 3u;
+                        cd_pending = 3u, g_pend_line = __LINE__;
                         r861_out("[cd] FIELD-SEEK assist: 3-byte SetLoc answer primed + INT1 armed (LBA %u, FE1C=%u)\n",
                                 cd_seek_lba, fe1c_f);
                     }
@@ -4812,7 +4822,7 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                         r1461s_stuck = 0u; r1461s_budget--;
                         cd_data_loaded = 0;
                         cd_data_load();
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("r1461sstream");
                         r861_out("[fstrfd] R1461S v2 fd-tick stream-serve fire %d/8 (seek=%u cmd=%02X FDF8=%u FE08=%08X) - sector staged + pend + INT1\n",
                                  8 - r1461s_budget, cd_seek_lba, (unsigned)cd_last_cmd,
@@ -5074,51 +5084,32 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                     }
                 }
                 if ((cd_last_cmd == 0x06u || cd_last_cmd == 0x09u) && cd_read_active) {
-                    /* R96 + R1481 [r96gate]: ReadN data-ready INT1 after response
-                     * consume. Unconditional R96 re-arm starved CD_flush
-                     * (fn_0x8004252C) exit — ROOT-CAUSE-cdflush-alarmguard-
-                     * deadlock.md (~1.03B pendclr). Hardware: flag stays clear
-                     * until a staged sector is actually waiting. INT3→INT1
-                     * ack-pair (~L2402) and DMA next-sector arm (~L6250) remain
-                     * the other legitimate arms — untouched. */
-                    int r1481_sector_ready = (cd_data_loaded && cd_data_pos < cd_data_n);
-                    if (r1481_sector_ready && cd_pending == 0) {
-                        cd_pending = 1;
-                        g_cd_irq_force = 1;
-                        r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
-                        { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
-                            uint16_t r1479_f578 = 0;
-                            memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
-                            if (g_r1479_fire_n < 64u
-                                && cd_seek_lba >= 108700u && cd_seek_lba < 300000u) {
-                                g_r1479_fire_n++;
-                                r861_out("[r96cam] FIRE #%u: seek=%u cmd=%02X act=%d pend=%u "
-                                         "data=%u/%u loaded=%d FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
-                                         "(clears=%u drains=%u)\n",
-                                         g_r1479_fire_n, cd_seek_lba, (unsigned)cd_last_cmd,
-                                         cd_read_active ? 1 : 0, (unsigned)cd_pending,
-                                         (unsigned)cd_data_pos, (unsigned)cd_data_n,
-                                         cd_data_loaded ? 1 : 0,
-                                         xenolift_mem_read32(0x8004FDF8u),
-                                         xenolift_mem_read32(0x8004FE1Cu),
-                                         xenolift_mem_read32(0x8006A22Cu),
-                                         (unsigned)r1479_f578,
-                                         g_r1479_clear_n, g_r1479_drain_n);
-                            }
-                        }
-                    } else {
-                        static uint32_t r1481_sup_n;
-                        if (r1481_sup_n < 32u
-                            || (r1481_sup_n & 0xFFFFu) == 0u) {
-                            r861_out("[r96gate] R1481 SUPPRESS #%u: seek=%u cmd=%02X act=%d "
-                                     "loaded=%d pos=%u/%u pend=%u cur_fn=%08X "
-                                     "(no new sector — CD_flush exit)\n",
-                                     r1481_sup_n + 1u, cd_seek_lba, (unsigned)cd_last_cmd,
-                                     cd_read_active ? 1 : 0, cd_data_loaded ? 1 : 0,
+                    /* R96: ReadN — the drive reads the sector immediately
+                     * after the INT3 ack; the data-ready INT1 goes
+                     * pending NOW (the kernel polls 1F801803 idx1 for
+                     * it before draining the FIFO at 802 idx0). */
+                    cd_pending = 1, g_pend_line = __LINE__;
+                    r861_out("[cd] data-ready INT1 armed (ReadN INT3 consumed)\n");
+                    g_cd_irq_force = 1;
+                    { /* R1479 [r96cam] FIRE: correlate R96 re-arm with FIFO/announce. Cap 64. ZERO behavior. */
+                        uint16_t r1479_f578 = 0;
+                        memcpy(&r1479_f578, xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), 2);
+                        if (g_r1479_fire_n < 64u
+                            && cd_seek_lba >= 108700u && cd_seek_lba < 300000u) {
+                            g_r1479_fire_n++;
+                            r861_out("[r96cam] FIRE #%u: seek=%u cmd=%02X act=%d pend=%u "
+                                     "data=%u/%u loaded=%d FDF8=%u FE1C=%u A22C=%u flag578A6=%u "
+                                     "(clears=%u drains=%u)\n",
+                                     g_r1479_fire_n, cd_seek_lba, (unsigned)cd_last_cmd,
+                                     cd_read_active ? 1 : 0, (unsigned)cd_pending,
                                      (unsigned)cd_data_pos, (unsigned)cd_data_n,
-                                     (unsigned)cd_pending, (unsigned)xenolift_cur_fn);
+                                     cd_data_loaded ? 1 : 0,
+                                     xenolift_mem_read32(0x8004FDF8u),
+                                     xenolift_mem_read32(0x8004FE1Cu),
+                                     xenolift_mem_read32(0x8006A22Cu),
+                                     (unsigned)r1479_f578,
+                                     g_r1479_clear_n, g_r1479_drain_n);
                         }
-                        r1481_sup_n++;
                     }
                 }
             }
@@ -5173,7 +5164,7 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                          * kernel polls DRQSTS instead in our model) */
                         cd_seek_lba++;
                         cd_data_loaded = 0;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         r861_out("[cd] sector consumed, LBA -> %u, INT1 pending\n", cd_seek_lba);
                     }
                     return b;
@@ -5283,7 +5274,7 @@ r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%
                 && cd_data_loaded && cd_data_pos < cd_data_n
                 && cd_last_cmd == 0x02u && cd_seek_lba >= 108900u
                 && xenolift_mem_read32(0x8004FDF8u) == 0u) {
-                cd_pending = 1;
+                cd_pending = 1, g_pend_line = __LINE__;
                 g_cd_irq_force = 1;
                 { static uint32_t fld2_n;
                   if (fld2_n < 24u) {
@@ -5298,7 +5289,7 @@ r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%
                 && cd_seek_lba >= 108900u
                 && xenolift_mem_read32(0x8004FE04u) == cd_seek_lba
                 && xenolift_mem_read32(0x8004FDF8u) > 100000u) {
-                cd_pending = 1;
+                cd_pending = 1, g_pend_line = __LINE__;
                 g_cd_irq_force = 1;
                 { static uint32_t fldi_n;
                   if (fldi_n < 24u) {
@@ -5366,7 +5357,7 @@ r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%
                     cd_resp[0] = 0x02u; /* data-ready status (proven ack-pair shape) */
                     cd_resp_n = 1;
                     cd_resp_pos = 0;
-                    cd_pending = 1; cd_pending_stamp(1u, 8u); /* site 8: the general door */
+                    cd_pending = 1, g_pend_line = __LINE__; cd_pending_stamp(1u, 8u); /* site 8: the general door */
                     g_cd_irq_force = 1;
                     if (r1378_fires < 64u) {
                         r1378_fires++;
@@ -5382,7 +5373,7 @@ r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%
             if (cd_pending == 0u && cd_read_active && cd_data_loaded
                 && (cd_last_cmd == 0x06u || cd_last_cmd == 0x09u)
                 && ++cd_poll803 > 4096u) {
-                cd_pending = 1;
+                cd_pending = 1, g_pend_line = __LINE__;
                 r861_out("[cd] forced data-ready INT1 after %u INT-flag polls\n", cd_poll803);
                 g_cd_irq_force = 1;
                 /* R112: the collector the kernel is spinning inside
@@ -5590,7 +5581,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
                                 xenolift_mem_read32(0x8006A488u) + 1u);
                         xenolift_mem_write32(0x8006A494u,
                                 xenolift_mem_read32(0x8006A494u) + 1u);
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("rdcomp");
                     }
                 } else {
@@ -5636,7 +5627,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
                         r861_out("[seek7] state-7 wedge @movie batch boundary: assist FIRED (FE1C 7->6, A4A8++, INT1 redelivered)\n");
                         xenolift_mem_write32(0x8004FE1Cu, 6u);
                         xenolift_mem_write32(0x8006A4A8u, 1u);
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("seek7");
                         s7x_armed = 1; /* R333: R332 wrote =0 (backwards!) — the escalation was NEVER armed; seek7x=0 all cycle-81. Now armed for real. */
                         s7x_ticks = 0;
@@ -5683,7 +5674,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
                              * killed at 240s). ASYNC-ONLY now: mark the INT pending
                              * and let the proven fd-tick collector deliver it on its
                              * own safe cadence. ZERO guest dispatch from this read. */
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             r861_out("[fldret] FIELD stale-stream retire #%u (async): FE1C %u->1, A488/A494++, INT1 left pending for collector (FE04=%u)\n",
                                     fr_fires, fe1c, fe04);
                             /* R355 FIELD FILE-14 SEED. Cycle-103 park: kernel sits INSIDE
@@ -5776,7 +5767,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
                         cd_seek_lba = fe04 + 1u;
                         r861_out("[seek7x] wedge survived cell-assist: ESCALATING (FE04 %u -> %u, seek_lba armed, INT1 redelivered)\n",
                                 fe04, fe04 + 1u);
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("seek7x");
                     }
                 } else {
@@ -6311,7 +6302,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                     }
                     cd_seek_lba++; /* next sector in the stream */
                     if (cd_read_active) {
-                        cd_pending = 1; /* INT1: next sector ready */
+                        cd_pending = 1, g_pend_line = __LINE__; /* INT1: next sector ready */
                         uint16_t one = 1;
                         memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
                         r861_out("[cd] INT1: next sector event flagged (LBA %u next)\n", cd_seek_lba);
@@ -6332,7 +6323,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                      * file layer's completion poll (Mac R108:
                      * FDF8=1480 stuck, 568 bytes left, watchdog at
                      * 0x800413BC). */
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     uint16_t one = 1;
                     memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
                     r861_out("[cd] INT1 re-armed: FIFO remainder %u bytes (LBA %u)\n",
@@ -7027,7 +7018,7 @@ uint32_t xenolift_mem_read32(uint32_t a)
                 if (r1280_n <= 12)
                     r861_out("[zrfB] R1280: A22C-site system serve fire #%d (seek=%u fe1c=%u data_n=%u) - FE04 stamp + read_active + same-poll cd_data_load + force-deliver INT1 below\n",
                             r1280_n, cd_seek_lba, fe1cA, cd_data_n);
-                cd_pending = 1;
+                cd_pending = 1, g_pend_line = __LINE__;
                 cd_force_deliver_int1("zrfB");
                 memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
             } else {
@@ -7326,7 +7317,7 @@ uint32_t xenolift_mem_read32(uint32_t a)
             cd_resp_n = 3u; cd_resp_pos = 0u;
             memcpy(cd_last_full, cd_resp, sizeof cd_resp);
             cd_last_full_n = 3u;
-            cd_pending = 3u;
+            cd_pending = 3u, g_pend_line = __LINE__;
             r861_out("[getstat7] R1267 GetStat ack primed at FE1C poll (stuck-confirmed 64 polls: FE1C=%u sched=%u pend=0 FE04=0 FDF8=0 resp_n<3) - 3-byte ack family, INT1 armed, budget=%d\n",
                      fe1c_d, cd_scheduled, r1266_budget);
             }
@@ -7363,7 +7354,45 @@ uint32_t xenolift_mem_read32(uint32_t a)
          * R408 arm's job; c169 showed a double-bell there made the guest
          * restart the whole request once (two re-arm passes 108933-108939). */
         if (r411_fdf8 != 0u && r411_fdf8 < 125304u) {
-            cd_pending = 1;
+        /* R1482 (JOSH-DIAG): THE BUDGET THAT NEVER BOUNDED THE BELL.
+         * The R415 comment above states the budget was raised 24->96 so that
+         * "96 covers file 1 (62 sectors) + file 2 (~15) end to end" - i.e. the
+         * author intended r411_n to bound the NUMBER OF BELLS. It never did:
+         * `if (r411_n++ < 96u)` wrapped only the r861_out, while the arm
+         * (cd_pending=1 + g_cd_irq_force=1) sat OUTSIDE it and fired on EVERY
+         * read of 0x8004FE1C that matched the gate. The gate includes
+         * `cd_pending == 0`, which is exactly the state the guest's own
+         * acknowledge creates - so the arm re-asserted INT1 as fast as the
+         * guest could clear it.
+         *
+         * RECEIPTS (this session, from run.log.raw - never run.log, which
+         * discards the middle): exhaustive __LINE__ stamping of all 99 arm
+         * sites shows armline=7357 (THIS arm) is 1,767 of 1,799 [pendclr]
+         * prints = 98%. Under the R714C cap (first 32, then 1 per 65,536
+         * clears) a longer run measured ~1.03 BILLION acknowledgements. R96,
+         * which I first blamed, is armline=5091 and accounts for 6.
+         *
+         * WHY IT DEADLOCKS THE WHOLE TREE: the guest loop is fn_0x8004252C =
+         * CD_flush, whose only exit is the IRQ flag at 1F801803 reading zero.
+         * This arm guarantees it never does. CD_flush spins at
+         * g_guest_depth=2, so R885's alarmguard defers on_alarm forever -
+         * "the next dispatch boundary" never arrives (R967/c76 already said
+         * this). Every camera, arm, heal and rescue living in on_alarm_ctx is
+         * therefore dead during the exact condition it was written for:
+         * [wd] [park] [halt] [fldfrz] [fld2sig] [fldbell] [trail] [xcam] all
+         * read ZERO for the entire freeze.
+         *
+         * THE FIX = the author's stated intent, nothing more: the budget now
+         * gates the BELL, not just the receipt. Flow for the first 96 bells is
+         * byte-identical to today; only the unbounded tail is removed.
+         * PASS = [pendclr] collapses by orders of magnitude, armline=7357
+         * stops dominating, and fn_0x8004252C stops appearing in [alarmguard]
+         * and [wedge]. REVERT = the stream stops advancing after 96 bells,
+         * which would mean the flow genuinely needs an unbounded bell and the
+         * budget belongs somewhere else. */
+        static int r411_n;
+        if (r411_n++ < 96) {
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
             /* R415: budget 24->96 — c172: the budget exhausted at sector
              * 16 of file 1 and the native path took over at a SLOWER pace
@@ -7372,11 +7401,9 @@ uint32_t xenolift_mem_read32(uint32_t a)
              * sectors) + file 2 (~15) end to end. Flow unchanged — budget
              * only; c171 lesson respected (no gate changes to working
              * flow). */
-            {   static int r411_n;
-                if (r411_n++ < 96u)
-                    r861_out("[fld-rearm] sector bell re-armed at FE1C poll (seek=%u FDF8=%u pend=%u)\n",
-                            cd_seek_lba, r411_fdf8, cd_pending);
-            }
+            r861_out("[fld-rearm] sector bell re-armed at FE1C poll (seek=%u FDF8=%u pend=%u bell %d/96)\n",
+                    cd_seek_lba, r411_fdf8, cd_pending, r411_n);
+        } /* R1482: close the budgeted bell */
         }
     }
     {   /* R403 fld-data camera: RAM-cell polls during the data-stage wait */
@@ -8479,7 +8506,7 @@ static void xenolift_kick(void)
                             xenolift_mem_write32(0x8004FE04u, cd_seek_lba);
                             cd_read_active = 1; cd_data_loaded = 0;
                             if (cd_scheduled) cd_scheduled = 0; /* stale-flag class (R1269) */
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("xferP");
                             r861_out("[xfer] R1314 pump-site serve: seek=%u fe1c=6 INT1 forced - consumption receipted by the R1312 drive-own completion retire for THIS lba\n", cd_seek_lba);
                         } else {
@@ -8500,7 +8527,7 @@ static void xenolift_kick(void)
                     && (fe1cP == 0u || fe1cP == 6u || fe1cP == 7u || fe1cP == 10u || fe1cP == 11u)) {
                     if (zrfF2P_armed) {
                         zrfF2P_armed = 0; zrfF2P_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("zrfF2P");
                         r861_out("[zrfF2P] R835P pump-site force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u pend=%u) - the zrf0 composite at the pump site; guest callback advance->finalize\n",
                                 zrfF2P_fires, cd_seek_lba, fdf8P, fe1cP, (unsigned)cd_pending);
@@ -8521,7 +8548,7 @@ static void xenolift_kick(void)
                     && (fe1cD == 0u || fe1cD == 1u || fe1cD == 2u || fe1cD == 6u || fe1cD == 7u || fe1cD == 9u || fe1cD == 10u || fe1cD == 11u)) {
                     if (zrfD2P_armed) {
                         zrfD2P_armed = 0; zrfD2P_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("zrfD2P");
                         r861_out("[zrfD2P] R1418A deep-band force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u pend=%u) - the R835P twin at the deep band; guest callback advance->finalize\n",
                                 zrfD2P_fires, cd_seek_lba, fdf8D, fe1cD, (unsigned)cd_pending);
@@ -13350,7 +13377,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                  * path) and walks its own finalize at FDF8=0. */
                 cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                 cd_resp_n = 3u; cd_resp_pos = 0u;
-                if (cd_pending == 0u) cd_pending = 1u;
+                if (cd_pending == 0u) cd_pending = 1u, g_pend_line = __LINE__;
                 r861_out("[mtrans] R655 f15 done-ack mailbox primed #%d (rspop path - main thread pops natively, no signal-context dispatch)\n", w52);
                 /* R671: c241 — the R669 queue answer hung off the phase-hook
                  * (fn 80019ACC entry with f0c=15), which does NOT fire on
@@ -13589,7 +13616,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                             fp2_hold = 1u;
                             cd_seek_lba = fp2_lba;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             { static uint32_t fp2_log;
                               if (fp2_log < 90u) { fp2_log++;
                                 if (fp2_rt > 0u) {
@@ -13623,7 +13650,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                             fp_cooldown = 3u;
                             cd_seek_lba = fp_lba;
                             cd_data_load();
-                            cd_pending = 1;   /* hook conversion delivers when guest polls 800415B4 */
+                            cd_pending = 1, g_pend_line = __LINE__;   /* hook conversion delivers when guest polls 800415B4 */
                             { static uint32_t fp_log;
                               if (fp_log < 80u) { fp_log++;
                                 r861_out("[f14pump] R559: armed sector idx=%u LBA=%u dest=%08X pend=1\n",
@@ -13930,7 +13957,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                  * Arm pending so the boot-era handler-pair conversion rings the
                  * guest's CD handler -> rspop delivers the 3 bytes. */
                 if (cd_pending == 0u) {
-                    cd_pending = 1u;
+                    cd_pending = 1u, g_pend_line = __LINE__;
                     r861_out("[dirack] R525: doorbell armed - handler pair will deliver the ack (rspop path)\n");
                 }
                 r861_out("[dirack] R521: empty-ack heal fire #%d (seek=%u FE1C=10 cmd=02) - [02 01 01] primed, game pops + advances\n",
@@ -13959,7 +13986,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                 d9_armed = 0; d9_fires++;
                 cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                 cd_resp_n = 3u; cd_resp_pos = 0u;
-                cd_pending = 1u;
+                cd_pending = 1u, g_pend_line = __LINE__;
                 r861_out("[dirack2] R526: ReadS-ack doorbell fire #%d (seek=%u FE1C=0 cmd=09) - 3-byte ack + bell armed\n", d9_fires, cd_seek_lba);
             } else {
                 d9_armed = 1;
@@ -14012,7 +14039,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                                     bell_n++;
                                     cd_resp[0] = 0x02; cd_resp[1] = 0x01; cd_resp[2] = 0x01;
                                     cd_resp_n = 3; cd_resp_pos = 0;
-                                    cd_pending = 1;
+                                    cd_pending = 1, g_pend_line = __LINE__;
                                     r861_out("[fldbell3] R544: doorbell fire #%u — answer [02 01 01] primed + INT1 armed (FE1C=%u)\n",
                                             bell_n, fe1c0);
                                 }
@@ -14038,7 +14065,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                     if (1) {
                         cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                         cd_resp_n = 3u; cd_resp_pos = 0u;
-                        cd_pending = 1u;
+                        cd_pending = 1u, g_pend_line = __LINE__;
                         r861_out("[dirack4] R532: field-era Setloc-ack doorbell fire #%d (seek=%u FE1C=1 cmd=02 data_n=%u) - [02 01 01] primed + bell\n",
                                 da4_fires, cd_seek_lba, cd_data_n);
                     } else {
@@ -14082,7 +14109,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
             cd_data_pos = cd_data_n = 0;
             cd_arm_int1_pending = 0;
             cd_read_active = 0;
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
         }
         /* R549 FE34FIX — c117: dirloop v2 receipts prove the decoded ArchiveCurrentFileReadyCallback
@@ -14144,7 +14171,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
             cd_read_active = 0;
             cd_scheduled = 0;
                         { static int sdw_11395; if (sdw_11395 < 2) { sdw_11395++; r861_out("[schdw] R1291 CLEAR site L11395 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
 } }
         /* R506 CBHEAL — c72: bell freed the batch handler and it now cycles
@@ -14185,7 +14212,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
             && cd_resp_n == 0u
             && cd_data_loaded == 0u && cd_data_n == 0u
             && cd_last_cmd == 0x01u) {
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
             { static uint32_t fld3c_n;
               if (fld3c_n < 24u) {
@@ -14215,7 +14242,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                         d1_armed = 0; d1_fires++;
                         cd_resp[0] = 0x02u;
                         cd_resp_n = 1u; cd_resp_pos = 0u;
-                        cd_pending = 1u;
+                        cd_pending = 1u, g_pend_line = __LINE__;
                         r861_out("[dirack3] R527: GetStat doorbell fire #%d (seek=%u FE1C=0 cmd=01 loaded=1) - [02] primed + bell\n",
                                 d1_fires, cd_seek_lba);
                     } else {
@@ -14240,7 +14267,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
             && xenolift_mem_read32(0x8004FE04u) == 0u
             && cd_resp_n == 0u
             && cd_data_loaded == 1u && cd_data_n > 0u) {
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
             { static uint32_t fld3a_n;
               if (fld3a_n < 24u) {
@@ -14878,7 +14905,7 @@ static void r1346_serve(void)
         cd_resp_n = 3u; cd_resp_pos = 0u;
         memcpy(cd_last_full, cd_resp, sizeof cd_resp);
         cd_last_full_n = 3u;
-        cd_pending = 3u;
+        cd_pending = 3u, g_pend_line = __LINE__;
         r1346_armed = 1;
         if (r1346p_n++ < 8u)
             r861_out("[wserve] R1347 watcher-side SetLoc serve: 3-byte answer primed + INT1 armed (seek=%u FE04=%08X owes=%08X)\n",
@@ -16711,7 +16738,7 @@ void xenolift_trace(uint32_t a)
                               r1432c_arms++;
                               if (!cd_data_loaded) cd_data_load();
                               cd_resp[0] = 0x02u; cd_resp_n = 1u; cd_resp_pos = 0u;
-                              cd_pending = 1u;
+                              cd_pending = 1u, g_pend_line = __LINE__;
                               xenolift_receipt("[r1432carm] R1432C waitbr-seam sgarm fire #%u @t=%lds: seek=%u FDF8=%u cmd=%02X - staging + resp 0x02 + burst\n",
                                       r1432c_arms, (long)(xl_wall() - g_boot_wall_t0), cd_seek_lba, r1432c_fdf8, cd_last_cmd);
                               while (r1432c_burst++ < 96u) {
@@ -16757,7 +16784,7 @@ void xenolift_trace(uint32_t a)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1u;
+            cd_pending = 1u, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1464b-armstart");
             xenolift_receipt("[armst32] R1464B armstart fire %d/8 @1432seam @t=%lds (seek=%u cmd=%02X FDF8=%u) - act=1 + staged + pend + INT1\n",
                     8 - r1464b_budget, (long)(xl_wall() - g_boot_wall_t0),
@@ -16780,7 +16807,7 @@ void xenolift_trace(uint32_t a)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1468-waitbr-pause-bell");
             xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
             { uint32_t r1468_sb = xenolift_mem_read32(0x80056788u);
@@ -17245,7 +17272,7 @@ void xenolift_trace(uint32_t a)
               r1432a_arms++;
               if (!cd_data_loaded) cd_data_load();
               cd_resp[0] = 0x02u; cd_resp_n = 1u; cd_resp_pos = 0u;
-              cd_pending = 1u;
+              cd_pending = 1u, g_pend_line = __LINE__;
               r861_out("[r1432arm] R1432A datasync-seam sgarm fire #%u @t=%lds: seek=%u FDF8=%u cmd=%02X (shape persisted 2x2s) - staging + resp 0x02 + burst\n",
                       r1432a_arms, (long)(xl_wall() - g_boot_wall_t0), cd_seek_lba, r1432a_fdf8, cd_last_cmd);
               while (r1432a_burst++ < 96u) {
@@ -17301,7 +17328,7 @@ void xenolift_trace(uint32_t a)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1467b-stagedbell");
             xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
             { uint32_t r1467b_sb = xenolift_mem_read32(0x80056788u);
@@ -17336,7 +17363,7 @@ void xenolift_trace(uint32_t a)
             r1467c_t0 = xl_wall(); r1467c_conf = 0;
         } else if (r1467c_conf == 0 && (xl_wall() - r1467c_t0) >= 2) {
             r1467c_conf = 1; r1467c_budget--;
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1467c-activedeliver");
             xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u);
             { uint32_t r1467c_sb = xenolift_mem_read32(0x80056788u);
@@ -17381,7 +17408,7 @@ void xenolift_trace(uint32_t a)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1467e-fieldbell");
             xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u); /* R722D: the announce */
             { uint32_t r722d_sb = xenolift_mem_read32(0x80056788u);
@@ -17455,7 +17482,7 @@ void xenolift_trace(uint32_t a)
         cd_read_active = 1;
         cd_data_loaded = 0;
         cd_data_load();
-        cd_pending = 1;
+        cd_pending = 1, g_pend_line = __LINE__;
         cd_force_deliver_int1("r1466b-v4-heal");
         xenolift_mem_write32(0x8006A22Cu, xenolift_mem_read32(0x8006A22Cu) + 1u); /* R722D (c1157): THE ANNOUNCE - the c1146 zrfMA-proven composite; A22C frozen at 2 through every field window, the game's own announcer never runs for raw-sector reads, so the waiter can only exit on its ~2s timeout; posting at the heal lets the waiter exit the moment data lands */
         { uint32_t r722d_sb = xenolift_mem_read32(0x80056788u);
@@ -17558,7 +17585,7 @@ void xenolift_trace(uint32_t a)
             cd_read_active = 1;
             cd_data_loaded = 0;
             cd_data_load();
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             cd_force_deliver_int1("r1466w-readnarm");
             r861_out("[readnarm] R1466W fire %d/16 (seek=%u cmd=%02X FE1C=%u) - FDF8 0->2048 + FE04 stamp + same-poll serve + pend + INT1, the never-armed ReadN STARTS\n",
                      16 - r1466w_budget, cd_seek_lba, (unsigned)cd_last_cmd,
@@ -17585,7 +17612,7 @@ void xenolift_trace(uint32_t a)
           cd_resp[0] = 0x02u; /* R1419Q (c965): THE 802-ARM BODY SWAP - the c963 verdict: the spin-conv fired its full 24 budget with zero consumption; the R468 receipted recipe for this named deadlock: prime the data-ready resp, load the data, force the IRQ - the rspop machinery delivers at the guest next poll, no ack-write wait */
           cd_resp_n = 1;
           cd_resp_pos = 0;
-          cd_pending = 1;
+          cd_pending = 1, g_pend_line = __LINE__;
           if (!cd_data_loaded) cd_data_load();
           g_cd_irq_force = 1;
           memcpy(r, sr, sizeof r); hi = shi; lo = slo;
@@ -17871,7 +17898,7 @@ void xenolift_trace(uint32_t a)
                         r1381_fired = 1;
                         g_r1385_armed = 1; g_r1385_seen_live = 0; g_r1385_announced = 0; /* R1387 (c468 receipts): armed at the fire; the watcher lives in the mv loop - this host goes cold once the bell releases the game's own wait */
                         xenolift_mem_write32(0x8004FDF8u, 92180u);
-                        cd_read_active = 1; cd_pending = 1; g_cd_irq_force = 1; /* R1383: the arm + start-bell (the fld-rearm pattern; the sector is already staged; the game's own queue consumes; zero guest dispatch) */
+                        cd_read_active = 1; cd_pending = 1, g_pend_line = __LINE__; g_cd_irq_force = 1; /* R1383: the arm + start-bell (the fld-rearm pattern; the sector is already staged; the game's own queue consumes; zero guest dispatch) */
                         r861_out("[f15arm] R1384: file-15 posture armed on FIRST PASS: FDF8 0->92180, act=1 pend=1 irq-force=1 (the fld-rearm bell); FE08=%08X\n", r1381_fe08);
                     }
                 } else if (r1381_since != 0 && r1381_fe04 != 108995u) {
@@ -17929,7 +17956,7 @@ void xenolift_trace(uint32_t a)
                     cd_read_active = 1;
                     cd_data_loaded = 0;
                     cd_data_load(); /* same-poll serve: the request own first sector into the FIFO */
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("armstart");
                 }
                 else if ((xl_wall() - r1298_t) >= 30
@@ -17981,7 +18008,7 @@ void xenolift_trace(uint32_t a)
                             cd_read_active = 1;
                             cd_data_loaded = 0;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("r1464d-pause-armstart");
                         }
                     }
@@ -18021,7 +18048,7 @@ void xenolift_trace(uint32_t a)
                             cd_read_active = 1;
                             cd_data_loaded = 0;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("r1464e-sched-park-armstart");
                         }
                     }
@@ -18060,7 +18087,7 @@ void xenolift_trace(uint32_t a)
                             cd_read_active = 1;
                             cd_data_loaded = 0;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("r1464d-pause-armstart");
                         }
                     }
@@ -18634,7 +18661,7 @@ r491_carry_done: ;
                 sg_arms++;
                 if (!cd_data_loaded) cd_data_load();
                 cd_resp[0] = 0x02u; cd_resp_n = 1u; cd_resp_pos = 0u;
-                cd_pending = 1u;
+                cd_pending = 1u, g_pend_line = __LINE__;
                 xenolift_receipt("[sgarm] R1163/R1281 skip-gate stuck-read arm #%u @t=%lds: seek=%u FDF8=%u last_cmd=%02X scheduled=%u (shape persisted 2 observations; scheduled tolerated per R1281 - the R541 end-of-read chain clears it at FDF8=0; psx-spx data-ready INT1 follows any read; R955 arm shape)\n",
                         sg_arms, (long)(xl_wall() - g_boot_wall_t0), cd_seek_lba, fdf8v, cd_last_cmd, cd_scheduled);
                 while (burst++ < 96u) {
@@ -18723,7 +18750,7 @@ r491_carry_done: ;
           cd_resp[0] = 0x02;
           cd_resp_n = 1;
           cd_resp_pos = 0;
-          cd_pending = 1;
+          cd_pending = 1, g_pend_line = __LINE__;
           if (!cd_data_loaded)
               cd_data_load();
           g_cd_irq_force = 1;
@@ -18754,7 +18781,7 @@ r491_carry_done: ;
                      && cd_data_n == 0u && cd_pending == 0u && cd_arm_int1_pending == 0u
                      && xenolift_mem_read32(0x8004FDF8u) > 0u
                      && (cd_scheduled || cd_read_active)) {
-                cd_pending = 1; r465_fires++;
+                cd_pending = 1, g_pend_line = __LINE__; r465_fires++;
                 r861_out("[defib] self-driving sector bell #%u @dispatch loop (seek=%u FDF8=%u sectors=%u FDE4=%08x)\n",
                         r465_fires, cd_seek_lba,
                         xenolift_mem_read32(0x8004FDF8u), g_fldsec_total,
@@ -21190,7 +21217,7 @@ r861_out("[unpackw] R1001 UnpackCompressedBuffer a0=%08X a1=%08X a2=%08X a3=%08X
                         && fdf8A != 0u && fdf8A < 400000u
                         && cd_data_n >= 2048u && zrfD2A_fires < 24u) {
                         zrfD2A_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("zrfD2A");
                         r861_out("[zrfD2A] R1419C arm-moment force-deliver fire #%d (seek=%u FDF8=%u pend=%u) - the R835P vehicle at the fdw arm moment\n",
                                 zrfD2A_fires, cd_seek_lba, fdf8A, (unsigned)cd_pending);
@@ -22675,7 +22702,7 @@ r861_out("[bootentry] R710 #%d fn=%08X epoch=%u t=%lds key(10000)=%08X 92C0=%08X
                 cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                 cd_resp_n = 3; cd_resp_pos = 0;
                 memcpy(cd_last_full, cd_resp, sizeof cd_resp); cd_last_full_n = 3;
-                cd_pending = 3u; /* INT1 chain — the fd-tick/handler-pair machinery owns conversion */
+                cd_pending = 3u, g_pend_line = __LINE__; /* INT1 chain — the fd-tick/handler-pair machinery owns conversion */
                 r861_out("[cd] FIELD-SEEK assist v4 (menu-frame ctx): 3-byte SetLoc answer + INT1 armed (LBA %u, FE1C=%u)\n",
                         cd_seek_lba, xenolift_mem[0x4FE1Cu]);
             }
@@ -22705,7 +22732,7 @@ r861_out("[bootentry] R710 #%d fn=%08X epoch=%u t=%lds key(10000)=%08X 92C0=%08X
                 cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                 cd_resp_n = 3; cd_resp_pos = 0;
                 memcpy(cd_last_full, cd_resp, sizeof cd_resp); cd_last_full_n = 3;
-                cd_pending = 3u;
+                cd_pending = 3u, g_pend_line = __LINE__;
                 if (frd_logged < 24) { frd_logged++;
                     r861_out("[cd] FIELD-READ assist (menu-frame ctx): 3-byte ReadN answer + INT1 armed (LBA %u, FDF8=%u, FE1C=2)\n",
                             cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
@@ -22735,7 +22762,7 @@ r861_out("[bootentry] R710 #%d fn=%08X epoch=%u t=%lds key(10000)=%08X 92C0=%08X
                     cd_resp_n = 3u; cd_resp_pos = 0u;
                     memcpy(cd_last_full, cd_resp, sizeof cd_resp);
                     cd_last_full_n = 3u;
-                    cd_pending = 3u; /* INT1s the established converter pair handles */
+                    cd_pending = 3u, g_pend_line = __LINE__; /* INT1s the established converter pair handles */
                     r861_out("[cd] FIELD-SEEK assist v3: state-1 dispatch primed 3-byte SetLoc answer + INT1 (LBA %u, resp_n was %u)\n",
                             cd_seek_lba, cd_resp_n);
                 }
@@ -23181,7 +23208,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                     cd_restore_pend(); /* R308: central (was R307 mv inline) */
                     cd_scheduled = 0;
                         { static int sdw_18730; if (sdw_18730 < 2) { sdw_18730++; r861_out("[schdw] R1291 CLEAR site L18730 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-                    cd_pending = 3; cd_pending_stamp(3u, 5u);
+                    cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 5u);
                     if (!cd_flag_suppressed(cd_last_cmd)) {
                         uint16_t one = 1;
                         memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
@@ -23222,7 +23249,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                       && xenolift_mem_read32(0x8004FDF8u) == 0u) {
                     if (r1419s_wn >= 1u && r1419s_fires < 24u) {
                         r1419s_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("f18ack");
                         r861_out("[R1419S] file-18 ack delivery fire #%u (seek=%u resp_n=%u pend=%u) - the 802-arm precedent\n",
                                 r1419s_fires, cd_seek_lba, (unsigned)cd_resp_n, (unsigned)cd_pending);
@@ -23249,7 +23276,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                         cd_resp[0] = 0x22u;
                         cd_resp_n = 1;
                         cd_resp_pos = 0;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("getstat22");
                         r861_out("[R1419U] deep-band GetStat-answer prime fire #%u (seek=%u cmd=%02X FDF8=%u) - the rspop 0x22 receipt at the flutter\n",
                                 r1419u_fires, cd_seek_lba, (unsigned)cd_last_cmd, xenolift_mem_read32(0x8004FDF8u));
@@ -23333,7 +23360,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                                          (unsigned)cd_pend_ans_cmd, (unsigned)cd_pend_ans_n,
                                          (unsigned)cd_resp_n, (unsigned)(cd_resp_n > 0u ? cd_resp[0] : 0u), restored ? "OWNED" : "SKIPPED");
                             cd_scheduled = 0;
-                            cd_pending = 3; cd_pending_stamp(3u, 5u);
+                            cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 5u);
                             if (!cd_flag_suppressed(cd_last_cmd)) {
                                 uint16_t one = 1;
                                 memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
@@ -23390,7 +23417,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                         mk_n++;
                         if (!cd_data_loaded) cd_data_load();
                         cd_resp[0] = 0x02u; cd_resp_n = 1u; cd_resp_pos = 0u;
-                        cd_pending = 1u;
+                        cd_pending = 1u, g_pend_line = __LINE__;
                         r861_out("[mvkick] R955 pre-movie ReadN data-ready INT1 armed #%u: seek=%u FDF8=%u (psx-spx ReadN: INT1 data-ready follows seek; same arm shape as the ack-pair path)\n",
                                 mk_n, cd_seek_lba,
                                 xenolift_mem_read32(0x8004FDF8u));
@@ -25082,7 +25109,7 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
                          * node F10 advance + queue idx stamp). */
                         cd_resp[0] = 0x02u; cd_resp[1] = 0x01u; cd_resp[2] = 0x01u;
                         cd_resp_n = 3u; cd_resp_pos = 0u;
-                        if (cd_pending == 0u) cd_pending = 1u;
+                        if (cd_pending == 0u) cd_pending = 1u, g_pend_line = __LINE__;
                         r861_out("[mtrans] R664 phase-done-ack primed (f0c=%u - mailbox hot, walk finalize can run)\n", pf0c);
                         /* R669: c239 [phase] receipts — the state dispatcher
                          * (0x80019AF8, entered when the menu exits) reads
@@ -25335,7 +25362,7 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
         cd_restore_pend(); /* R308: central (was R307 event-flag inline) */
         cd_scheduled = 0;
                         { static int sdw_20590; if (sdw_20590 < 2) { sdw_20590++; r861_out("[schdw] R1291 CLEAR site L20590 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-        cd_pending = 3; cd_pending_stamp(3u, 6u); /* INT3: response ready in the FIFO */
+        cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 6u); /* INT3: response ready in the FIFO */
         if (!cd_flag_suppressed(cd_last_cmd)) {
             uint16_t one = 1;
             memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
@@ -25745,7 +25772,7 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
                     && (fe1cS == 0u || fe1cS == 1u || fe1cS == 2u || fe1cS == 6u || fe1cS == 7u || fe1cS == 10u || fe1cS == 11u)) {
                     { /* R1419B (c919): FIRE-ON-FIRST. The c918 verdict: zero fires + the fld2sig print = the seam evaluated EXACTLY ONCE at the armed posture (the arm-then-fire cadence needs TWO consecutive evals; this site is once-per-delivery-event). The composite is the full safety boundary (band, FDF8 armed, staged sector, flutter, budget 24); the delivery chain re-enters this seam per sector. */
                         zrfD2S_fires++;
-                        cd_pending = 1;
+                        cd_pending = 1, g_pend_line = __LINE__;
                         cd_force_deliver_int1("zrfD2S");
                         r861_out("[zrfD2S] R1419A hot-site force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u pend=%u) - the R835P twin at the sched=1 seam; guest callback advance->finalize\n",
                                 zrfD2S_fires, cd_seek_lba, fdf8S, fe1cS, (unsigned)cd_pending);
@@ -25805,7 +25832,7 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
             && cd_data_loaded && cd_data_pos < cd_data_n
             && cd_last_cmd == 0x02u && cd_seek_lba >= 108900u
             && xenolift_mem_read32(0x8004FDF8u) == 0u) {
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
             { static uint32_t fld2a_n;
               if (fld2a_n < 24u) {
@@ -25829,7 +25856,7 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
             && cd_last_cmd == 0x02u && cd_seek_lba >= 108995u
             && xenolift_mem_read32(0x8004FDF8u) == 0u
             && cd_data_n > 0u) {
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             g_cd_irq_force = 1;
             { static uint32_t fld2b_n;
               if (fld2b_n < 24u) {
@@ -26063,7 +26090,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     if (zrf_win_now) zrf_win_served = fe04;
                     zrf_armed = 0;
                     cd_data_load();
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("zrf");
                     { /* R339: Noah sStrSectorHeader — assembler accepts only magic 0x0160 + chunk 0x8001; log what we served */
                         uint8_t *p = cd_data + 12;
@@ -26200,7 +26227,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                         r861_out("[zrf0] R515: zero-length directory request healed (FDF8 0 -> 2048) fire #%d\n",
                                 zrf0_fires);
                     }
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("zrf0");
                     r861_out("[zrf0] R511: LBA-0 wedge fire #%d (seek=%u fe1c=%u data_n=%u pend) — guest callback advance->finalize path\n",
                             zrf0_fires, cd_seek_lba, fe1c0, cd_data_n);
@@ -26221,7 +26248,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                 && (fe1cF == 0u || fe1cF == 6u || fe1cF == 7u || fe1cF == 10u || fe1cF == 11u)) {
                 if (zrfF2_armed) {
                     zrfF2_armed = 0; zrfF2_fires++;
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("zrfF2");
                     r861_out("[zrfF2] R815F field-band force-deliver fire #%d (seek=%u FDF8=%u fe1c=%u pend=%u) - the zrf0 composite at the field band; guest callback advance->finalize\n",
                             zrfF2_fires, cd_seek_lba, fdf8F, fe1cF, (unsigned)cd_pending);
@@ -26275,7 +26302,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     cd_read_active = 1; cd_data_loaded = 0; /* same-poll cd_data_load below serves the sector */
                     if (cd_scheduled) cd_scheduled = 0; /* stale-flag class (R1269) */
                         { static int sdw_21162; if (sdw_21162 < 2) { sdw_21162++; r861_out("[schdw] R1291 CLEAR site L21162 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("zrfS");
                     r861_out("[zrfS] R1270 sync-band serve fire #%d (seek=%u fe1c=%u) - heal + FE04 stamp + read_active + force-deliver INT1, guest callback advance->finalize\n",
                             zrfS_fires, cd_seek_lba, fe1cS);
@@ -26354,7 +26381,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     cd_read_active = 1; cd_data_loaded = 0; /* same-poll cd_data_load below serves the sector */
                     if (cd_scheduled) cd_scheduled = 0; /* stale-flag class (R1269) */
                         { static int sdw_21209; if (sdw_21209 < 2) { sdw_21209++; r861_out("[schdw] R1291 CLEAR site L21209 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-                    cd_pending = 1;
+                    cd_pending = 1, g_pend_line = __LINE__;
                     cd_force_deliver_int1("zrfY");
                     r861_out("[zrfY] R1271: system-band serve fire #%d (seek=%u fe1c=%u data_n=%u) - heal + FE04 stamp + read_active + force-deliver INT1, guest callback advance->finalize\n",
                             zrfY_fires, cd_seek_lba, fe1cY, cd_data_n);
@@ -26627,7 +26654,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
              * (cd_pending cleared) before we run the pair — on real HW
              * the IRQ handler reads the flag WHILE SET, then acks. Re-
              * assert it for the handler; its own code acks when done. */
-            cd_pending = 1;
+            cd_pending = 1, g_pend_line = __LINE__;
             r861_out("[cd] CD IRQ handler pair dispatch (INT1 re-asserted, LBA %u)\n", cd_seek_lba);
             uint32_t sr[32]; uint32_t shi, slo;
             memcpy(sr, r, sizeof r); shi = hi; slo = lo;
@@ -26708,7 +26735,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                             if (fdf8_before < 64u) break;
                             cd_data_loaded = 0;
                             cd_data_load();
-                            cd_pending = 1;
+                            cd_pending = 1, g_pend_line = __LINE__;
                             cd_force_deliver_int1("fldbatch");
                             fdf8_after = xenolift_mem_read32(0x8004FDF8u);
                             r861_out("[fldbatch] %u/%u seek=%u FDF8 %u->%u FE04=%08X FE08=%08X\n",
@@ -26764,7 +26791,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                 cd_read_active = 1;
                 cd_data_loaded = 0;
                 cd_data_load();
-                cd_pending = 1;
+                cd_pending = 1, g_pend_line = __LINE__;
                 cd_force_deliver_int1("r1464aarmstart");
                 r861_out("[armst28] R1464A armstart fire %d/8 (seek=%u cmd=%02X FDF8=%u) - act=1 + staged + pend + INT1\n",
                          8 - r1464a_budget, cd_seek_lba, (unsigned)cd_last_cmd,
@@ -26960,7 +26987,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
         if (fdfc != 0u) {
             cd_scheduled = 0;
                         { static int sdw_21506; if (sdw_21506 < 2) { sdw_21506++; r861_out("[schdw] R1291 CLEAR site L21506 ran (seq=%u t=%u): pend=%u act=%u sched=0 FDF8=%u FE04=%08X fe1c=%u last_cmd=%02X resp=%u/%u (popped/armed = guest-ack vs runtime-only)\n", cd_sched_seq, xl_wall(), (unsigned)cd_pending, cd_read_active ? 1u : 0u, xenolift_mem_read32(0x8004FDF8u), xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE1Cu), (unsigned)cd_last_cmd, (unsigned)cd_resp_pos, (unsigned)cd_resp_n); } } /* R1291v3 schdw tracer */
-            cd_pending = 3; cd_pending_stamp(3u, 7u);
+            cd_pending = 3, g_pend_line = __LINE__; cd_pending_stamp(3u, 7u);
             uint16_t one = 1;
             memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
             uint32_t zero = 0;
