@@ -178,23 +178,22 @@ Legend: **C** = camera (print / sample only) · **A** = behavioural arm (mutates
 
 ## Migration order recommendation (ONE at a time — not a land)
 
-1. **This turn:** census only (this doc). No runtime change.
-2. **Default first port if DIRECTOR greenlights a Nasir land later:**  
-   **camera-only `[xcam]` STALL dump twin** (or `[fldfrz]`) on the hot guest
-   poll for the *current* spin (status `0x1F801800` and/or A22C
-   `0x8006A22C` — pick from wedge receipts, not guess). Pass bar: tag
-   prints in `run.log.raw` while `[alarmguard]` defers; binary SHA proves
-   source. Revert if silent under deferral or storms.
-3. **Do not** pick `[dirack2]` / Pause-ack doorbells as first port — overlaps
-   Claude's `fn_0x80042090` cmd=09 lane.
-4. **Do not** port behavioural doorbells until a camera twin has proven the
-   site hot under `[alarmguard]`.
-5. **Do not** touch R885.
-6. **Recommended first *behavioural* port candidate from this census alone:**
-   **none without DIRECTOR go.** The ≥1500s-before-R1483 HOLD is historical
-   (Mac already ~1300s; bell FIXes null). Census proves placement debt; it
-   does not by itself name a safe behavioural FIX for the current Pause
-   wedge (wrong lane) or authorize a land.
+1. **This turn (R1485):** census only (this doc). No runtime change.
+2. **Recommended first (BIMODAL / Task A ELEVATED — docs proposal):**  
+   **`[c2door]` R1191 guest-read port** — see
+   `docs/proposals/R1487-c2door-guest-read-port.md`. Behavioural arm, dead at
+   depth>0, hook = `cd_read_impl` `case 0x1F801800` (~L3228). **No land until
+   DIRECTOR explicit GO / greenlight.**
+3. **Prior default (camera-only, superseded as first by Task A):**  
+   **camera-only `[xcam]` STALL dump twin** (or `[fldfrz]`) on status
+   `0x1F801800` and/or A22C `0x8006A22C` — still valid as a later pattern-proof
+   camera if DIRECTOR prefers camera-before-behavioural.
+4. **Do not** pick `[dirack2]` / Pause-ack doorbells as first port — overlaps
+   Claude's Pause / `fn_0x80042AA8` lane.
+5. **Do not** pile behavioural doorbells; one FIX at a time after Mac receipts.
+6. **Do not** touch R885.
+7. Census alone does not authorize a land — R1487 is the named first
+   behavioural candidate; DIRECTOR GO required before any runtime change.
 
 ## Task B pointer
 
