@@ -7347,8 +7347,40 @@ uint32_t xenolift_mem_read32(uint32_t a)
     if (a == 0x8004FE1Cu && cd_scheduled == 0u && cd_pending == 0u
         && cd_read_active && cd_data_loaded
         && (cd_last_cmd == 0x06u || cd_last_cmd == 0x09u)
-        && cd_seek_lba >= 108900u && cd_seek_lba < 109150u
+        && cd_seek_lba >= 108900u && cd_seek_lba < 109150u /* R1484 REVERTED - band restored */
         && xenolift_mem_read32(0x8004FE04u) == cd_seek_lba) {
+        /* R1484 REVERTED (JOSH-DIAG, same session): widening this band to
+         * 130000 was a NULL RESULT and is undone per the project rule. It DID
+         * work mechanically - bells reached #256 at seek 109239 (vs ~96 before)
+         * and [pendclr] stayed at 32, so the widen is safe and the c166 desync
+         * did not occur - but max seek was 109442 against the 109443 ceiling it
+         * was meant to break. The ceiling is not the bell, not the band and not
+         * the count. Kept as a receipt so nobody re-tries it: the original
+         * reasoning below is preserved.
+         *
+         * R1484 (JOSH-DIAG): THE BAND WAS THE LIMITER, NOT THE COUNT.
+         * R1483 (one bell per delivered sector) measured as a NULL RESULT
+         * against R1482's fixed 96: max seek 109442 vs 109443, last sector
+         * t=479s vs t=493s. The reason is here, not in the budget: the old
+         * band ended at 109150 and the walk already reaches 109442, so past
+         * 109150 NO bell rings at all regardless of how it is gated. Only ~96
+         * bells ever rang under either scheme - the band capped them.
+         *
+         * WHY WIDENING IS SAFE ONLY NOW. The R411 comment justifies the narrow
+         * band with the c166 lesson - "an extra bell in a healthy flow desyncs
+         * it" - and that risk was real while the bell could fire repeatedly
+         * within one sector (which, unbudgeted, is exactly what produced the
+         * ~1.03e9 acknowledgement storm and the CD_flush deadlock). R1483's
+         * sector edge removes that failure mode by construction: at most ONE
+         * bell per delivered sector, which is the psx-spx model the R411
+         * comment itself states. An extra bell can no longer exist, so the
+         * band no longer has to carry that safety on its own.
+         *
+         * 130000 covers the field walk through the 120634 door while still
+         * excluding the movie band (239317) the original comment calls out.
+         * PASS = the walk sustains past seek 109443, the R1482/R1483 ceiling.
+         * REVERT = pendclr climbs back toward pre-R1482 counts (a desync or a
+         * double-counted sector), or the walk regresses below 109443. */
         uint32_t r411_fdf8 = xenolift_mem_read32(0x8004FDF8u);
         /* R412: strictly MID-read — the initial FDF8==125304 state is the
          * R408 arm's job; c169 showed a double-bell there made the guest
@@ -7390,6 +7422,36 @@ uint32_t xenolift_mem_read32(uint32_t a)
          * and [wedge]. REVERT = the stream stops advancing after 96 bells,
          * which would mean the flow genuinely needs an unbounded bell and the
          * budget belongs somewhere else. */
+        /* R1483 (JOSH-DIAG): ONE BELL PER DELIVERED SECTOR - the model this
+         * block's own comment already states, replacing R1482's fixed count.
+         * R1482 stopped the storm by making the 96 budget gate the bell
+         * instead of only the receipt, and that broke the CD_flush deadlock
+         * (pendclr ~1.03e9 -> <6.6e4, seek 108907 -> 109200, dma2_sends 1 -> 3).
+         * But a fixed count is the wrong shape: the c-this-session long run
+         * shows the walk falls back to ~0.9 sectors/s the moment the 96th bell
+         * is spent, so the budget is now the limiter.
+         *
+         * The R411 comment above already names the correct rule: "Hardware
+         * truth (psx-spx): the drive raises INT1 PER DELIVERED SECTOR under
+         * ReadN, not once per request." So gate the bell on an actual sector
+         * delivery - g_sectors_loaded, the counter cd_data_load() increments
+         * (the same delta vehicle R1423A uses) - rather than on a call count.
+         *
+         * This is bounded BY CONSTRUCTION and cannot re-open the deadlock:
+         * within one delivered sector at most one arm fires, so once the guest
+         * acknowledges, nothing re-asserts INT1 until a NEW sector lands and
+         * CD_flush always reaches its zero-flag exit. It is also unlimited in
+         * duration, so the stream is never cut off mid-file.
+         * PASS = the walk sustains past seek 109274 (the R1482 long-run mark)
+         * without the post-96 fallback to ~0.9 sectors/s, and [pendclr] stays
+         * collapsed. REVERT = pendclr climbs back toward its pre-R1482 counts,
+         * which would mean a sector is being counted more than once. */
+        /* R1483 REVERTED (JOSH-DIAG, same session): the per-delivered-sector
+         * edge gate measured NULL against R1482's fixed 96 (seek 109442 vs
+         * 109443, last sector t=479s vs t=493s), so it is undone per the
+         * project rule even though its shape matches the psx-spx model the
+         * R411 comment states. It is only worth re-landing together with a
+         * band widen, and R1484 showed the band is not the ceiling either. */
         static int r411_n;
         if (r411_n++ < 96) {
             cd_pending = 1, g_pend_line = __LINE__;
@@ -7401,9 +7463,10 @@ uint32_t xenolift_mem_read32(uint32_t a)
              * sectors) + file 2 (~15) end to end. Flow unchanged — budget
              * only; c171 lesson respected (no gate changes to working
              * flow). */
-            r861_out("[fld-rearm] sector bell re-armed at FE1C poll (seek=%u FDF8=%u pend=%u bell %d/96)\n",
-                    cd_seek_lba, r411_fdf8, cd_pending, r411_n);
-        } /* R1482: close the budgeted bell */
+            if (r411_n <= 96 || (r411_n % 256) == 0) /* R1483: receipt cap only - the BELL itself is gated by the sector edge above, never by this */
+                r861_out("[fld-rearm] sector bell #%d re-armed at FE1C poll (seek=%u FDF8=%u pend=%u sec=%u)\n",
+                        r411_n, cd_seek_lba, r411_fdf8, cd_pending, g_sectors_loaded);
+        } /* R1483: close the sector-edge-gated bell */
         }
     }
     {   /* R403 fld-data camera: RAM-cell polls during the data-stage wait */
