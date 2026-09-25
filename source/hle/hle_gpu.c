@@ -599,9 +599,34 @@ uint32_t g_cls_poly_cmd0, g_cls_poly_v0, g_cls_poly_v1, g_cls_poly_v2;
 uint32_t g_cls_fill_w[3], g_cls_rect_w[4]; int g_cls_fill_n, g_cls_rect_n; uint32_t g_cls_rect_cmd;
 uint32_t g_cls_dropped[4]; int g_cls_dropped_n;
 uint32_t g_cls_words_exec; /* words consumed by executed cmds */
+/* R1486: first-content GP0 tripwire (camera-only).
+ * Predicate matches R939 census: fill == GP0 opcode 0x02 (FillVram);
+ * everything else that reaches exec_cmd_buf (copy/poly/line/rect/other)
+ * is non-fill content. Fire ONCE on the first non-fill; silent on
+ * fill-only runs. Does NOT change whether the command executes.
+ * NOP/ClearCache/IRQ/env/A0 never reach this path as drawing headers. */
+static uint8_t g_r1486_fired;
 static void exec_cmd_buf(void)
 {
     uint32_t cmd = (g_cmd_buf[0] >> 24) & 0xFFu;
+
+    /* R1486 [r1486] FIRST non-fill GP0 — camera only, once. */
+    if (!g_r1486_fired && cmd != 0x02u) {
+        const char *cls;
+        g_r1486_fired = 1u;
+        if (cmd == 0x80u) cls = "copy";
+        else if (cmd >= 0x20u && cmd <= 0x3Fu) cls = "poly";
+        else if (cmd >= 0x40u && cmd <= 0x5Fu) cls = "line";
+        else if (cmd >= 0x60u && cmd <= 0x7Fu) cls = "rect";
+        else cls = "other";
+        hle_out("[r1486] FIRST non-fill GP0: cmd=%02X class=%s words=%d "
+                "w0=%08X w1=%08X w2=%08X w3=%08X (fill=0x02 silent)\n",
+                (unsigned)cmd, cls, g_cmd_words_total,
+                g_cmd_buf[0],
+                g_cmd_words_total > 1 ? g_cmd_buf[1] : 0u,
+                g_cmd_words_total > 2 ? g_cmd_buf[2] : 0u,
+                g_cmd_words_total > 3 ? g_cmd_buf[3] : 0u);
+    }
 
     if (cmd == 0x02) {
         g_cls_fill++; g_cls_words_exec += (uint32_t)g_cmd_words_total;
