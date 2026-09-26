@@ -4852,7 +4852,15 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
        * posting 0 fails the ==2048 term until the guest re-arms. 4096 is a runaway
        * backstop only. PASS = runs stop ending at seek 2..5 with FDF8=2048.
        * REVERT = that terminal persists, or escape falls. */
-      } else if (r1426a_served && r1426a_fires < 4096u) {
+      /* R1497 REVERTED -> budget 4. Two batches (2/12) plus R1498 stacked on it
+       * (0/6) put the R1497 era at 2/18 = 11% escape vs the R1493 state's 9/24 = 38%,
+       * Fisher p = 0.056. Not conclusive, but it trends down, and R1497 showed no
+       * forward progress: it cleared the TOC-starvation terminal (5/5 -> 0/6) yet the
+       * game still stopped, only elsewhere. Same standard as R1494: no demonstrated
+       * benefit, so it does not stay. Its diagnostic value (exposing the next wait
+       * sites) has been captured. The sole-writer analysis above remains true and is
+       * the right basis if a narrower, per-episode version is tried later. */
+      } else if (r1426a_served && r1426a_fires < 4u) {
           r1426a_served = 0;
           r1426a_fires++;
           xenolift_mem_write32(0x8004FDF8u, 0u);
@@ -5040,7 +5048,34 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
         }
         return (cd_index & 3u) | 0x04u
              | ((cd_resp_pos < cd_resp_n) ? 0x20u : 0u)
-             | ((cd_read_active && cd_data_pos < cd_data_n) ? 0x40u : 0u);
+             | ((cd_read_active && cd_data_pos < cd_data_n) ? 0x40u : 0u); /* R1498 REVERTED, see below */
+        /* R1498 REVERTED (JOSH-DIAG): escape 0/6 stacked on R1497 (vs R1497's 2/12,
+         * p = 0.43 - not shown harmful, but no benefit either, and this bit is read in
+         * every era). The hardware argument below is still correct; the likely reason
+         * a hardware-correct DRQSTS does not help is that the read_active term was
+         * masking STALE FIFO leftovers the runtime fails to clear, so the right fix is
+         * clearing those, not exposing them. Original note kept:
+         *
+         * R1498 (JOSH-DIAG): DRQSTS WAS GATED ON cd_read_active, WHICH HARDWARE DOES NOT
+         * DO. psx-spx: 1F801800 bit6 "DRQSTS - Data fifo empty (0=Empty)". It reflects
+         * only whether the data FIFO holds bytes - not whether a read command is
+         * currently active. The old term was `cd_read_active && pos<n`, with no
+         * comment justifying the extra condition.
+         *
+         * RECEIPT (R1496 [termcam], R1497b trial 1): the guest spins in
+         * fn 0x80042AA8 = CD_getsector for the final 120s. Its emitted loop is
+         *     L_80042B30: if ((LBU 1F801800) & 0x40) == 0  goto L_80042B30
+         * and the terminal posture is act=0 ld=1 cmd=07: a sector IS staged in the
+         * FIFO, yet DRQSTS reads 0 solely because cd_read_active is 0 (it clears on
+         * Pause/MotorOn). The data is there and the status bit hides it. Same act-
+         * cell pattern as R1493/R1426A.
+         *
+         * SCOPE, stated honestly: this posture is 1 of 18 termcam-era terminals.
+         * It is fixed because it is hardware-incorrect, not because it is the main
+         * blocker. Stale-leftover safety is unchanged: the runtime's explicit
+         * discard paths zero cd_data_pos/cd_data_n, so a discarded FIFO still reads
+         * empty. PASS = no CD_getsector terminal with act=0 ld=1, escape not lower.
+         * REVERT = new early deaths or escape falls. */
     case 0x1F801801: /* bank 1: response FIFO */
         if ((cd_index & 3u) == 1u && cd_resp_pos < cd_resp_n) {
             uint8_t b = cd_resp[cd_resp_pos++];
