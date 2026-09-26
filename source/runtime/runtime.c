@@ -25785,6 +25785,59 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
         }
     }
 }
+{ /* R1488: [idle1436] GUEST-READ TWIN of R1436A. Alarm/composer copy (~L4617
+     * on the status/composer path) can be cold under R1457-class depth>0 spin;
+     * Mac stall is completed-read busy-stuck at fn 0x800286CC (act=1 FDF8=0
+     * seek~108884 FE1C=0). Twin evaluates INLINE on the 286CC dispatch seam
+     * (R1160/c345; sibling of R1459W/R1405). Mac-aligned gates: FE1C-agnostic,
+     * no hard cmd==0x02. Stuck = dispatch-count fence 65536; budget 4.
+     * Guest cells via bounds-checked memcpy from xenolift_mem only (R1197 /
+     * VERIFY memcpy rule; preferred 286CC seam — not the status-1800 path).
+     * Existing R1436A KEPT; R1487 [c2door] untouched; no R885 touch.
+     * NOT an escape-converter. */
+    static uint32_t r1488_stuck; static int r1488_budget = 4;
+    static uint32_t r1488_tseek = 1u, r1488_tf8 = 1u;
+    if (a == 0x800286CCu) {
+        uint32_t r1488_f8 = 0u, r1488_fe04 = 0u, r1488_fe1c = 0u;
+        { uint32_t off = 0x4FDF8u;
+          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
+            memcpy(&r1488_f8, xenolift_mem + off, 4u); }
+        { uint32_t off = 0x4FE04u;
+          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
+            memcpy(&r1488_fe04, xenolift_mem + off, 4u); }
+        { uint32_t off = 0x4FE1Cu;
+          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
+            memcpy(&r1488_fe1c, xenolift_mem + off, 4u); }
+        /* tuple-reset on seek/FDF8 change */
+        if (r1488_tseek != (uint32_t)cd_seek_lba || r1488_tf8 != r1488_f8) {
+            r1488_tseek = (uint32_t)cd_seek_lba; r1488_tf8 = r1488_f8;
+            r1488_stuck = 0u;
+        }
+        if (r1488_budget > 0
+            && cd_read_active == 1
+            && cd_pending == 0u
+            && !cd_scheduled
+            && cd_seek_lba >= 100000u && cd_seek_lba < 300000u
+            && r1488_f8 == 0u
+            /* FE1C-agnostic; no hard cmd==0x02 (R1460F flutter lesson) */) {
+            if (++r1488_stuck >= 65536u) {
+                r1488_stuck = 0u; r1488_budget--;
+                r861_out("[idle1436] R1488 guest-read twin: completed-read idle reset #%d: FE04=%u seek=%u FDF8=0 FE1C=%u busy->idle (stuck 65536 dispatches at 286CC; budget left %d) - NOT an escape-converter\n",
+                         4 - r1488_budget, r1488_fe04, (unsigned)cd_seek_lba, r1488_fe1c, r1488_budget);
+                cd_read_active = 0;
+                cd_data_loaded = 0;
+                cd_data_pos = 0;
+                cd_data_n = 0;
+                /* optional idempotent FE1C=0 via memcpy hygiene only */
+                { uint32_t z = 0u; uint32_t off = 0x4FE1Cu;
+                  if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
+                    memcpy(xenolift_mem + off, &z, 4u); }
+            }
+        } else {
+            r1488_stuck = 0u; /* reset on posture break */
+        }
+    }
+}
 { static uint32_t r764a_n; if (a == 0x800286CCu) { r764a_n++;
   if (r764a_n <= 16u || (r764a_n % 65536u) == 0u) r861_out("[f5cam] R764A n=%u 5F: FDFC=%08X FE48=%08X FE1C=%08X DF8=%08X FE04=%08X 4F: FDFC=%08X FE1C=%08X DF8=%08X\n", r764a_n, xenolift_mem_read32(0x8005FDFCu), xenolift_mem_read32(0x8005FE48u), xenolift_mem_read32(0x8005FE1Cu), xenolift_mem_read32(0x8005FDF8u), xenolift_mem_read32(0x8005FE04u), xenolift_mem_read32(0x8004FDFCu), xenolift_mem_read32(0x8004FE1Cu), xenolift_mem_read32(0x8004FDF8u));
 } }
