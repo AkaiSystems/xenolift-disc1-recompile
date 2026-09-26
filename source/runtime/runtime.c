@@ -7423,6 +7423,62 @@ uint32_t xenolift_mem_read32(uint32_t a)
      * lesson — an extra bell in a healthy flow desyncs it — is why
      * pend/sched must both be idle AND the band is narrow. FDF8 gate
      * 1..125304 = strictly mid-field-read. */
+    { /* R1491 (JOSH-DIAG): CLEAR THE WAITER'S ONE FAILING EXIT TERM AT 0x8004FDFC,
+       * IN GUEST-READ CONTEXT. The R1306 waiter exits on ret==0 + FDFC==0 +
+       * FE1C==0. The reproducible stall (identical in escape-protocol trials 2
+       * and 4, 300s serialized) has TWO of the three already satisfied:
+       *   [wedge] R967 STUCK 80s in fn 0x800286CC (PollArchiveTransfer)
+       *     FE1C=00  FDF8=00000000  FE04=00000000  FDFC=00000001
+       *     act=1 loaded=1 pos=0/2060 sched=0 pend=0 cmd=02  A22C=00000018
+       * FE1C is clear, nothing is owed (FDF8=0), no request is stamped (FE04=0),
+       * no interrupt is outstanding - and FDFC is stuck at 1. It is the SINGLE
+       * failing exit term, and the drive is idle so nothing will ever clear it.
+       *
+       * THE ADDRESS MATTERS. The wedge camera's FDFC is 0x8004FDFC (verified
+       * against its argument list), and the R1195 wedgespin receipts show the
+       * guest polling 0x8004FDFC 63 times inside the wedge window. The tree has
+       * FIVE clears of 0x8005FDFC but only THREE of 0x8004FDFC, and two of those
+       * three sit inside on_alarm_ctx (L13432, L14902) and are therefore dead at
+       * depth>0 under R885. Both cells are real (42 refs vs 17), so this is not a
+       * typo - the clears simply do not cover the cell this waiter polls.
+       *
+       * PLACEMENT: hooked on the guest's own read of that exact cell - the
+       * R1160/c345 pattern, and the narrowest possible placement since the
+       * polling read IS the trigger. Not in on_alarm_ctx, which is blacked out at
+       * five distinct wedge sites now.
+       *
+       * ALL GATE READS ARE RAW memcpy, never xenolift_mem_read32 - the R1197
+       * rule: hooked reads feed the read-hit counters, the A22C cadence and the
+       * R1196 kick threshold. My own R1490 broke that rule and produced a phantom
+       * 3x regression while firing zero times.
+       *
+       * Stuck fence 131072 consecutive qualifying polls (R1451's receipted
+       * posture-poll confirm, the same fence the R1487 port used) so a healthy
+       * in-flight async can never be cleared out from under the guest. Budget 8.
+       * PASS = escape, scored as a movie-band read at/after the last field-band
+       * read, over >=5 serialized trials. REVERT = fires with no escape change. */
+        static uint32_t r1491_polls, r1491_fires;
+        if (a == 0x8004FDFCu) {
+            uint32_t q_fdfc = 0, q_fe1c = 0, q_fdf8 = 0, q_fe04 = 0;
+            memcpy(&q_fdfc, xenolift_mem + 0x4FDFCu, 4);
+            memcpy(&q_fe1c, xenolift_mem + 0x4FE1Cu, 4);
+            memcpy(&q_fdf8, xenolift_mem + 0x4FDF8u, 4);
+            memcpy(&q_fe04, xenolift_mem + 0x4FE04u, 4);
+            if (q_fdfc == 1u && q_fe1c == 0u && q_fdf8 == 0u && q_fe04 == 0u
+                && cd_pending == 0u && cd_scheduled == 0u
+                && cd_arm_int1_pending == 0u) {
+                if (++r1491_polls >= 131072u && r1491_fires < 8u) {
+                    r1491_polls = 0u; r1491_fires++;
+                    xenolift_mem_write32(0x8004FDFCu, 0u);
+                    r861_out("[fdfcclr] R1491 fire %u/8: waiter's last exit term cleared (0x8004FDFC 1->0) at seek=%u cmd=%02X act=%d loaded=%d FE1C=0 FDF8=0 FE04=0 - LegacyCdDataWait can now return\n",
+                             r1491_fires, cd_seek_lba, (unsigned)cd_last_cmd,
+                             cd_read_active ? 1 : 0, cd_data_loaded ? 1 : 0);
+                }
+            } else {
+                r1491_polls = 0u;
+            }
+        }
+    }
     if (a == 0x8004FE1Cu && cd_scheduled == 0u && cd_pending == 0u
         && cd_read_active && cd_data_loaded
         && (cd_last_cmd == 0x06u || cd_last_cmd == 0x09u)
@@ -25782,59 +25838,6 @@ if (a == 0x8001996Cu || a == 0x80019ACCu || a == 0x80019EF8u) {
                 r861_out("[fe1clear] R1459W fire %u/8 (FE1C %u->0 at all-dead seek=%u cmd=%02X) - the waiter's last exit term cleared, LegacyCdDataWait returns 0, the game advances\n",
                          r1459w_fires, r1459w_e1c, (unsigned)cd_seek_lba, (unsigned)cd_last_cmd);
             }
-        }
-    }
-}
-{ /* R1488: [idle1436] GUEST-READ TWIN of R1436A. Alarm/composer copy (~L4617
-     * on the status/composer path) can be cold under R1457-class depth>0 spin;
-     * Mac stall is completed-read busy-stuck at fn 0x800286CC (act=1 FDF8=0
-     * seek~108884 FE1C=0). Twin evaluates INLINE on the 286CC dispatch seam
-     * (R1160/c345; sibling of R1459W/R1405). Mac-aligned gates: FE1C-agnostic,
-     * no hard cmd==0x02. Stuck = dispatch-count fence 65536; budget 4.
-     * Guest cells via bounds-checked memcpy from xenolift_mem only (R1197 /
-     * VERIFY memcpy rule; preferred 286CC seam — not the status-1800 path).
-     * Existing R1436A KEPT; R1487 [c2door] untouched; no R885 touch.
-     * NOT an escape-converter. */
-    static uint32_t r1488_stuck; static int r1488_budget = 4;
-    static uint32_t r1488_tseek = 1u, r1488_tf8 = 1u;
-    if (a == 0x800286CCu) {
-        uint32_t r1488_f8 = 0u, r1488_fe04 = 0u, r1488_fe1c = 0u;
-        { uint32_t off = 0x4FDF8u;
-          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
-            memcpy(&r1488_f8, xenolift_mem + off, 4u); }
-        { uint32_t off = 0x4FE04u;
-          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
-            memcpy(&r1488_fe04, xenolift_mem + off, 4u); }
-        { uint32_t off = 0x4FE1Cu;
-          if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
-            memcpy(&r1488_fe1c, xenolift_mem + off, 4u); }
-        /* tuple-reset on seek/FDF8 change */
-        if (r1488_tseek != (uint32_t)cd_seek_lba || r1488_tf8 != r1488_f8) {
-            r1488_tseek = (uint32_t)cd_seek_lba; r1488_tf8 = r1488_f8;
-            r1488_stuck = 0u;
-        }
-        if (r1488_budget > 0
-            && cd_read_active == 1
-            && cd_pending == 0u
-            && !cd_scheduled
-            && cd_seek_lba >= 100000u && cd_seek_lba < 300000u
-            && r1488_f8 == 0u
-            /* FE1C-agnostic; no hard cmd==0x02 (R1460F flutter lesson) */) {
-            if (++r1488_stuck >= 65536u) {
-                r1488_stuck = 0u; r1488_budget--;
-                r861_out("[idle1436] R1488 guest-read twin: completed-read idle reset #%d: FE04=%u seek=%u FDF8=0 FE1C=%u busy->idle (stuck 65536 dispatches at 286CC; budget left %d) - NOT an escape-converter\n",
-                         4 - r1488_budget, r1488_fe04, (unsigned)cd_seek_lba, r1488_fe1c, r1488_budget);
-                cd_read_active = 0;
-                cd_data_loaded = 0;
-                cd_data_pos = 0;
-                cd_data_n = 0;
-                /* optional idempotent FE1C=0 via memcpy hygiene only */
-                { uint32_t z = 0u; uint32_t off = 0x4FE1Cu;
-                  if (off + 4u <= (uint32_t)(XENOLIFT_RAM_SIZE + XENOLIFT_IO_SIZE))
-                    memcpy(xenolift_mem + off, &z, 4u); }
-            }
-        } else {
-            r1488_stuck = 0u; /* reset on posture break */
         }
     }
 }
