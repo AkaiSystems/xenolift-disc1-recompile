@@ -4808,6 +4808,22 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
       if (g_sectors_loaded != r1426a_last_sec) {
           r1426a_last_sec = g_sectors_loaded;
           r1426a_served = 1;
+      /* R1494 (JOSH-DIAG): BUDGET 4 -> 32, single-variable test. R1493 exhausted
+       * its budget 4/4 in ALL 12 confirmation trials, including all 7 that did
+       * NOT escape, so firing is necessary-not-sufficient and the budget is a
+       * candidate limiter. PREDICTION, stated before the run: if the budget is
+       * the limiter, escape rises above 5/12; if escape does not move, the budget
+       * is exonerated and the remaining barrier is elsewhere. Nothing else in the
+       * gate changes - the serve-delta confirm still requires g_sectors_loaded to
+       * have advanced AND the game to have failed to decrement. */
+      /* R1494 REVERTED -> budget back to 4. The 4->32 test measured fires rising
+       * 4 -> 25..32 per trial (the arm really did have ~8x more work available and
+       * took it) while escape moved only 5/12 -> 3/6, i.e. 42% -> 50%, inside noise
+       * at this n. PREDICTION RESOLVED as outcome 2 of the three registered before
+       * the run: the budget is EXONERATED and the remaining barrier is elsewhere.
+       * Reverting per the project rule - a parameter with no demonstrated benefit
+       * does not stay, and 32 posts ~8x more FDF8 zeros for nothing. The
+       * act-agnostic gate (R1493) is what carries the effect and it stays. */
       } else if (r1426a_served && r1426a_fires < 4u) {
           r1426a_served = 0;
           r1426a_fires++;
