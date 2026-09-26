@@ -4824,7 +4824,35 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
        * Reverting per the project rule - a parameter with no demonstrated benefit
        * does not stay, and 32 posts ~8x more FDF8 zeros for nothing. The
        * act-agnostic gate (R1493) is what carries the effect and it stays. */
-      } else if (r1426a_served && r1426a_fires < 4u) {
+      /* R1497 (JOSH-DIAG): R1426A's LIFETIME BUDGET WAS SPENT AT BOOT - uncap it.
+       * Receipts from the R1496 [termcam] run (unsampled, 5s cadence):
+       *  - R1426A fires EXACTLY 4 times in EVERY trial, at seeks 0,1,3,4, all in
+       *    the boot TOC read at t~0. The budget is gone before the field band.
+       *  - Every full-length run then follows TOC -> field -> (movie) -> TOC and
+       *    ends back in the TOC band at the very posture R1426A exists for:
+       *      seek=2..5 FE04=seek FDF8=2048 FE1C=6 act=1 pend=0 cmd=09
+       *    with no budget left to post the zero. Escaping and non-escaping runs
+       *    end in the SAME terminal state - "escape" was an intermediate stage.
+       *  - With budget 32 (R1494) the runs cycle TOC<->field up to six times and
+       *    each TOC re-entry burns ~4-10 fires. Any fixed budget only delays it.
+       *
+       * CORRECTION TO R1494: I called the budget "exonerated" because escape did
+       * not move. Escape happens BEFORE the return to TOC, so it cannot see this
+       * effect. I measured the wrong outcome.
+       *
+       * WHY UNCAPPING IS SAFE HERE WHEN R1495 WAS NOT: the rule is that FDF8
+       * bookkeeping is safe only where the guest never decrements natively. Tested
+       * directly: of 234 post-boot TOC-band [termcam] samples, 233 show FDF8=2048
+       * (trial 1 stuck from t=15s to t=320s). The guest does not drain FDF8 in the
+       * TOC band, so R1426A is the sole writer there and cannot race it - the exact
+       * opposite of the field band, where native draining is what R1495 raced.
+       *
+       * Still bounded by construction: the serve-delta confirm is unchanged, so it
+       * fires at most once per sector actually delivered while FDF8==2048, and
+       * posting 0 fails the ==2048 term until the guest re-arms. 4096 is a runaway
+       * backstop only. PASS = runs stop ending at seek 2..5 with FDF8=2048.
+       * REVERT = that terminal persists, or escape falls. */
+      } else if (r1426a_served && r1426a_fires < 4096u) {
           r1426a_served = 0;
           r1426a_fires++;
           xenolift_mem_write32(0x8004FDF8u, 0u);
@@ -6664,9 +6692,65 @@ static uint32_t lzss_hle_src_saved = 0;
 static int lzss_inpast_n = 0;      /* R195: token reads past the stream end (LOG-ONLY) */
 static uint32_t lzss_fence_hits = 0; /* R1276 (c167): run-lifetime fence-hit counter. The c167 long run proved the 8-hit cap is per-ARM (the arm site resets lzss_inpast_n=0 at every core entry) - the game read loop re-enters lzss decode and each arm re-opens 8 more prints: 31,993 fence lines, a 224MB raw log, the 50MB budget eaten, and the logcap window (first 16k + last 16k of ~450k lines) buried EVERY boot receipt (state table, phase ladder, GPU, the seed - all absent-as-artifact, the c484 playbook). R1276 throttles the PRINT (never the read, never the counter): first 64 hits receipt, then 1 per 4096 - the camera keeps its voice, the storm can never again drown the evidence. */
 
+/* R1496b (JOSH-DIAG): [termcam] moved into a shared tick called from read8, read16
+ * AND read32. The first version keyed on the read32 counter only, and three runs
+ * went silent early while still logging thousands of lines - the CD controller
+ * registers 1F801800..1F801803 are BYTE-wide, so a guest spinning on them does
+ * read8s and the read32 counter barely moves. I had claimed the camera was alive
+ * in every spin; it was blind in exactly the CD-register spins. One tick counter
+ * across all three widths closes that. Camera only. */
+static void r1496_termcam_tick(void)
+{
+    { /* R1496 (JOSH-DIAG) [termcam]: AN UNSAMPLED, UNBUDGETED TERMINAL-STATE CAMERA.
+       * Why this exists: three conclusions this session were corrupted by cameras
+       * that sample or cap - [fldsec] prints only fldsec_n<=4 || fldsec_n%8==0, so
+       * "LBA 4/5 never consumed" was a print gap; [waitbr]'s last line is budgeted,
+       * so "terminal FE04=108894" was a stale sample while the walk ran on to 108927;
+       * and a PIO drain counter read 0 in a healthy DMA stream. Every "last state"
+       * read from those cameras is unreliable.
+       *
+       * This prints ONE compact line every 5 wall-seconds for the whole run, with no
+       * count cap, so the final line is always within 5s of the true terminal
+       * state. It rides the top of xenolift_mem_read32 - the one path that runs on
+       * every guest load, including every depth>0 spin, so it is alive where every
+       * on_alarm_ctx camera is blacked out. Gated by a cheap counter mask first
+       * (1 in 262144 reads) so it never adds per-read cost.
+       *
+       * It reads the REAL counters, not the sampled prints: g_fldsec_total (true
+       * field sectors delivered) and g_sectors_loaded. All RAM cells are raw
+       * memcpy from the backing store - never xenolift_mem_read32, which would
+       * recurse here and feed the read-hit and pollkick counters (the R1197 rule).
+       * Both copies of FE1C are printed because they diverge in 84% of samples.
+       * Camera only: zero writes, zero behaviour change. */
+        static time_t r1496_last; static uint32_t r1496_seq, r1496_ticks;
+        if ((++r1496_ticks & 0x3FFFFu) == 0u) {
+            time_t r1496_now = xl_wall();
+            if (r1496_last == 0 || (r1496_now - r1496_last) >= 5) {
+                uint32_t v4fe1c=0, v5fe1c=0, vfe04=0, vfdf8=0, vfdfc=0, va22c=0;
+                memcpy(&v4fe1c, xenolift_mem + 0x4FE1Cu, 4);
+                memcpy(&v5fe1c, xenolift_mem + 0x5FE1Cu, 4);
+                memcpy(&vfe04,  xenolift_mem + 0x4FE04u, 4);
+                memcpy(&vfdf8,  xenolift_mem + 0x4FDF8u, 4);
+                memcpy(&vfdfc,  xenolift_mem + 0x4FDFCu, 4);
+                memcpy(&va22c,  xenolift_mem + 0x6A22Cu, 4);
+                r1496_last = r1496_now; r1496_seq++;
+                r861_out("[termcam] #%u t=%lds seek=%u FE04=%u FDF8=%u FE1C4F=%u FE1C5F=%u FDFC=%u A22C=%u cmd=%02X act=%d ld=%d pend=%u sched=%u arm1=%u fldsec=%u secs=%u fn=%08X d=%d\n",
+                         r1496_seq, (long)(r1496_now - g_boot_wall_t0), cd_seek_lba,
+                         vfe04, vfdf8, v4fe1c, v5fe1c, vfdfc, va22c,
+                         (unsigned)cd_last_cmd, cd_read_active ? 1 : 0,
+                         cd_data_loaded ? 1 : 0, (unsigned)cd_pending,
+                         (unsigned)cd_scheduled, (unsigned)cd_arm_int1_pending,
+                         g_fldsec_total, g_sectors_loaded,
+                         (unsigned)xenolift_cur_fn, g_guest_depth);
+            }
+        }
+    }
+}
+
 static int g_r402_in_hook; /* R402 recursion guard (see RAM-POLL RELEASE below) */
 uint32_t xenolift_mem_read32(uint32_t a)
 {
+    r1496_termcam_tick(); /* R1496b: shared across read8/16/32 */
     g_r1195_r32_hits++; /* R1337 (c290): the SPU voice-base cell (0x80068E08) has NO guest
     * writer (c289: 20 LW reads, zero SW; rvbw=0) - its value comes
     * only from the pristine image (R722 capture / R772 restores).
@@ -9304,6 +9388,7 @@ int xenolift_spuerr_stub(void)
 
 uint32_t xenolift_mem_read16(uint32_t a)
 {
+    r1496_termcam_tick(); /* R1496b */
     g_r1195_r16_hits++; /* R1195: total hook hits BEFORE any early return */
     if (g_r1194_wedge_streak >= 5u) {
         static uint32_t seen[16]; static uint32_t sn;
@@ -9730,6 +9815,7 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
 
 uint32_t xenolift_mem_read8(uint32_t a)
 {
+    r1496_termcam_tick(); /* R1496b */
     g_r1195_r8_hits++; /* R1195: total hook hits BEFORE any early return */
     if (g_r1194_wedge_streak >= 5u) {
         static uint32_t seen[16]; static uint32_t sn;
