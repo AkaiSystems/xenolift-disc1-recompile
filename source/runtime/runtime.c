@@ -4768,11 +4768,43 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
   }
 }
 { /* R1426A (c1006): THE TOC-BAND FDF8 COMPLETION BOOKKEEPING. The c1005 receipts: the TOC sectors SERVED at LBA 0 AND LBA 1 (cd-dma 12/12 to the ring + 2048/2048 payload drains, fifo 2060/2060 staged) yet FDF8 stayed 0x800 through 357M pre-movie polls - LegacyCdDataWait returns FDF8=800 so its exit term (FDF8==0) never computes; the R1423A bookkeeping twin is gated to the deep band only, and the zrfF sibling fails on one term (cmd=08 here vs its 01/02 gate). THIS twin, the R1423A mechanism widened to its receipted sibling band: when the TOC posture holds (seek < 150, FE04==0 or ==seek, one sector armed FDF8==2048, drive idle act=0 pend=0) and a serve has landed (g_sectors_loaded delta) without the game own decrement by the next evaluation - post the honest zero. The waiter FDF8 term then computes, the poll exits, the movie/menu chain proceeds. Budget 4. REVERT = fires with zero consumer progress (the waiter still hangs). */
+  /* R1493 (JOSH-DIAG): R1426A MADE ACT-AGNOSTIC - the one term that refuses the
+   * TOC-band stall we actually hit. Receipts, R1491 6-trial serialized protocol:
+   * THREE of six trials never leave the TOC band (terminal seek 6, 5, 0), which
+   * is a separate and equally common failure from the field-band stall every
+   * prior digest chased. Trial 5 terminal:
+   *     seek=5  FE04=00000005  FDF8=00000800  FE1C=00000006  FDFC=00000000
+   *     act=1  sched=0  pend=0  arm1=0  cmd=09
+   *     [waitbr] R1306 LegacyCdDataWait RETURN: ret=0 FDFC=0 FE1C=6
+   * The sector IS delivered - LBA 5 loads into the FIFO 9x and DMAs 4x to a sane
+   * sequential buffer (LBA 3->0x1800, 4->0x2000, 5->0x2800, each +2048) - but
+   * FDF8 never leaves 0x800, so the waiter's FDF8==0 exit term never computes.
+   * That is precisely what R1426A was built to post.
+   *
+   * R1426A declines on ONE term: `!cd_read_active`, and our posture is act=1.
+   * Every other term already holds (seek<150, FE04==seek, FDF8==2048, pend==0).
+   *
+   * Dropping the act term is the R1460F v2 precedent verbatim - its own comment:
+   * "v1 fired 0 - THIS run's terminal is the BUSY-STUCK variant ... while v1's
+   * act==0 gate refused ... the SAME disease, the act cell flutters between the
+   * two forks. v2 = the receipted composite: gates WITHOUT the act term".
+   *
+   * SAFETY IS UNCHANGED, and it is the serve-delta confirm, not the act term:
+   * the block still only posts the zero when g_sectors_loaded has advanced (a
+   * sector really landed) AND the game failed to decrement by the next
+   * evaluation. It cannot invent a completion for a read that never delivered.
+   * Budget stays 4 so the act term is the single variable under test.
+   *
+   * NOTE for the alarm-context migration lane: this arm is at L4770, NOT inside
+   * on_alarm_ctx, so it is reachable at depth>0 already - no port needed.
+   * PASS = TOC-band trials stop terminating at seek 0-6; graded over >=6
+   * serialized trials. REVERT = fires with FDF8 still stuck or no change in how
+   * many trials strand in the TOC band. */
   static uint32_t r1426a_last_sec; static int r1426a_served; static int r1426a_fires;
   if (cd_seek_lba < 150u
       && (xenolift_mem_read32(0x8004FE04u) == 0u || xenolift_mem_read32(0x8004FE04u) == cd_seek_lba)
       && xenolift_mem_read32(0x8004FDF8u) == 2048u
-      && !cd_read_active && cd_pending == 0u) {
+      && cd_pending == 0u) { /* R1493: act term dropped (was `!cd_read_active &&`) */
       if (g_sectors_loaded != r1426a_last_sec) {
           r1426a_last_sec = g_sectors_loaded;
           r1426a_served = 1;
@@ -4780,8 +4812,8 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
           r1426a_served = 0;
           r1426a_fires++;
           xenolift_mem_write32(0x8004FDF8u, 0u);
-          r861_out("[R1426A] TOC-band bookkeeping fire #%d: FDF8 2048->0 (seek=%u FE04=%u sectors=%u) - the served sector posts its own decrement\n",
-                  r1426a_fires, cd_seek_lba, xenolift_mem_read32(0x8004FE04u), g_sectors_loaded);
+          r861_out("[R1426A] R1493 TOC-band bookkeeping fire #%d: FDF8 2048->0 (seek=%u FE04=%u sectors=%u act=%d) - the served sector posts its own decrement\n",
+                  r1426a_fires, cd_seek_lba, xenolift_mem_read32(0x8004FE04u), g_sectors_loaded, cd_read_active ? 1 : 0);
       }
   }
 }
