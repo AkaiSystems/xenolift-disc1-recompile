@@ -6761,7 +6761,9 @@ static void r1496_termcam_tick(void)
         if ((++r1496_ticks & 0x3FFFFu) == 0u) {
             time_t r1496_now = xl_wall();
             if (r1496_last == 0 || (r1496_now - r1496_last) >= 5) {
-                uint32_t v4fe1c=0, v5fe1c=0, vfe04=0, vfdf8=0, vfdfc=0, va22c=0;
+                uint32_t v4fe1c=0, v5fe1c=0, vfe04=0, vfdf8=0, vfdfc=0, va22c=0, vcnt=0, vref=0;
+                memcpy(&vcnt, xenolift_mem + 0x68960u, 4); /* R1499: libetc Vcount - what v_wait compares */
+                memcpy(&vref, xenolift_mem + 0x57848u, 4); /* R1499: VSync reference / target base (R209 advances this) */
                 memcpy(&v4fe1c, xenolift_mem + 0x4FE1Cu, 4);
                 memcpy(&v5fe1c, xenolift_mem + 0x5FE1Cu, 4);
                 memcpy(&vfe04,  xenolift_mem + 0x4FE04u, 4);
@@ -6769,14 +6771,14 @@ static void r1496_termcam_tick(void)
                 memcpy(&vfdfc,  xenolift_mem + 0x4FDFCu, 4);
                 memcpy(&va22c,  xenolift_mem + 0x6A22Cu, 4);
                 r1496_last = r1496_now; r1496_seq++;
-                r861_out("[termcam] #%u t=%lds seek=%u FE04=%u FDF8=%u FE1C4F=%u FE1C5F=%u FDFC=%u A22C=%u cmd=%02X act=%d ld=%d pend=%u sched=%u arm1=%u fldsec=%u secs=%u fn=%08X d=%d\n",
+                r861_out("[termcam] #%u t=%lds seek=%u FE04=%u FDF8=%u FE1C4F=%u FE1C5F=%u FDFC=%u A22C=%u cmd=%02X act=%d ld=%d pend=%u sched=%u arm1=%u fldsec=%u secs=%u fn=%08X d=%d vcnt=%u vref=%u\n",
                          r1496_seq, (long)(r1496_now - g_boot_wall_t0), cd_seek_lba,
                          vfe04, vfdf8, v4fe1c, v5fe1c, vfdfc, va22c,
                          (unsigned)cd_last_cmd, cd_read_active ? 1 : 0,
                          cd_data_loaded ? 1 : 0, (unsigned)cd_pending,
                          (unsigned)cd_scheduled, (unsigned)cd_arm_int1_pending,
                          g_fldsec_total, g_sectors_loaded,
-                         (unsigned)xenolift_cur_fn, g_guest_depth);
+                         (unsigned)xenolift_cur_fn, g_guest_depth, vcnt, vref);
             }
         }
     }
@@ -16409,6 +16411,12 @@ static void xenolift_psyqptr_heal(const char *site)
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
+    r1496_termcam_tick(); /* R1499: tick from EVERY emitted function entry. The
+     * read8/16/32 hooks fire only on special addresses - the recompiler inlines
+     * ordinary RAM loads - so [termcam] went blind in exactly the VSync spins it
+     * needed to see (four VSync-terminal runs logged one line at t=0). XTRACE is
+     * a real call at the top of every emitted function, so the render loop's
+     * repeated VSync calls now tick it. */
     r1392_check(a);
     r1393_guard(a);
     {   /* R941 [primx] (b8-c47): the pixels hunt decoded the fade prim to a
