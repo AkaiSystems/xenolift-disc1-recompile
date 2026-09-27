@@ -11602,7 +11602,22 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
  * Logs only non-heap-pointer values. Receipt-only, capped. */
 static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 {
-    static uint32_t n;
+    static uint32_t n, n2;
+    /* R1518: the post-MainLoop restart - HeapRelocate's HeapFreeAllBlocks
+     * faults on the header at 0x800B3CCC (block data 0x800B3CD4 = file#7's
+     * LZSS output, alloc #8) whose next reads 0x00FB00FC in 4/6 R1517 runs.
+     * Log EVERY write to that header word (legit HeapAlloc stores included). */
+    if (((a & 0x1FFFFFu) & ~3u) == 0xB3CCCu) {
+        if (n2 < 40u) {
+            void *bt2[10]; int k2 = backtrace(bt2, 10), i2, o2 = 0; char b2[520];
+            for (i2 = 0; i2 < k2 && o2 < (int)sizeof b2 - 24; i2++) o2 += snprintf(b2 + o2, sizeof b2 - o2, " %p", bt2[i2]);
+            n2++;
+            xenolift_receipt("[hdrtrip] R1518 #%u write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X depth=%d ra=%08X a0=%08X a1=%08X FE08=%08X base=%p bt:%s\n",
+                n2, w * 8u, a, v, *(uint32_t *)(xenolift_mem + 0xB3CCCu), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, g_guest_depth,
+                r[31], r[4], r[5], *(uint32_t *)(xenolift_mem + 0x4FE08u), (void *)_dyld_get_image_header(0), b2);
+        }
+        return;
+    }
     if (((a & 0x1FFFFFu) & ~3u) != 0x6FAF0u) return;
     if (w == 4u && v >= 0x80000000u && v < 0x80200000u) return;
     if (n < 16u) {
@@ -16644,6 +16659,19 @@ static void r1514_watch(uint32_t a)
                     r[31], r[4], r[5], r[2], (void *)_dyld_get_image_header(0), b);
             }
             hw_prev = hv;
+        }
+    }
+    { /* R1518 [hdrwatch]: per-trace poll of 0x800B3CCC (raw memcpy writers bypass the hooks) */
+        static uint32_t hp, hn; static int hi;
+        uint32_t hv; memcpy(&hv, xenolift_mem + 0xB3CCCu, 4);
+        if (!hi) { hp = hv; hi = 1; }
+        else if (hv != hp) {
+            if (hn++ < 40u)
+                xenolift_receipt("[hdrwatch] R1518 #%u 800B3CCC %08X->%08X at trace %08X depth=%d FE08=%08X cdseek=%u | chunks %08X %08X %08X %08X %08X %08X %08X %08X\n",
+                    hn, hp, hv, a, g_guest_depth, *(uint32_t *)(xenolift_mem + 0x4FE08u), (unsigned)cd_seek_lba,
+                    g_jw_ring[g_jw_ri & 7u], g_jw_ring[(g_jw_ri + 1u) & 7u], g_jw_ring[(g_jw_ri + 2u) & 7u], g_jw_ring[(g_jw_ri + 3u) & 7u],
+                    g_jw_ring[(g_jw_ri + 4u) & 7u], g_jw_ring[(g_jw_ri + 5u) & 7u], g_jw_ring[(g_jw_ri + 6u) & 7u], g_jw_ring[(g_jw_ri + 7u) & 7u]);
+            hp = hv;
         }
     }
     g_jw_ring[g_jw_ri++ & 7u] = a;
@@ -26921,7 +26949,18 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
              * fe1c==0 was not in the qualifying set, so the arm never saw two
              * consecutive qualifying polls. Widen the set: with 0 included the
              * 0/6 alternation always pairs -> wedge fires. */
-            if (cd_seek_lba < 150u && fdf80 == 0u && cd_data_n >= 2048u && zrf0_fires < 40u &&
+            /* R1519 (JOSH-DIAG): MAIN-LOOP ERA ONLY (the R1517 latch). R511/R515 were
+             * built for the FIELD era ("the field batch COMPLETED ... flipped to the
+             * directory/system sector"), but every R1517-run fire before the first
+             * MainLoop is BOOT: GameBootstrap makes zero-length TOC-band requests
+             * (FDF8=0), R515 stamps FDF8=2048 and force-delivers, and the game's
+             * callback copies LBA 5,6,7,8 to the STALE FE08 left by the last file
+             * read (0x800B2498..) - across the live heap. R1518 receipts (3/3
+             * runs): LBA 8 +52 = 0x00FB00FC lands on block #8's header 0x800B3CCC
+             * (sector base FE08=0x800B3C98), and HeapRelocate's HeapFreeAllBlocks
+             * faults on it when mode 6 mounts at t~3s -> R777/R772/R765 restart. */
+            if (g_r1517_inloop &&
+                cd_seek_lba < 150u && fdf80 == 0u && cd_data_n >= 2048u && zrf0_fires < 40u &&
                 (fe1c0 == 0u || fe1c0 == 6u || fe1c0 == 7u || fe1c0 == 10u || fe1c0 == 11u)) {
                 if (zrf0_armed) {
                     zrf0_armed = 0; zrf0_fires++;
