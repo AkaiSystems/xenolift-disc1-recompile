@@ -6810,6 +6810,37 @@ static uint32_t g_as_tbl, g_as_idx, g_as_entry, g_as_n, g_rf_fe14;
  * read is in flight (g_rf_armed) and is NOT the INGS call itself. Records caller ra,
  * the index it selects, and the host-side cur_fn / guest depth. Camera only. */
 static uint32_t g_intr_n, g_intr_ra[8], g_intr_idx[8], g_intr_fn[8]; static int g_intr_dep[8];
+/* R1510 (JOSH-DIAG) [cdtrace]: CD-level trace of the one read that blocks boot -
+ * archive idx 16 / file 3 inside InitializeNewGameState. Active from the FIRST INGS
+ * read's arm until that read completes (INGS sync entered) or 700 events. Sampled on
+ * every emitted function entry (xenolift_trace) and logged ONLY on change, with ms
+ * time and the R1505 step, so the sequence of CD transitions is visible and the point
+ * where it stops changing is the stall. Uses its own tag: the [cd] tag is past the
+ * R1287 governor's 2048-line free window well before t~3s, so existing [cd] lines are
+ * thinned exactly here. RAM cells via raw memcpy (R1197 rule). Camera only. */
+static int g_ct_active, g_ct_done; static uint32_t g_ct_n, g_ct_t0;
+static uint32_t g_ct_last[12];
+static void r1510_sample(void) {
+    uint32_t v[12], f8=0, fe04=0, fe1c=0, fdfc=0;
+    memcpy(&f8,   xenolift_mem + 0x4FDF8u, 4); memcpy(&fe04, xenolift_mem + 0x4FE04u, 4);
+    memcpy(&fe1c, xenolift_mem + 0x4FE1Cu, 4); memcpy(&fdfc, xenolift_mem + 0x4FDFCu, 4);
+    v[0]=cd_last_cmd; v[1]=cd_seek_lba; v[2]=cd_read_active?1u:0u; v[3]=cd_data_loaded?1u:0u;
+    v[4]=cd_data_pos; v[5]=cd_data_n; v[6]=cd_pending; v[7]=cd_scheduled;
+    v[8]=f8; v[9]=fe04; v[10]=fe1c; v[11]=fdfc;
+    if (memcmp(v, g_ct_last, sizeof v) != 0 || g_ct_n == 0u) {
+        struct timespec ts; uint32_t ms;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        ms = (uint32_t)((uint32_t)ts.tv_sec * 1000u + (uint32_t)(ts.tv_nsec / 1000000L));
+        if (g_ct_n == 0u) g_ct_t0 = ms;
+        memcpy(g_ct_last, v, sizeof v);
+        xenolift_receipt("[cdtrace] #%u +%ums step=%u cmd=%02X seek=%u act=%u ld=%u fifo=%u/%u pend=%u sched=%u FDF8=%u FE04=%u FE1C=%u FDFC=%u fn=%08X d=%d\n",
+                 g_ct_n, ms - g_ct_t0, g_rf_step, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7],
+                 v[8], v[9], v[10], v[11], (unsigned)xenolift_cur_fn, g_guest_depth);
+        g_ct_n++;
+        if (g_ct_n >= 700u) { g_ct_active = 0; g_ct_done = 1;
+            xenolift_receipt("[cdtrace] cap reached (700 changes) - read still in flight at step=%u\n", g_rf_step); }
+    }
+}
 static void r1505_step(uint32_t k) { if (g_rf_armed && k > g_rf_step) g_rf_step = k; }
 static void r1501_hit(int i) {
     g_bc_n[i]++;
@@ -11562,8 +11593,30 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
     memcpy(xenolift_mem + off, &v, 4);
     if (r1197_hit) r1197_tblw_post(a, off, 4u, v, r1197_old, g_r1197_t_active); }
 }
+/* R1516 (JOSH-DIAG) [heaptrip]: physical-address tripwire on the heap head
+ * word 0x8006FAF0. R1515 caught it going 8007EBF0 -> 00000004 at unrelated
+ * guest chunks, and [descw] (which matches only the literal 0x8006FAF0 in
+ * write32_inner) never logged that write. Match the PHYSICAL word at every
+ * write entry (any segment/mirror alias, any width) and name the store:
+ * disc1.c line of the emitted SW/SH/SB, cur_fn, value, host stack.
+ * Logs only non-heap-pointer values. Receipt-only, capped. */
+static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
+{
+    static uint32_t n;
+    if (((a & 0x1FFFFFu) & ~3u) != 0x6FAF0u) return;
+    if (w == 4u && v >= 0x80000000u && v < 0x80200000u) return;
+    if (n < 16u) {
+        void *bt[10]; int k = backtrace(bt, 10), i, o = 0; char b[520];
+        for (i = 0; i < k && o < (int)sizeof b - 24; i++) o += snprintf(b + o, sizeof b - o, " %p", bt[i]);
+        n++;
+        xenolift_receipt("[heaptrip] R1516 #%u write%u ea=%08X v=%08X sw_active=%d sw_line=%u cur_fn=%08X depth=%d ra=%08X sp=%08X a0=%08X a1=%08X v0=%08X base=%p bt:%s\n",
+            n, w * 8u, a, v, xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, g_guest_depth,
+            r[31], r[29], r[4], r[5], r[2], (void *)_dyld_get_image_header(0), b);
+    }
+}
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
+    r1516_trip(a, v, 4u); /* R1516 */
     /* R1204 (c9 receipts) [cbcell] camera: the poll-dispatcher crash chain
      * (cur_fn 80041C64/80041BA8/80041C68, addr=0xFFFFFFFF r4=0xFFFFFFFF,
      * deref via [0x800564AC] behind a beq-zero guard that cannot catch -1)
@@ -11768,6 +11821,7 @@ static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
 }
 void xenolift_mem_write16(uint32_t a, uint32_t v)
 {
+    r1516_trip(a, v, 2u); /* R1516 */
     uint32_t sv_l = g_r1197_t_line, sv_w = g_r1197_t_width; int sv_a = g_r1197_t_active;
     g_r1197_t_line = xenolift_sw_line; g_r1197_t_width = xenolift_sw_width; g_r1197_t_active = xenolift_sw_active;
     xenolift_sw_active = 0;
@@ -12017,6 +12071,7 @@ static void xenolift_mem_write8_inner(uint32_t a, uint32_t v)
 }
 void xenolift_mem_write8(uint32_t a, uint32_t v)
 {
+    r1516_trip(a, v, 1u); /* R1516 */
     uint32_t sv_l = g_r1197_t_line, sv_w = g_r1197_t_width; int sv_a = g_r1197_t_active;
     g_r1197_t_line = xenolift_sw_line; g_r1197_t_width = xenolift_sw_width; g_r1197_t_active = xenolift_sw_active;
     xenolift_sw_active = 0;
@@ -16527,17 +16582,112 @@ static void xenolift_psyqptr_heal(const char *site)
     }
 }
 
+/* R1514 (JOSH-DIAG) [jtwatch]: WHO REWRITES THE BOOT IMAGE'S RODATA?
+ * R1513 receipts (3/3 runs, 9/9 hits): at every bad jump, one contiguous
+ * 50,656-byte run 0x80010004-0x8001C5E3 differs from the boot image; every
+ * jump-table word in it is +0x100 (getintr 80041A74 -> 80041B74 etc.), and the
+ * altered bytes occur NOWHERE in the disc's sector data (the original table is
+ * found at sector 108624 = inside SLUS_006.64). So the block is computed or
+ * relocated in-process. Poll two words of that run on every trace (one load
+ * each); on change name the chunk being entered, the last 8 chunks entered
+ * (the writer ran in or before them), guest regs and the host stack. Arms only
+ * after both words hold their boot-image values. Receipt-only, capped. */
+static uint32_t g_jw_ring[8], g_jw_ri, g_jw_w0, g_jw_w1, g_jw_n; static int g_jw_armed;
+static void r1514_dump(const char *tag)
+{
+    char nm[96]; FILE *f; snprintf(nm, sizeof nm, "/tmp/jtwatch/%s_%d.bin", tag, (int)getpid());
+    /* /tmp/jtwatch is created by the protocol script */
+    if ((f = fopen(nm, "wb")) != NULL) { fwrite(xenolift_mem + 0x10000u, 1, 0x10000u, f); fclose(f);
+        xenolift_receipt("[jtwatch] R1514 dumped live 80010000-8001FFFF to %s\n", nm); }
+}
+static void r1514_watch(uint32_t a)
+{
+    uint32_t w0, w1;
+    memcpy(&w0, xenolift_mem + 0x10004u, 4); memcpy(&w1, xenolift_mem + 0x18EACu, 4);
+    if (!g_jw_armed) {
+        if (w1 == 0x80041A74u && w0 == 0xEF000029u) { g_jw_armed = 1; g_jw_w0 = w0; g_jw_w1 = w1;
+            xenolift_receipt("[jtwatch] R1514 armed at trace %08X (boot-image values present)\n", a); }
+    } else if (w0 != g_jw_w0 || w1 != g_jw_w1) {
+        if (g_jw_n < 12u) {
+            void *bt[12]; int k = backtrace(bt, 12), i, o = 0; char b[640]; struct timespec ts;
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            for (i = 0; i < k && o < (int)sizeof b - 24; i++) o += snprintf(b + o, sizeof b - o, " %p", bt[i]);
+            g_jw_n++;
+            xenolift_receipt("[jtwatch] R1514 #%u CHANGE at trace %08X (cur_fn=%08X depth=%d t=%lds): w80010004 %08X->%08X w80018EAC %08X->%08X | last chunks %08X %08X %08X %08X %08X %08X %08X %08X (oldest->newest)\n",
+                g_jw_n, a, (unsigned)xenolift_cur_fn, g_guest_depth, (long)ts.tv_sec, g_jw_w0, w0, g_jw_w1, w1,
+                g_jw_ring[g_jw_ri & 7u], g_jw_ring[(g_jw_ri + 1u) & 7u], g_jw_ring[(g_jw_ri + 2u) & 7u], g_jw_ring[(g_jw_ri + 3u) & 7u],
+                g_jw_ring[(g_jw_ri + 4u) & 7u], g_jw_ring[(g_jw_ri + 5u) & 7u], g_jw_ring[(g_jw_ri + 6u) & 7u], g_jw_ring[(g_jw_ri + 7u) & 7u]);
+            xenolift_receipt("[jtwatch] R1514 #%u regs ra=%08X sp=%08X v0=%08X v1=%08X a0=%08X a1=%08X a2=%08X a3=%08X t0=%08X s0=%08X s1=%08X s2=%08X base=%p bt:%s\n",
+                g_jw_n, r[31], r[29], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[16], r[17], r[18], (void *)_dyld_get_image_header(0), b);
+            if (g_jw_n == 1u) r1514_dump("first");
+        }
+        g_jw_w0 = w0; g_jw_w1 = w1;
+    }
+    /* R1515 [heapwatch]: the heap head node 0x8006FAF0 (R1514 chain root: it
+     * reads 0x00000004 by alloc #5, HeapAlloc then returns 1, the LZSS wrapper
+     * gets src=1, the relocator adds 1 across 0x80000005-0x8001C5E4 and
+     * rewrites every jump table). Print every change with the chunk ring and
+     * the CD destination/remaining cells, so the writer is named. */
+    {
+        static uint32_t hw_prev, hw_n; static int hw_init;
+        uint32_t hv, fe08, fdf8; memcpy(&hv, xenolift_mem + 0x6FAF0u, 4);
+        if (!hw_init) { hw_prev = hv; hw_init = 1; }
+        else if (hv != hw_prev) {
+            memcpy(&fe08, xenolift_mem + 0x4FE08u, 4); memcpy(&fdf8, xenolift_mem + 0x4FDF8u, 4);
+            if (hw_n++ < 40u || hv < 0x80000000u) {
+                void *bt[10]; int k = backtrace(bt, 10), i, o = 0; char b[520];
+                for (i = 0; i < k && o < (int)sizeof b - 24; i++) o += snprintf(b + o, sizeof b - o, " %p", bt[i]);
+                xenolift_receipt("[heapwatch] R1515 #%u 8006FAF0 %08X->%08X at trace %08X depth=%d FE08=%08X FDF8=%u cdseek=%u act=%d | chunks %08X %08X %08X %08X %08X %08X %08X %08X | ra=%08X a0=%08X a1=%08X v0=%08X base=%p bt:%s\n",
+                    hw_n, hw_prev, hv, a, g_guest_depth, fe08, fdf8, (unsigned)cd_seek_lba, cd_read_active ? 1 : 0,
+                    g_jw_ring[g_jw_ri & 7u], g_jw_ring[(g_jw_ri + 1u) & 7u], g_jw_ring[(g_jw_ri + 2u) & 7u], g_jw_ring[(g_jw_ri + 3u) & 7u],
+                    g_jw_ring[(g_jw_ri + 4u) & 7u], g_jw_ring[(g_jw_ri + 5u) & 7u], g_jw_ring[(g_jw_ri + 6u) & 7u], g_jw_ring[(g_jw_ri + 7u) & 7u],
+                    r[31], r[4], r[5], r[2], (void *)_dyld_get_image_header(0), b);
+            }
+            hw_prev = hv;
+        }
+    }
+    g_jw_ring[g_jw_ri++ & 7u] = a;
+}
+/* R1517 (JOSH-DIAG): BOOT-ERA LATCH for the field-era heals.
+ * Receipts R1512-R1516 (3 runs each): the reboot loop's root is a runtime
+ * heal, not the game. The R812/R814 full-handoff stamp is designed for the
+ * PARKED MAIN-LOOP era (kernel dispatcher idx=0/cur=0, "boot 3+"), but its
+ * posture check reads 0x8005FAEC / 0x800592C0 / 0x80018088, which are all 0
+ * before the main loop exists (0x800592C0 is also the sign-extension wrong
+ * cell - the real one is 0x800692C0). So it fires at t~1s INSIDE GameBootstrap,
+ * stamps the heap cursor 0x80059320, and calls xenolift_field_expand_all ->
+ * the R1005 RETARGET arm LZSS-expands field file#14 (260,862 bytes) into
+ * 0x8006FAF0 - which during boot is the LIVE GAME HEAP (InitializeGameHeap
+ * 0x8006FAF0..0x801FC000: head node, the sound bank in block #1, file#3 in
+ * block #2). R1516: 10/10 value-4 writes to the heap head have the stack
+ * xenolift_lzss_hle <- xenolift_field_expand_all <- xenolift_trace; 14/14
+ * expansions are "via full-handoff-stamp". Downstream: HeapAlloc returns 1,
+ * LZSSHeapDecompress(src=1), ResolveArchiveEntryPointers(1) adds 1 at every
+ * unaligned word 0x80000005..0x8001C5E4 (+0x100 on every rodata jump table),
+ * getintr / fn_8002A694 jump to shifted cases, R807 reboots, and the pristine
+ * restore puts the tables back for the next lap.
+ * FIX: a per-boot latch - set when RunResidentGameLoop (0x80019ACC) is
+ * entered, cleared at every boot entry (start 0x80019524, GameBootstrap
+ * 0x80019578). The stamp and the field expansion require it. The heals keep
+ * their designed era (inside the main loop); they can no longer fire inside
+ * GameBootstrap. PASS = heap head never 4 at the file-6 alloc, no rodata
+ * rewrite ([jtwatch] silent), fewer reboots, more boots reach MainLoop. */
+static int g_r1517_inloop;
+static uint32_t g_r1517_declined;
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
+    if (g_ct_active) r1510_sample(); /* R1510 [cdtrace] */
+    r1514_watch(a); /* R1514 [jtwatch] */
     switch (a) { /* R1500 [chaincam] */
     case 0x8001996Cu: r1501_hit(15); g_ch_commit++;   break; /* CommitGameStateTransition */
-    case 0x80019ACCu: r1501_hit(16); g_ch_loop++;     break; /* RunResidentGameLoop */
+    case 0x80019ACCu: r1501_hit(16); g_ch_loop++; g_r1517_inloop = 1; break; /* RunResidentGameLoop (+R1517 latch) */
+    case 0x80019524u: case 0x80019578u: g_r1517_inloop = 0; break; /* R1517: boot entry clears the main-loop latch */
     case 0x800199CCu: g_ch_mount++;    break; /* MountGameStateModule */
     case 0x80028738u: if (r[31] == 0x8002960Cu) r1505_step(1); g_ch_measure++;  break; /* MeasureArchivePayload */
-    case 0x800295D8u: if (r[31] == 0x8001B9CCu) { if (g_rf_armed) g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 1; g_rf_step = 0; g_rf_arms++; } if (r[31] == 0x8001B9CCu) g_i_readfile++; r1501_hit(4); g_ch_read++;     break; /* ReadArchiveMemberIntoBuffer */
+    case 0x800295D8u: if (r[31] == 0x8001B9CCu) { if (g_rf_armed) g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 1; g_rf_step = 0; g_rf_arms++; if (!g_ct_done && !g_ct_active) { g_ct_active = 1; xenolift_receipt("[cdtrace] ARM: first INGS read of archive16/file3 begins\n"); } } if (r[31] == 0x8001B9CCu) g_i_readfile++; r1501_hit(4); g_ch_read++;     break; /* ReadArchiveMemberIntoBuffer */
     case 0x80031BDCu: if (r[31] == 0x8001B9B4u) g_i_alloc++; g_ch_alloc++;    break; /* AllocateHeapBlock */
-    case 0x80028A60u: if (r[31] == 0x8002962Cu) r1505_step(2); if (r[31] == 0x8001B9D4u && g_rf_armed) { g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 0; } if (r[31] == 0x8001B9D4u) { g_bc_ingsync++; g_bc_ingsync_seek = cd_seek_lba; } if (r[31] == 0x8001BB74u) { g_bc_sngsync++; g_bc_sngsync_seek = cd_seek_lba; } r1501_hit(5); g_ch_wait++;     break; /* WaitArchiveCdData */
+    case 0x80028A60u: if (r[31] == 0x8002962Cu) r1505_step(2); if (r[31] == 0x8001B9D4u && g_rf_armed) { g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 0; if (g_ct_active) { g_ct_active = 0; g_ct_done = 1; xenolift_receipt("[cdtrace] END: the INGS read COMPLETED after %u changes\n", g_ct_n); } } if (r[31] == 0x8001B9D4u) { g_bc_ingsync++; g_bc_ingsync_seek = cd_seek_lba; } if (r[31] == 0x8001BB74u) { g_bc_sngsync++; g_bc_sngsync_seek = cd_seek_lba; } r1501_hit(5); g_ch_wait++;     break; /* WaitArchiveCdData */
     case 0x80032EB4u: g_ch_unpack++;   break; /* UnpackCompressedBuffer */
     case 0x80031B10u: g_ch_movheap++;  break; /* MoveHeapAllocation */
     case 0x80031A30u: g_ch_clrheap++;  break; /* ClearHeapRuntime */
@@ -24214,6 +24364,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                          * parked guard stops firing. */
                             static int r812_stamps;
                             if (r812_stamps < 8 &&
+                                g_r1517_inloop && /* R1517: parked MAIN-LOOP era only, never inside GameBootstrap */
                                 (mv_n % 524288u) == 0u &&
                                 xenolift_mem_read32(0x8005FAECu) == 0u &&
                                 xenolift_mem_read32(0x800592C0u) == 0u &&
@@ -28094,6 +28245,66 @@ void xenolift_unknown(uint32_t word)
     if (bios_hook(word)) {
         return; /* synthetic BIOS hook serviced — continue execution */
     }
+    /* R1512 (JOSH-DIAG) [jtwho]: WHO DISPATCHES TO A MID-FUNCTION PC?
+     * R1511's premise ("jump-table case") was wrong: none of the unresolved
+     * targets (80041A6C, 8002A994, 8002ABF0, 8002AA9C...) occur as a word in the
+     * EXE image, and each is a plain mid-basic-block PC (80041A6C = loop exit,
+     * 8002ABF0 = between lui a1 / addiu a1). No emitted code dispatches to them.
+     * So something that knows PCs at instruction granularity resumes there.
+     * This camera names it: host backtrace (symbolize with atos -l <base>) plus
+     * the guest registers and guest stack frame. Receipt-only, capped at 8,
+     * main-EXE targets only. Behaviour unchanged. */
+    if (word >= 0x80010000u && word < 0x80059800u) {
+        static uint32_t r1512_n;
+        if (r1512_n < 8u) {
+            void *bt[14]; int k = backtrace(bt, 14), i; char b[900]; int o = 0;
+            uint32_t sp = r[29], st[12] = {0};
+            if ((sp & 0x1FFFFFu) + sizeof st <= 0x200000u) memcpy(st, xenolift_mem + (sp & 0x1FFFFFu), sizeof st);
+            for (i = 0; i < k && o < (int)sizeof b - 24; i++) o += snprintf(b + o, sizeof b - o, " %p", bt[i]);
+            r1512_n++;
+            xenolift_receipt("[jtwho] R1512 #%u target=%08X cur_fn=%08X depth=%d ra=%08X k0=%08X k1=%08X sp=%08X v0=%08X v1=%08X a0=%08X a1=%08X s0=%08X s1=%08X base=%p\n",
+                r1512_n, word, (unsigned)xenolift_cur_fn, g_guest_depth, r[31], r[26], r[27], sp, r[2], r[3], r[4], r[5], r[16], r[17], (void *)_dyld_get_image_header(0));
+            xenolift_receipt("[jtwho] R1512 #%u stack sp+0..0x2C: %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
+                r1512_n, st[0], st[1], st[2], st[3], st[4], st[5], st[6], st[7], st[8], st[9], st[10], st[11]);
+            xenolift_receipt("[jtwho] R1512 #%u host bt:%s\n", r1512_n, b);
+            /* R1513 [jtdiff]: v0 == target in every R1512 receipt, and the guest
+             * loads v0 from a .rodata jump table (getintr: lw 0x80018E9C+i*4;
+             * fn_8002A694: 0x800188F4 / 0x8001892C). The EXE file's tables do NOT
+             * contain these targets, so the tables in RAM were altered. Diff live
+             * RAM 0x80010000-0x80020000 against the boot-time image (R722) and the
+             * file-era table words, and show the runs of changed words. */
+            if (r1512_n <= 3u) {
+                uint32_t a, lw, iw, run0 = 0, runn = 0, nd = 0, nr = 0;
+                xenolift_receipt("[jtdiff] R1513 #%u r722_len=%u live tab8E9C: %08X %08X %08X %08X %08X | tab88F4[8..12]: %08X %08X %08X %08X %08X | tab892C[4..5]: %08X %08X\n",
+                    r1512_n, g_r722_len,
+                    *(uint32_t *)(xenolift_mem + 0x18E9Cu), *(uint32_t *)(xenolift_mem + 0x18EA0u), *(uint32_t *)(xenolift_mem + 0x18EA4u), *(uint32_t *)(xenolift_mem + 0x18EA8u), *(uint32_t *)(xenolift_mem + 0x18EACu),
+                    *(uint32_t *)(xenolift_mem + 0x18914u), *(uint32_t *)(xenolift_mem + 0x18918u), *(uint32_t *)(xenolift_mem + 0x1891Cu), *(uint32_t *)(xenolift_mem + 0x18920u), *(uint32_t *)(xenolift_mem + 0x18924u),
+                    *(uint32_t *)(xenolift_mem + 0x1893Cu), *(uint32_t *)(xenolift_mem + 0x18940u));
+                if (g_r722_len >= 0x10000u) {
+                    xenolift_receipt("[jtdiff] R1513 #%u r722 tab8E9C: %08X %08X %08X %08X %08X\n", r1512_n,
+                        g_r722_img[0x8E9Cu >> 2], g_r722_img[0x8EA0u >> 2], g_r722_img[0x8EA4u >> 2], g_r722_img[0x8EA8u >> 2], g_r722_img[0x8EACu >> 2]);
+                    for (a = 0u; a <= 0x10000u; a += 4u) {
+                        int diff = 0;
+                        if (a < 0x10000u) { memcpy(&lw, xenolift_mem + 0x10000u + a, 4); iw = g_r722_img[a >> 2]; diff = (lw != iw); if (diff) nd++; }
+                        if (diff && runn == 0u) run0 = a;
+                        if (diff) runn++;
+                        else if (runn) {
+                            if (nr < 24u) {
+                                uint32_t f0, i0; memcpy(&f0, xenolift_mem + 0x10000u + run0, 4); i0 = g_r722_img[run0 >> 2];
+                                xenolift_receipt("[jtdiff] R1513 #%u run %08X..%08X (%u words) first live=%08X img=%08X\n",
+                                    r1512_n, 0x80010000u + run0, 0x80010000u + run0 + runn * 4u - 1u, runn, f0, i0);
+                            }
+                            nr++; runn = 0u;
+                        }
+                    }
+                    xenolift_receipt("[jtdiff] R1513 #%u total changed words in 80010000-8001FFFF: %u in %u runs\n", r1512_n, nd, nr);
+                    if (r1512_n == 1u) r1514_dump("atjump");
+                }
+            }
+        }
+    }
+    /* R1511 REVERTED (R1517): its premise - a missing jump-table entry - was wrong;
+     * the table itself was corrupted in RAM (see R1513-R1517). */
     /* R1058 (b8-c219): INVALID-DISPATCH SKIP GUARD. c219 TRUE DEATH:
      * callback-invoker thunks (cur_fn=0x8004B748/0x8004B7A8 family, one per
      * stack slot 4/8/0xC/0x10/0x14/0x18) jalr through uninitialized slots to
@@ -30954,6 +31165,12 @@ static void cd_restore_pend(void)
  * process, whichever trajectory arrives first. */
 static void xenolift_field_expand_all(const char *via)
 {
+    if (!g_r1517_inloop) { /* R1517: never expand over the live boot heap */
+        if (g_r1517_declined++ < 8u)
+            xenolift_receipt("[r1517] field expansion DECLINED (via %s): game not in its main loop this boot - 0x8006FAF0 is the live heap head (%08X)\n",
+                             via, *(uint32_t *)(xenolift_mem + 0x6FAF0u));
+        return;
+    }
     r861_out("[fldx] R790 expansion sequence entered (via %s; coordinator slot %08X %08X; R1002 staged f14@801D9724=%08X gate=%s f15@801F8724=%08X)\n", via,
             xenolift_mem_read32(0x80077E88u), xenolift_mem_read32(0x80077E88u + 4u),
             xenolift_mem_read32(0x801D9724u),
