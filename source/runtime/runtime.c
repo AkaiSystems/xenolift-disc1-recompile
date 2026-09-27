@@ -24124,7 +24124,30 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                         extern jmp_buf xenolift_churn_jmp; extern int xenolift_churn_armed;
                         extern uint32_t xenolift_churn_pend; extern time_t g_boot_wall_t0_w;
                         static int r845_reforces;
+                        /* R1509 (JOSH-DIAG): R845 WAS SABOTAGING BOOT. Receipts, R1508 intruder
+                         * batch, two independent trials, exact 1:1:1:
+                         *   R845 re-force fires            8   8
+                         *   field-coordinator interp entry 8   8
+                         *   ArchiveSetIndex(4) mid-read    8   8
+                         * Boot hangs inside InitializeNewGameState's read of archive 16 / file
+                         * 3 (the 9,048-byte initial game-state image). That read spins in a CD
+                         * wait, the spin drives mv_n up, and at t~21s this gate decides the
+                         * kernel is "parked" and forces the field coordinator 0x80077E88. That
+                         * code calls ArchiveSetIndex(4), which rewrites the shared archive base
+                         * 0x8004FE14 from 0x0B21 (archive 16) to 0x17 - so the in-flight boot
+                         * read resolves "file 3" in the wrong archive and never completes.
+                         *
+                         * R845's own comment says it was built for the era AFTER boot ("the
+                         * kernel then PARKED in this pre-movie poll"). Its gate checks
+                         * !g_splash_live but never checks that boot has finished, and boot
+                         * never reaches the splash, so that guard never engages. This keeps
+                         * R845's purpose and removes the interference: it may only re-force
+                         * once GameBootstrap has reached MainLoop at least once (g_bc_n[16],
+                         * the R1501 [bootcam] MainLoop entry count).
+                         * PASS = MainLoop reached in more trials than the ~23% baseline
+                         * (9/39 across the recent 150s batches). REVERT = no change. */
                         if (xenolift_churn_armed && mv_n >= 4000000u
+                            && g_bc_n[16] > 0u /* R1509: never before boot reaches MainLoop */
                             && (long)(xl_wall() - g_boot_wall_t0) > 20
                             && r845_reforces < 8
                             && !g_splash_live

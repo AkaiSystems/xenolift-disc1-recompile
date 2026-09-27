@@ -70,3 +70,60 @@ short for this to happen. Unverified; the caller's identity is the next step.
 The `[mvloop]` R894 ARCH-REQ camera reads `0x8005FDF4`/`0x8005FE14`; the game
 uses `0x8004FDF4`/`0x8004FE14` (sign-extended immediates). Its "FDF4=0 in 1255
 samples" is retracted. Same class as `[phase]` (0x800592C0 vs 0x800692C0).
+
+---
+
+# UPDATE: callback identified (R845) and fixed (R1509) — but it was a symptom
+
+## The callback is R845, a runtime rescue arm — exact 1:1:1
+R1508 intruder batch, two independent trials:
+```
+                                trial 1   trial 3
+R845 POLL-PARK RE-FORCE fires       8         8
+field-coordinator interp entries    8         8
+ArchiveSetIndex(4) during the read  8         8
+```
+R845 ("backup plan, round two") force-dispatches the field coordinator 0x80077E88
+when the pre-movie poll counter `mv_n` is high and t > 20s. Its own comment says
+it was built for the era AFTER boot. Its only era guard is `!g_splash_live`, and
+boot never reaches the splash, so that guard never engages. The coordinator calls
+`ArchiveSetIndex(4)`, rewriting the archive base. (R844, the sibling that forces
+the same door on reboots, fired 0 times — ruled out.)
+
+## R1509: R845 may only re-force once boot has reached MainLoop
+Gate added: `g_bc_n[16] > 0` (R1501 [bootcam] MainLoop entry count).
+
+Result, 6 trials x 150s:
+```
+R845 fires                  0 in all 6          (was 8)
+0x800858A8 intruders        0 in all 6          (was 8)   <- mechanism removed
+remaining "intruders"       ra=0x8001967C archive 1 depth 0 = GameBootstrap
+                            after a reboot; my in-flight flag survives reboots
+MainLoop reached            2 / 6               (baseline ~23%, 9/39)
+```
+
+## Verdict: correct fix, wrong root cause
+R1509 does what it should — R845 no longer interferes with boot. **It does not
+unblock boot.** MainLoop is unchanged.
+
+The reason is causality, which I had backwards. Boot reaches the failing read at
+t~2-3s. R845 first fires at t~21s — about 18 seconds AFTER the read was already
+stuck. R845 fires BECAUSE the read is stuck: the stuck CD wait is what drives
+`mv_n` past R845's threshold. So the archive-base clobbering is DOWNSTREAM of the
+hang, not its cause. The "FE14 = 0x17 at the read" capture was contaminated by
+the same reboot-persistent flag.
+
+## Kept anyway
+R1509 is kept as a correctness fix (a later-era rescue must not rewrite archive
+state during boot) and because removing that interference is required to see the
+real failure cleanly. It is NOT claimed as progress.
+
+## Also observed
+Reboots rose to 10-16 per run in three trials (typically ~2). Without R845
+forcing the coordinator, the stuck read now falls through to reboot recovery
+instead. More attempts, same success rate.
+
+## The real question is now narrower
+Why does the read of archive 16 / file 3 hang in the first ~18s, before any
+rescue arm touches it? R1505 placed it inside ArchiveReadFile's CD streaming,
+after CdIntToPos. That is a genuine CD read that does not complete.
