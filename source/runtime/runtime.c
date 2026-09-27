@@ -6741,6 +6741,80 @@ static uint32_t lzss_fence_hits = 0; /* R1276 (c167): run-lifetime fence-hit cou
  * the last one reached. Each address has exactly one XTRACE site in disc1.c, so an
  * entry count is a call count. RestoreResidentExecutionRegisters is the abort /
  * restart path, so a rising 'restart' means the chain is bailing out. Camera only. */
+/* R1501 (JOSH-DIAG) [bootcam]: GameBootstrap milestones in call order, read from the
+ * emitted GameBootstrap (0x80019578). Its last two calls are ChangeGameState and
+ * MainLoop, and R1500 showed both at 0 - so boot dies somewhere earlier in this list.
+ * GameShowSplashScreen is the first thing a player would see. For each milestone:
+ * entry count, and first-entry second (+1, so 0 means never reached). The LAST
+ * milestone with a first-entry time is where boot stops. Each address has exactly
+ * one XTRACE site. xl_wall() runs only on a milestone's first hit. Camera only. */
+#define R1501_N 17
+static uint32_t g_bc_n[R1501_N];
+static uint32_t g_bc_t[R1501_N];
+static const char *const g_bc_name[R1501_N] = { "SpuInit", "ArchiveInit", "SoundInit", "ArchSetIndex", "ReadFile", "CdDataSync", "SoundLoadWds", "LZSSDecomp", "InitFont", "InitData", "SoundXfer", "InitKernVars", "StartNewGame", "ResetSprite", "SPLASH", "ChangeState", "MainLoop" };
+/* R1502 (JOSH-DIAG): split StartNewGame, where every failing boot stops. Its body is
+ * only: InitializeNewGameState(); ArchiveCdDataSync(0); four default writes; return.
+ * The sync is entered with ra=0x8001BB74 ONLY from StartNewGame, and the defaults
+ * 0x800694D5=0x76 / 0x800694D6=0x54 are written only if that wait returns. So:
+ *   initngs == sngsync  -> InitializeNewGameState returns; it hangs in the wait
+ *   initngs >  sngsync  -> it hangs inside InitializeNewGameState
+ * sngsync_seek records the drive position at each such wait. Camera only. */
+static uint32_t g_bc_initngs, g_bc_lpar, g_bc_sngsync, g_bc_sngsync_seek;
+/* R1503 (JOSH-DIAG): split InitializeNewGameState, which R1502 showed is where boot
+ * hangs (entered every boot, returns only 1/7 and 2/10). Its only unbounded step is
+ * ArchiveCdDataSync(0) waiting on archive idx 16 / file 3 (the 9,048-byte initial
+ * game-state image, memmove'd to 0x8007D634). Keyed on return addresses:
+ *   ingsync  = sync entered from INGS          (ra 0x8001B9D4)
+ *   ingsmove = memmove right after that sync   (ra 0x8001B9EC) - only if it returned
+ *   ingsdec  = SystemDecodeStringCodes in INGS (ra 0x8001BA8C)
+ * ingsync > ingsmove  => it hangs IN the CD wait. ingsync_seek = drive position then. */
+static uint32_t g_bc_ingsync, g_bc_ingsmove, g_bc_ingsdec, g_bc_ingsync_seek;
+/* R1504 (JOSH-DIAG): R1503 showed InitializeNewGameState hangs BEFORE its CD wait
+ * (entered 1-2x, wait reached 0x in 5 of 6 runs). Bisect its five pre-wait calls,
+ * each keyed on the return address it is called with from INGS. The last one
+ * entered is where boot hangs. */
+static uint32_t g_i_setidx, g_i_heapusr, g_i_decsize, g_i_alloc, g_i_readfile;
+/* R1505 (JOSH-DIAG): R1504 showed boot hangs INSIDE ArchiveReadFileToBuffer when
+ * InitializeNewGameState calls it (ra 0x8001B9CC): entered every attempt, and the
+ * next INGS call is reached only occasionally. Bisect its five inner calls.
+ * g_rf_armed is set when that INGS read begins and cleared when the INGS CD wait
+ * that follows it is entered (i.e. the read returned). g_rf_step records the
+ * furthest inner step reached in the current armed read, so at a hang it names
+ * the step that never returned:
+ *   1 ArchiveDecodeSize(ra 8002960C)  2 ArchiveCdDataSync(ra 8002962C)
+ *   3 ArchiveDecodeSector(ra 80029644) 4 ArchiveDecodeAlignedSize(ra 80029654)
+ *   5 ArchiveReadFile(ra 80029670)     6 CdIntToPos in ArchiveReadFile(ra 80029734)
+ *   7 PCopen in ArchiveReadFile (ra 800297E0) - the PsyQ dev-PC file server path.
+ * g_pcopen counts EVERY PCopen call: retail should never reach it. Camera only. */
+static int g_rf_armed; static uint32_t g_rf_step, g_rf_arms, g_pcopen, g_rf_step_hist[8];
+/* R1506 (JOSH-DIAG): R1505 showed every INGS read reaches CdIntToPos inside
+ * ArchiveReadFile (step 6) and the hang is after it, in the CD streaming setup.
+ * PCopen (the dev-PC path) was called 0 times. CdIntToPos(int lba, CdlLOC*) takes
+ * the LBA in r4, so capturing r4 on entry from ArchiveReadFile (ra 0x80029734)
+ * names the exact disc address of archive idx 16 / file 3 whose read hangs boot.
+ * Records the LBA of the first and most recent armed read. Camera only. */
+static uint32_t g_rf_lba_first, g_rf_lba_last, g_rf_lba_n;
+/* R1507 (JOSH-DIAG): the REAL archive cells. ArchiveSetIndex computes
+ * 0x80050000 + (int16)0xFDF4 = 0x8004FDF4 (directory-table ptr) and writes
+ * 0x8004FE14 (current archive base) - both sign-extended. The [mvloop] R894
+ * ARCH-REQ camera reads 0x8005FDF4/0x8005FE14 instead, so its FDF4=0 in 1255
+ * samples said nothing about the cells ArchiveSetIndex uses (retracted). Here:
+ *   at ArchiveSetIndex entry from INGS (ra 0x8001B994): table ptr, index arg,
+ *     and the halfword entry it will read, all raw memcpy;
+ *   at the INGS CdIntToPos: FE14 and the LBA, so the file resolution is visible. */
+static uint32_t g_as_tbl, g_as_idx, g_as_entry, g_as_n, g_rf_fe14;
+/* R1508 (JOSH-DIAG): R1507 caught the archive base being overwritten mid-read:
+ * ArchiveSetIndex(16) reads entry 0x0B22 so it sets 0x8004FE14 = 0x0B21 (2849), but
+ * when the INGS read resolves file 3, FE14 = 0x17 (23). File 3 then resolves in the
+ * wrong archive. Catch the intruder: every ArchiveSetIndex that runs while the INGS
+ * read is in flight (g_rf_armed) and is NOT the INGS call itself. Records caller ra,
+ * the index it selects, and the host-side cur_fn / guest depth. Camera only. */
+static uint32_t g_intr_n, g_intr_ra[8], g_intr_idx[8], g_intr_fn[8]; static int g_intr_dep[8];
+static void r1505_step(uint32_t k) { if (g_rf_armed && k > g_rf_step) g_rf_step = k; }
+static void r1501_hit(int i) {
+    g_bc_n[i]++;
+    if (g_bc_t[i] == 0u) g_bc_t[i] = (uint32_t)(xl_wall() - g_boot_wall_t0) + 1u;
+}
 static uint32_t g_ch_commit, g_ch_loop, g_ch_mount, g_ch_measure, g_ch_read, g_ch_alloc,
                 g_ch_wait, g_ch_unpack, g_ch_movheap, g_ch_clrheap, g_ch_dispatch, g_ch_movie,
                 g_ch_restart;
@@ -6793,6 +6867,37 @@ static void r1496_termcam_tick(void)
                          (long)(r1496_now - g_boot_wall_t0), g_ch_commit, g_ch_loop, g_ch_mount,
                          g_ch_measure, g_ch_read, g_ch_alloc, g_ch_wait, g_ch_unpack,
                          g_ch_movheap, g_ch_clrheap, g_ch_dispatch, g_ch_movie, g_ch_restart);
+                { char r1501_b[1400]; int r1501_o = 0, r1501_i;
+                  for (r1501_i = 0; r1501_i < R1501_N && r1501_o < 1300; r1501_i++)
+                      r1501_o += snprintf(r1501_b + r1501_o, sizeof r1501_b - (size_t)r1501_o, " %s=%u@%u",
+                                          g_bc_name[r1501_i], g_bc_n[r1501_i], g_bc_t[r1501_i]);
+                  r861_out("[bootcam] R1501 t=%lds%s\n", (long)(r1496_now - g_boot_wall_t0), r1501_b); }
+                { uint8_t d5=0, d6=0;
+                  memcpy(&d5, xenolift_mem + 0x694D5u, 1); memcpy(&d6, xenolift_mem + 0x694D6u, 1);
+                  r861_out("[sngcam] R1502 t=%lds StartNewGame=%u initngs=%u lpar=%u sngsync=%u sngsync_seek=%u post-sync-defaults(D5=%02X want76 D6=%02X want54) seek_now=%u\n",
+                           (long)(r1496_now - g_boot_wall_t0), g_bc_n[12], g_bc_initngs, g_bc_lpar,
+                           g_bc_sngsync, g_bc_sngsync_seek, d5, d6, cd_seek_lba); }
+                r861_out("[ingscam] R1503 t=%lds initngs=%u ingsync=%u ingsync_seek=%u ingsmove=%u ingsdec=%u sngsync=%u\n",
+                         (long)(r1496_now - g_boot_wall_t0), g_bc_initngs, g_bc_ingsync, g_bc_ingsync_seek,
+                         g_bc_ingsmove, g_bc_ingsdec, g_bc_sngsync);
+                r861_out("[ingsbisect] R1504 t=%lds initngs=%u setidx=%u heapusr=%u decsize=%u alloc=%u readfile=%u ingsync=%u\n",
+                         (long)(r1496_now - g_boot_wall_t0), g_bc_initngs, g_i_setidx, g_i_heapusr,
+                         g_i_decsize, g_i_alloc, g_i_readfile, g_bc_ingsync);
+                r861_out("[rfcam] R1505 t=%lds armed=%d cur_step=%u arms=%u pcopen=%u completed-at-step[0..7]=%u,%u,%u,%u,%u,%u,%u,%u seek=%u\n",
+                         (long)(r1496_now - g_boot_wall_t0), g_rf_armed, g_rf_step, g_rf_arms, g_pcopen,
+                         g_rf_step_hist[0], g_rf_step_hist[1], g_rf_step_hist[2], g_rf_step_hist[3],
+                         g_rf_step_hist[4], g_rf_step_hist[5], g_rf_step_hist[6], g_rf_step_hist[7], cd_seek_lba);
+                r861_out("[rflba] R1506 t=%lds INGS-read LBA first=%u last=%u n=%u (archive idx16 file3) seek_now=%u FE04=%u\n",
+                         (long)(r1496_now - g_boot_wall_t0), g_rf_lba_first, g_rf_lba_last, g_rf_lba_n,
+                         cd_seek_lba, vfe04);
+                { uint32_t tbl_now=0, fe14_now=0; memcpy(&tbl_now, xenolift_mem + 0x4FDF4u, 4); memcpy(&fe14_now, xenolift_mem + 0x4FE14u, 4);
+                  r861_out("[arcreal] R1507 t=%lds REAL 0x8004FDF4(tbl)=%08X 0x8004FE14(base)=%08X | at INGS SetIndex: tbl=%08X idx=%u entry=%04X n=%u | at first INGS read: FE14=%08X LBA=%u\n",
+                           (long)(r1496_now - g_boot_wall_t0), tbl_now, fe14_now, g_as_tbl, g_as_idx, g_as_entry, g_as_n, g_rf_fe14, g_rf_lba_first); }
+                { char ib[512]; int io_=0; uint32_t m_ = g_intr_n < 8u ? g_intr_n : 8u, j_;
+                  for (j_ = 0; j_ < m_ && io_ < 460; j_++)
+                      io_ += snprintf(ib + io_, sizeof ib - (size_t)io_, " [ra=%08X idx=%u dep=%d]", g_intr_ra[j_], g_intr_idx[j_], g_intr_dep[j_]);
+                  r861_out("[intruder] R1508 t=%lds ArchiveSetIndex calls DURING the INGS read: n=%u%s\n",
+                           (long)(r1496_now - g_boot_wall_t0), g_intr_n, ib); }
             }
         }
     }
@@ -16426,19 +16531,48 @@ void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
     switch (a) { /* R1500 [chaincam] */
-    case 0x8001996Cu: g_ch_commit++;   break; /* CommitGameStateTransition */
-    case 0x80019ACCu: g_ch_loop++;     break; /* RunResidentGameLoop */
+    case 0x8001996Cu: r1501_hit(15); g_ch_commit++;   break; /* CommitGameStateTransition */
+    case 0x80019ACCu: r1501_hit(16); g_ch_loop++;     break; /* RunResidentGameLoop */
     case 0x800199CCu: g_ch_mount++;    break; /* MountGameStateModule */
-    case 0x80028738u: g_ch_measure++;  break; /* MeasureArchivePayload */
-    case 0x800295D8u: g_ch_read++;     break; /* ReadArchiveMemberIntoBuffer */
-    case 0x80031BDCu: g_ch_alloc++;    break; /* AllocateHeapBlock */
-    case 0x80028A60u: g_ch_wait++;     break; /* WaitArchiveCdData */
+    case 0x80028738u: if (r[31] == 0x8002960Cu) r1505_step(1); g_ch_measure++;  break; /* MeasureArchivePayload */
+    case 0x800295D8u: if (r[31] == 0x8001B9CCu) { if (g_rf_armed) g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 1; g_rf_step = 0; g_rf_arms++; } if (r[31] == 0x8001B9CCu) g_i_readfile++; r1501_hit(4); g_ch_read++;     break; /* ReadArchiveMemberIntoBuffer */
+    case 0x80031BDCu: if (r[31] == 0x8001B9B4u) g_i_alloc++; g_ch_alloc++;    break; /* AllocateHeapBlock */
+    case 0x80028A60u: if (r[31] == 0x8002962Cu) r1505_step(2); if (r[31] == 0x8001B9D4u && g_rf_armed) { g_rf_step_hist[g_rf_step & 7u]++; g_rf_armed = 0; } if (r[31] == 0x8001B9D4u) { g_bc_ingsync++; g_bc_ingsync_seek = cd_seek_lba; } if (r[31] == 0x8001BB74u) { g_bc_sngsync++; g_bc_sngsync_seek = cd_seek_lba; } r1501_hit(5); g_ch_wait++;     break; /* WaitArchiveCdData */
     case 0x80032EB4u: g_ch_unpack++;   break; /* UnpackCompressedBuffer */
     case 0x80031B10u: g_ch_movheap++;  break; /* MoveHeapAllocation */
     case 0x80031A30u: g_ch_clrheap++;  break; /* ClearHeapRuntime */
     case 0x80019BFCu: g_ch_dispatch++; break; /* entry dispatch (jalr descriptor[0]) */
     case 0x800737ECu: g_ch_movie++;    break; /* MovieEntry */
     case 0x80019548u: g_ch_restart++;  break; /* RestoreResidentExecutionRegisters */
+    case 0x8001B970u: g_bc_initngs++; break; /* R1502 InitializeNewGameState */
+    case 0x800289D0u: if (r[31] == 0x80029644u) r1505_step(3); break; /* R1505 ArchiveDecodeSector */
+    case 0x80029690u: if (r[31] == 0x80029670u) r1505_step(5); break; /* R1505 ArchiveReadFile */
+    case 0x80041430u: if (r[31] == 0x80029734u) { r1505_step(6); if (g_rf_armed) { if (g_rf_lba_n == 0u) { g_rf_lba_first = r[4]; memcpy(&g_rf_fe14, xenolift_mem + 0x4FE14u, 4); } g_rf_lba_last = r[4]; g_rf_lba_n++; } } break; /* R1505/R1506 CdIntToPos */
+    case 0x8004C318u: g_pcopen++; if (r[31] == 0x800297E0u) r1505_step(7); break; /* R1505 PCopen - dev-PC file path */
+    case 0x80032498u: if (r[31] == 0x8001B9A0u) g_i_heapusr++; break; /* R1504 HeapChangeCurrentUser from INGS */
+    case 0x800288ECu: if (r[31] == 0x80029654u) r1505_step(4); if (r[31] == 0x8001B9A8u) g_i_decsize++; break; /* R1504 ArchiveDecodeAlignedSize from INGS */
+    case 0x8003F99Cu: if (r[31] == 0x8001B9ECu) g_bc_ingsmove++; break; /* R1503 memmove after INGS sync */
+    case 0x80033B34u: if (r[31] == 0x8001BA8Cu) g_bc_ingsdec++;  break; /* R1503 SystemDecodeStringCodes in INGS */
+    case 0x800379D8u: g_bc_lpar++;    break; /* R1502 LoadPairedArchiveResources */
+    case 0x8004C548u: r1501_hit(0); break; /* R1501 SpuInit */
+    case 0x80028230u: r1501_hit(1); break; /* R1501 ArchiveInit */
+    case 0x80037B88u: r1501_hit(2); break; /* R1501 SoundInit */
+    case 0x80028470u: if (g_rf_armed && r[31] != 0x8001B994u) { uint32_t k_ = g_intr_n & 7u;
+          g_intr_ra[k_] = r[31]; g_intr_idx[k_] = r[4] + r[5]; g_intr_fn[k_] = (uint32_t)xenolift_cur_fn; g_intr_dep[k_] = g_guest_depth; g_intr_n++; }
+          if (r[31] == 0x8001B994u) { uint32_t t_=0; uint16_t e_=0; uint32_t ix_=r[4]+r[5];
+          memcpy(&t_, xenolift_mem + 0x4FDF4u, 4); g_as_tbl=t_; g_as_idx=ix_;
+          if (t_ >= 0x80000000u && t_ < 0x80200000u) memcpy(&e_, xenolift_mem + ((t_ + ix_*2u) & 0x1FFFFFu), 2); else e_ = 0xFFFFu;
+          g_as_entry=e_; g_as_n++; }
+          if (r[31] == 0x8001B994u) g_i_setidx++; r1501_hit(3); break; /* R1501 ArchSetIndex */
+    case 0x80037FD8u: r1501_hit(6); break; /* R1501 SoundLoadWds */
+    case 0x80032E88u: r1501_hit(7); break; /* R1501 LZSSDecomp */
+    case 0x80033558u: r1501_hit(8); break; /* R1501 InitFont */
+    case 0x800335F4u: r1501_hit(9); break; /* R1501 InitData */
+    case 0x8003BDFCu: r1501_hit(10); break; /* R1501 SoundXfer */
+    case 0x8001AADCu: r1501_hit(11); break; /* R1501 InitKernVars */
+    case 0x8001BB50u: r1501_hit(12); break; /* R1501 StartNewGame */
+    case 0x80024F20u: r1501_hit(13); break; /* R1501 ResetSprite */
+    case 0x80019D48u: r1501_hit(14); break; /* R1501 SPLASH */
     default: break;
     }
     r1496_termcam_tick(); /* R1499: tick from EVERY emitted function entry. The
