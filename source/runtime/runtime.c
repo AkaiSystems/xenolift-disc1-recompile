@@ -6734,6 +6734,16 @@ static uint32_t lzss_fence_hits = 0; /* R1276 (c167): run-lifetime fence-hit cou
  * read8s and the read32 counter barely moves. I had claimed the camera was alive
  * in every spin; it was blind in exactly the CD-register spins. One tick counter
  * across all three widths closes that. Camera only. */
+/* R1500 (JOSH-DIAG) [chaincam]: entry counts for every step of the game-mode
+ * chain in RunResidentGameLoop, from the GAMEMODE_INTEL.md map + annotations.csv.
+ * [gdisp] shows the dispatcher entering state 6 (movie) 23 times, yet [mod6] is 0
+ * in all 78 runs: MovieEntry never runs. These counters show exactly which step is
+ * the last one reached. Each address has exactly one XTRACE site in disc1.c, so an
+ * entry count is a call count. RestoreResidentExecutionRegisters is the abort /
+ * restart path, so a rising 'restart' means the chain is bailing out. Camera only. */
+static uint32_t g_ch_commit, g_ch_loop, g_ch_mount, g_ch_measure, g_ch_read, g_ch_alloc,
+                g_ch_wait, g_ch_unpack, g_ch_movheap, g_ch_clrheap, g_ch_dispatch, g_ch_movie,
+                g_ch_restart;
 static void r1496_termcam_tick(void)
 {
     { /* R1496 (JOSH-DIAG) [termcam]: AN UNSAMPLED, UNBUDGETED TERMINAL-STATE CAMERA.
@@ -6779,6 +6789,10 @@ static void r1496_termcam_tick(void)
                          (unsigned)cd_scheduled, (unsigned)cd_arm_int1_pending,
                          g_fldsec_total, g_sectors_loaded,
                          (unsigned)xenolift_cur_fn, g_guest_depth, vcnt, vref);
+                r861_out("[chaincam] R1500 t=%lds commit=%u loop=%u mount=%u measure=%u read=%u alloc=%u wait=%u unpack=%u movheap=%u clrheap=%u DISPATCH=%u MOVIE=%u restart=%u\n",
+                         (long)(r1496_now - g_boot_wall_t0), g_ch_commit, g_ch_loop, g_ch_mount,
+                         g_ch_measure, g_ch_read, g_ch_alloc, g_ch_wait, g_ch_unpack,
+                         g_ch_movheap, g_ch_clrheap, g_ch_dispatch, g_ch_movie, g_ch_restart);
             }
         }
     }
@@ -16411,6 +16425,22 @@ static void xenolift_psyqptr_heal(const char *site)
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
+    switch (a) { /* R1500 [chaincam] */
+    case 0x8001996Cu: g_ch_commit++;   break; /* CommitGameStateTransition */
+    case 0x80019ACCu: g_ch_loop++;     break; /* RunResidentGameLoop */
+    case 0x800199CCu: g_ch_mount++;    break; /* MountGameStateModule */
+    case 0x80028738u: g_ch_measure++;  break; /* MeasureArchivePayload */
+    case 0x800295D8u: g_ch_read++;     break; /* ReadArchiveMemberIntoBuffer */
+    case 0x80031BDCu: g_ch_alloc++;    break; /* AllocateHeapBlock */
+    case 0x80028A60u: g_ch_wait++;     break; /* WaitArchiveCdData */
+    case 0x80032EB4u: g_ch_unpack++;   break; /* UnpackCompressedBuffer */
+    case 0x80031B10u: g_ch_movheap++;  break; /* MoveHeapAllocation */
+    case 0x80031A30u: g_ch_clrheap++;  break; /* ClearHeapRuntime */
+    case 0x80019BFCu: g_ch_dispatch++; break; /* entry dispatch (jalr descriptor[0]) */
+    case 0x800737ECu: g_ch_movie++;    break; /* MovieEntry */
+    case 0x80019548u: g_ch_restart++;  break; /* RestoreResidentExecutionRegisters */
+    default: break;
+    }
     r1496_termcam_tick(); /* R1499: tick from EVERY emitted function entry. The
      * read8/16/32 hooks fire only on special addresses - the recompiler inlines
      * ordinary RAM loads - so [termcam] went blind in exactly the VSync spins it
