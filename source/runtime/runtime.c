@@ -16880,6 +16880,20 @@ void xenolift_trace(uint32_t a)
         }
     }
     r1535_check(); /* R1535 */
+    { /* R1541 (JOSH-DIAG): $gp IS A CONSTANT 0x80059170 for this executable (set at boot by
+       * RestoreResidentExecutionRegisters; every main-EXE global is gp-relative). R1540q: the movie
+       * player called HeapAlloc with gp=0xFFFF9CF4 -> heap state read from garbage -> abort 130 ->
+       * KernelMenu. Once gp has been seen correct, log any later deviation (with the chunk trail that
+       * names the corrupter) and restore it at the next chunk entry. */
+        static int gp_ok; static uint32_t gp_n;
+        if (r[28] == 0x80059170u) gp_ok = 1;
+        else if (gp_ok) {
+            if (gp_n++ < 8u)
+                xenolift_receipt("[gpfix] R1541 #%u gp=%08X at trace %08X (prev chunks %08X %08X %08X %08X) ra=%08X sp=%08X - restored 80059170\n",
+                    gp_n, r[28], a, g_jw_ring[(g_jw_ri + 4u) & 7u], g_jw_ring[(g_jw_ri + 5u) & 7u], g_jw_ring[(g_jw_ri + 6u) & 7u], g_jw_ring[(g_jw_ri + 7u) & 7u], r[31], r[29]);
+            r[28] = 0x80059170u;
+        }
+    }
     if (a == 0x80022FC4u || a == 0x800230A8u) { /* R1540 [sprpkt]: sprite frame-packet alloc vs destroy */
         static uint32_t n1, n2;
         uint32_t sp = r[4], p32 = 0, p44 = 0;
@@ -32154,7 +32168,7 @@ static int r1394_interp(uint32_t entry)
                 pc = act_ret; npc = act_ret + 4; act = 0;
                 continue;
             }
-            if (uns_n < 16u) { uns_n++; r861_out("[ovlint] R1394 CONTROL OUTSIDE WINDOW without a jump (act=0) pc=%08X - the explicit stop class\n", pc); }
+            if (uns_n < 64u) { uns_n++; xenolift_receipt("[ovlint] R1394 CONTROL OUTSIDE WINDOW without a jump (act=0) pc=%08X entry=%08X sp=%08X ra=%08X - the explicit stop class\n", pc, entry, r[29], r[31]); } /* R1542 */
             return 3;
         }
         /* R680J (c680): flow-change ring camera (camera only - no behavior).
@@ -32225,7 +32239,7 @@ static int r1394_interp(uint32_t entry)
                         return 0;
                     }
                 }
-                 if (uns_n < 16u) { uns_n++; r861_out("[ovlint] R1394 UNSUPPORTED SPECIAL fn=%02X at pc=%08X w=%08X\n", fn_, pc, w); } return 3; }
+                 if (uns_n < 64u) { uns_n++; xenolift_receipt("[ovlint] R1394 UNSUPPORTED SPECIAL fn=%02X at pc=%08X w=%08X entry=%08X sp=%08X ra=%08X\n", fn_, pc, w, entry, r[29], r[31]); } return 3; } /* R1542 */
             if (rd == 0u) r[0] = 0u; /* R1394Z (c893, repaired c901b): the architected zero-register guard - MOVED after the else. The c893 placement BETWEEN the chain last else-if (0x2B) and its else made the else attach to THIS if: every supported SPECIAL word with rd != 0 (the ADDU r4 at w=00002021, the c897/c898 receipts) fell to the UNSUPPORTED stop and killed the deepest field-era run at exit 99. After the move the else re-attaches to the 0x2B else-if and this guard runs only on SUPPORTED ops - the stop stays loud for genuinely undefined functs. */
         }
         else if (op == 0x01u) { /* REGIMM: bltz/bgez/bltzal/bgezal */
@@ -32234,7 +32248,7 @@ static int r1394_interp(uint32_t entry)
             else if (rt == 0x01u) { cond = ((int32_t)r[rs] >= 0); }
             else if (rt == 0x10u) { cond = ((int32_t)r[rs] < 0); }
             else if (rt == 0x11u) { cond = ((int32_t)r[rs] >= 0); }
-            else { if (uns_n < 16u) { uns_n++; r861_out("[ovlint] R1394 UNSUPPORTED REGIMM rt=%02X at pc=%08X w=%08X\n", rt, pc, w); } return 3; }
+            else { if (uns_n < 64u) { uns_n++; xenolift_receipt("[ovlint] R1394 UNSUPPORTED REGIMM rt=%02X at pc=%08X w=%08X entry=%08X\n", rt, pc, w, entry); } return 3; } /* R1542 */
             if (rt == 0x10u || rt == 0x11u) { r[31] = npc + 4; }
             if (cond) {
                 tgt = pc + 4 + ((int32_t)imm << 2);
@@ -32302,7 +32316,7 @@ else if (op == 0x3Au) { /* SWC2 */ /* R1412 (c551): SWC2 is opcode 0x3A per the 
         return 0;
     }
 }
- if (uns_n < 16u) { uns_n++; r861_out("[ovlint] R1394 UNSUPPORTED op=%02X at pc=%08X w=%08X\n", op, pc, w); } return 3; }
+ if (uns_n < 64u) { uns_n++; xenolift_receipt("[ovlint] R1394 UNSUPPORTED op=%02X at pc=%08X w=%08X entry=%08X sp=%08X ra=%08X\n", op, pc, w, entry, r[29], r[31]); } return 3; } /* R1542: ungoverned */
         r[0] = 0u; /* R1522: $zero is architected - I-type ops with rt=0 must not leave it nonzero */
         pc = npc; npc = pc + 4;
     }

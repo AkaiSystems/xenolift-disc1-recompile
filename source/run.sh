@@ -216,6 +216,24 @@ else:
     print('[emit] R224 guard ANCHOR MISSING (emitter output changed) — check manually')
 XEOF
 
+# R1543 (JOSH-DIAG): idempotent post-emit patch: DestroySpriteAllocation(NULL) is a no-op.
+# The field's actor sweep (field module 0x80076C38) destroys entry->sprite when flags bit0 is set;
+# R1540/R1542q receipts: an entry had the flag with sprite==0 -> HeapFree(NULL) -> AbortOnGameFault(131)
+# -> KernelMenu. Destroying nothing must not abort. (Root cause - who sets the flag without the
+# pointer - is still open; the R1540 [sprpkt] camera keeps logging NULL destroys.)
+python3 - <<'XEOF'
+s = open('disc1.c').read()
+hdr = "static void xenolift_fn_800230A8_DestroySpriteAllocation___Frees_optional_tile_overrides_and_frame_packets_then_unlinks_and_releases_the_sprite_allocation_(void)\n{\nXTRACE(0x800230A8);\n"
+if 'R1543 null-sprite guard' in s:
+    print('[emit] R1543 null-sprite guard already present')
+elif hdr in s:
+    s = s.replace(hdr, hdr + "if (r[4] == 0u) { return; } /* R1543 null-sprite guard */\n", 1)
+    open('disc1.c','w').write(s)
+    print('[emit] R1543 null-sprite guard APPLIED')
+else:
+    print('[emit] R1543 anchor MISSING')
+XEOF
+
 # R873: idempotent post-emit patch: ReportSoundDriverError body stub.
 # The reporter's emitted body walks the kernel error-dispatch chain and
 # jal @0x8003F710 re-dispatches boot entry 0x80019524 -> deterministic
