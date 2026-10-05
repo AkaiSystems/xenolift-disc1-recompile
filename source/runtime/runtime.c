@@ -1834,8 +1834,65 @@ int cd_motor_on = 1; /* R212: spindle state — Stop (0x08) turns it OFF;
                        * report the LIVE state or the kernel's post-Stop poll
                        * never sees the motor-off transition it waits for. */
 
+/* R1520 (JOSH-DIAG) [f15]: FILE-15 READ TIMELINE. After R1519 the game reaches
+ * field state 1 via its own dispatcher, loads file#14 (the field module), then
+ * reads file#15 (LBA 108995..109040, 92180 B - the stream into the ring at
+ * 0x8007F2F8) and stalls: drive paused (cmd 09), FDF8=2048, ~8 sectors in,
+ * each pushed by a heal, 93 forced INT1s, served LBAs skipping. The existing
+ * cameras are governed/sampled (R533 cap 80, [fldsec] 1-in-8), so this is one
+ * ungoverned ordered timeline: every CD command (Setloc decoded), every CD-DMA
+ * delivery with its destination, every forced INT1 with the heal's name, every
+ * FDF8 write (guest vs runtime). Arms in the main-loop era when the drive first
+ * aims into file 15's range. Receipt-only, capped at 1500 lines. */
+static int g_r1517_inloop; /* tentative - defined with the R1517 latch below */
+static int g_f15_on; static uint32_t g_f15_n, g_f15_t0;
+static void r1520_ev(const char *ev, uint32_t a1, uint32_t a2, uint32_t a3, const char *why)
+{
+    struct timespec ts; uint32_t ms, f8, fe04, fe08, fe1c, fe34;
+    if (!g_f15_on || g_f15_n >= 1500u) return;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    ms = (uint32_t)((uint32_t)ts.tv_sec * 1000u + (uint32_t)(ts.tv_nsec / 1000000L));
+    if (g_f15_n == 0u) g_f15_t0 = ms;
+    memcpy(&f8, xenolift_mem + 0x4FDF8u, 4); memcpy(&fe04, xenolift_mem + 0x4FE04u, 4);
+    memcpy(&fe08, xenolift_mem + 0x4FE08u, 4); memcpy(&fe1c, xenolift_mem + 0x4FE1Cu, 4);
+    memcpy(&fe34, xenolift_mem + 0x4FE34u, 4);
+    xenolift_receipt("[f15] #%u +%ums %s %08X %08X %08X %s | seek=%u FE04=%u FDF8=%u FE08=%08X FE1C=%u FE34=%d pend=%u sched=%u act=%u ld=%u fifo=%u/%u fn=%08X ra=%08X d=%d\n",
+        g_f15_n, ms - g_f15_t0, ev, a1, a2, a3, why ? why : "-", cd_seek_lba, fe04, f8, fe08, fe1c, (int)fe34,
+        (unsigned)cd_pending, (unsigned)cd_scheduled, (unsigned)cd_read_active, (unsigned)cd_data_loaded,
+        cd_data_pos, cd_data_n, (unsigned)xenolift_cur_fn, r[31], g_guest_depth);
+    g_f15_n++;
+}
+/* R1521 (JOSH-DIAG): FDF8 OWNERSHIP for R1466B. The R1520 [f15] timeline: the
+ * game arms a 1-sector request (FDF8=2048), the sector lands, the GUEST callback
+ * (8002B168) counts FDF8 2048->0 = request complete; 1 ms later R1466B ("field-band
+ * zero-length heal", built for NEVER-ARMED reads) sees FDF8==0 and writes 0->2048 +
+ * forces INT1. The game then Pauses (it is done) and its sync waits for the phantom
+ * 2048 with the drive stopped - 29 s until its own timeout clears FDF8 and retries,
+ * and R1466B re-arms again: ~1 sector per 29 s (the "file-15 stall"). This is the
+ * FDF8 writer rule (memory): a runtime FDF8 write in a band where the guest counts
+ * FDF8 natively races the guest. Track the guest's own lifecycle: a guest write
+ * nonzero->0 = the guest COMPLETED its count; a guest nonzero write or a new guest
+ * read request (Setloc/ReadN/ReadS) clears it. R1466B declines while completed. */
+static int g_r1521_guest_done; static uint32_t g_r1521_declined;
+static void r1520_arm_check(uint32_t lba)
+{
+    if (!g_f15_on && g_r1517_inloop && lba >= 108995u && lba < 109041u) {
+        g_f15_on = 1;
+        xenolift_receipt("[f15] R1520 ARMED (drive aimed at LBA %u, inside file#15 108995..109040)\n", lba);
+    }
+}
 static void cd_cmd(uint8_t cmd)
 {
+    if (cmd == 0x02u || cmd == 0x06u || cmd == 0x1Bu) g_r1521_guest_done = 0; /* R1521: a new request begins */
+    { /* R1520 [f15] */
+        uint32_t lba_arg = 0u;
+        if (cmd == 0x02u && cd_param_n >= 3u) {
+            int32_t l = (int32_t)((cd_bcd(cd_params[0]) * 60u + cd_bcd(cd_params[1])) * 75u + cd_bcd(cd_params[2])) - 150;
+            lba_arg = l < 0 ? 0u : (uint32_t)l;
+            r1520_arm_check(lba_arg);
+        } else r1520_arm_check(cd_seek_lba);
+        r1520_ev("CMD", cmd, lba_arg, cd_last_cmd, cmd == 0x02u ? "setloc" : cmd == 0x06u ? "readN" : cmd == 0x1Bu ? "readS" : cmd == 0x09u ? "pause" : cmd == 0x01u ? "getstat" : cmd == 0x0Eu ? "setmode" : NULL);
+    }
     /* R533 [cmdtl]: field-era command timeline - c101: dirack4 fired 3x, the
      * Setloc ack popped, yet the game RE-ISSUED the same Setloc (seek 108934):
      * a retry loop whose missing next-step must be NAMED, not guessed.
@@ -6416,6 +6473,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                     r861_out("[cd-dma] CHCR=%08X %u/%u bytes -> 0x%08X (LBA %u, fifo %u/%u, FDF8=%u)\n",
                         v, n, bytes, madr, cd_seek_lba, cd_data_pos, cd_data_n,
                         xenolift_mem_read32(0x8004FDF8u));
+                    r1520_ev("DMA", madr, n, cd_seek_lba, NULL); /* R1520 */
                 /* R508 CB-DMA camera: c74 verdict — the on-change watcher saw
                  * ZERO guest writes to the callback cell 0x80059F08 all run,
                  * yet cbheal kept finding it empty again. Only DMA blasts memory
@@ -11652,6 +11710,12 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
     if (a == 0x8004FDF8u || a == 0x8004FE04u || a == 0x8004FE1Cu) {
         static uint32_t r1248_n;
         r1248_n++;
+        if (a == 0x8004FDF8u && xenolift_sw_active) { /* R1521: guest-owned FDF8 lifecycle */
+            uint32_t r1521_old = xenolift_mem_read32(a);
+            if (v != 0u) g_r1521_guest_done = 0;
+            else if (r1521_old != 0u) g_r1521_guest_done = 1;
+        }
+        if (a == 0x8004FDF8u) r1520_ev(xenolift_sw_active ? "FDF8w-guest" : "FDF8w-RUNTIME", xenolift_mem_read32(a), v, xenolift_sw_line, NULL); /* R1520 */
         if (r1248_n <= 1000u || (r1248_n & 65535u) == 0u) {
             r861_out("[finstamp] R1248 #%u ea=%08X %u -> %u cur_fn=%08X w=%u act=%d sched=%d\n",
                     r1248_n, a, xenolift_mem_read32(a), v,
@@ -18182,7 +18246,8 @@ void xenolift_trace(uint32_t a)
         && cd_arm_int1_pending == 0
         && (cd_last_cmd == 0x02u || cd_last_cmd == 0x06u || cd_last_cmd == 0x09u)
         && (xenolift_mem_read32(0x8004FE1Cu) == 0u || xenolift_mem_read32(0x8004FE1Cu) == 1u || xenolift_mem_read32(0x8004FE1Cu) == 6u) /* R1466B v7 (c1187): the zombie-read admission - FE1C=6 with act=1 and FDF8=0 = started, zero bytes, never completes; healthy FE1C=6 holds FDF8>0 and still refuses on FDF8==0 */
-        && (cd_seek_lba != r1466b_lastfired || (xl_wall() - r1466b_alast) >= 1)) {
+        && (cd_seek_lba != r1466b_lastfired || (xl_wall() - r1466b_alast) >= 1)
+        && (!g_r1521_guest_done || (g_r1521_declined++ < 24u && (xenolift_receipt("[r1521] R1466B DECLINED #%u: FDF8=0 is the guest's own completed count (seek=%u FE04=%u cmd=%02X) - not a never-armed read\n", g_r1521_declined, cd_seek_lba, xenolift_mem_read32(0x8004FE04u), (unsigned)cd_last_cmd), 0)))) {
         r1466b_alast = xl_wall(); r1466b_lastfired = (uint32_t)cd_seek_lba;
         if (r1466b_seen < 4u) {
             r1466b_seen++;
@@ -31089,6 +31154,7 @@ static int xenolift_real_main(int argc, char **argv)
  * register-file + hi/lo save/restore and a reentrancy guard. */
 static void cd_force_deliver_int1(const char *why)
 {
+    r1520_ev("FORCE", cd_pending, cd_scheduled, 0u, why); /* R1520 */
     static int busy; static uint32_t n;
     if (busy) return;
     /* R898 (c494, manager): the canary is NAMED — this host fn's frame is
