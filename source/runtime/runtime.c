@@ -6136,6 +6136,28 @@ static int io_special_write(uint32_t p, uint32_t v)
         xl_gpu_writes++;
         return 1;
     }
+    if (p == 0x1F8010E8u && (v & 0x01000000u)) {
+        /* R1546 (JOSH-DIAG): DMA6 = ORDERING-TABLE CLEAR (OTC), never implemented. ClearOTagR (0x80044AD8)
+         * calls the GPU driver's otc routine, which programs MADR = &ot[n-1], BCR = n, CHCR = 0x11000002
+         * and waits for the busy bit. psx-spx: the channel writes n words DOWNWARD from MADR, each the
+         * address of the entry below it (24-bit), and the last (lowest, ot[0]) gets the end marker
+         * 0x00FFFFFF. Without it the field's 4096-entry OTs (0x800BA65C, 0x800BE660) were never built:
+         * its primitives (RotAverage4 x5 per frame) linked into garbage and DrawOTag drew nothing - the
+         * field frames were black while the kernel menu (CPU-side lists) rendered. */
+        static uint32_t otc_n;
+        uint32_t madr = io_raw_read32(0x1F8010E0u) & 0x00FFFFFCu;
+        uint32_t cnt = io_raw_read32(0x1F8010E4u) & 0xFFFFu, i;
+        if (cnt == 0u) cnt = 0x10000u;
+        for (i = 0; i < cnt; i++) {
+            uint32_t addr = (madr - 4u * i) & 0x001FFFFCu;
+            uint32_t val = (i == cnt - 1u) ? 0x00FFFFFFu : ((madr - 4u * (i + 1u)) & 0x00FFFFFFu);
+            memcpy(xenolift_mem + addr, &val, 4);
+        }
+        io_raw_write32(0x1F8010E8u, v & ~0x01000000u); /* done: busy/start cleared */
+        if (otc_n++ < 4u) xenolift_receipt("[otc] R1546 DMA6 OT clear: %u entries from %08X down (end marker at %08X)\n",
+                                           cnt, 0x80000000u | madr, 0x80000000u | ((madr - 4u * (cnt - 1u)) & 0x1FFFFCu));
+        return 1;
+    }
     if (p == 0x1F801088u || p == 0x1F801098u || p == 0x1F8010A8u) {
         /* R255 DMA CHANNEL MAP FIX (verified psx-spx "DMA Channels"):
          *   1F80108x = DMA0 MDECin   1F80109x = DMA1 MDECout
@@ -6173,6 +6195,16 @@ static int io_special_write(uint32_t p, uint32_t v)
                        * textured rect 64-67, area >= 200x200) after 200 lists, with the raw words. */
                         static uint32_t bp_n, bp_lists; uint32_t w0 = n ? xenolift_mem_read32(cur + 4u) : 0u, c = w0 >> 24;
                         if (nodes == 0u) bp_lists++;
+                        { /* R1545 [polypkt]: the field's polygon packets (cmd 20-3F) with all words - are the GTE
+                           * screen coordinates sane? The field loop calls RotAverage4 ~5x/frame but nothing shows. */
+                            static uint32_t pp_n;
+                            if (n >= 4u && c >= 0x20u && c <= 0x3Fu && pp_n < 60u && g_r1517_inloop) {
+                                uint32_t ww[12] = {0}, q; char b[200]; int o = 0;
+                                for (q = 0; q < n && q < 12u; q++) { ww[q] = xenolift_mem_read32(cur + 4u + 4u * q); o += snprintf(b + o, sizeof b - o, " %08X", ww[q]); }
+                                pp_n++;
+                                xenolift_receipt("[polypkt] R1545 #%u list#%u cmd=%02X n=%u words:%s cur_fn=%08X\n", pp_n, bp_lists, c, n, b, (unsigned)xenolift_cur_fn);
+                            }
+                        }
                         if (bp_lists > 200u && bp_n < 24u && n >= 3u && (c == 0x02u || (c >= 0x60u && c <= 0x67u))) {
                             uint32_t w1 = xenolift_mem_read32(cur + 8u), w2 = xenolift_mem_read32(cur + 12u);
                             uint32_t w3 = n >= 4u ? xenolift_mem_read32(cur + 16u) : 0u;
@@ -16880,6 +16912,21 @@ void xenolift_trace(uint32_t a)
         }
     }
     r1535_check(); /* R1535 */
+    if (a == 0x8003223Cu) { /* R1544 [chainval]: validate the heap chain at every HeapFreeAllBlocks entry */
+        static uint32_t cv_n;
+        uint32_t cur, prev = 0, k, bad = 0, nx = 0, fl = 0;
+        memcpy(&cur, xenolift_mem + 0x59320u, 4);
+        for (k = 0; k < 4096u; k++) {
+            if (cur < 0x80010008u || cur > 0x801FC000u) { bad = 1; break; }
+            memcpy(&nx, xenolift_mem + ((cur - 8u) & 0x1FFFFFu), 4); memcpy(&fl, xenolift_mem + ((cur - 4u) & 0x1FFFFFu), 4);
+            if ((fl & 0x01E00000u) == 0x00200000u) break;           /* terminator */
+            if (nx <= cur && nx != 0x801FC000u) { bad = 2; break; } /* must ascend */
+            prev = cur; cur = nx;
+        }
+        if (bad && cv_n++ < 12u)
+            xenolift_receipt("[chainval] R1544 BAD chain at HeapFreeAllBlocks (hop %u, class %u): prev=%08X cur=%08X next=%08X flags=%08X head59320=%08X ra=%08X cdFE08=%08X seek=%u\n",
+                k, bad, prev, cur, nx, fl, *(uint32_t *)(xenolift_mem + 0x59320u), r[31], *(uint32_t *)(xenolift_mem + 0x4FE08u), (unsigned)cd_seek_lba);
+    }
     { /* R1541 (JOSH-DIAG): $gp IS A CONSTANT 0x80059170 for this executable (set at boot by
        * RestoreResidentExecutionRegisters; every main-EXE global is gp-relative). R1540q: the movie
        * player called HeapAlloc with gp=0xFFFF9CF4 -> heap state read from garbage -> abort 130 ->
