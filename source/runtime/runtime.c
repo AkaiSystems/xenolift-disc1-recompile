@@ -1701,6 +1701,80 @@ static uint32_t g_r1480_xcam_stall_n; /* stall dumps this run (cap 8) */
 
 static uint32_t cd_bcd(uint8_t x) { return ((x >> 4) & 15u) * 10u + (x & 15u); }
 static FILE *g_disc = NULL; static uint32_t g_sec_bytes = 2048u; /* R262: hoisted decls (used by cd_cmd GetTD) */
+/* R1553 [mvcam] camera only: movie state 6 -> ReadS stream -> FE46 handoff camera.
+ * ZERO BEHAVIOUR. Host statics only here (H2 cd_cmd ring, H3 cd_data_load serve
+ * counters). Guest cells are read ONLY by memcpy from xenolift_mem in the printer
+ * (no read32 helper - memcpy only, no guest writes, nothing on the 0x1F801800 status poll,
+ * no FE1C/FDF8/FE04/pend/INT/R371 touch). Era = the opening movie state-6 request
+ * (0x8001996C a0==6) until the next commit with a0!=6. Plan: docs/proposals/
+ * R1553-movie-fe46-stream-camera.md; digest docs/digests/R1553_NEXT.md. */
+static uint32_t g_r1547_m0, g_r1547_m1; /* R1553 [mvcam] camera only: R1547 [mdecdma] DMA0/DMA1 totals hoisted to file scope (H4) */
+#define R1553_RING_N 16u
+typedef struct { uint8_t cmd, p0, p1, p2, act, pend, sched, np; uint32_t seek; } r1553_cmd_slot_t;
+static struct {
+    uint8_t open, closed, recorded, open_via;      /* open_via: 1=commit(6) 2=MovieEntry 737EC 3=StrLibInit 3538 */
+    uint32_t later_eras;                           /* eras after the recorded one (count only) */
+    time_t t_open, t_prog, t_beat;
+    uint32_t open_a0, open_r31, close_a0, close_r31;
+    uint8_t fe44_open[4], fe44_close[4];
+    uint32_t fp_nz, fp_586c, fp_5d54, fp_5900;     /* stage-2 fingerprint at OPEN */
+    uint32_t fp2_nz, fp2_586c;                     /* re-taken at the first era StrLibInit 0x801D3538 (file 18 may land after OPEN) */
+    uint32_t m0_open, m1_open;                     /* R1547 DMA totals at OPEN */
+    /* H1 movie-lib entry counters (era only), index = R1553_L_* */
+    uint32_t lib[16];
+    uint32_t a586c[3], r4318;                      /* StartCdRead2 a0..a2, StopPlayback r31 */
+    uint32_t err_n, err_a0, err_r31, err_pre586c;  /* 0x80019EF8 GameHandleError (era) */
+    uint32_t cbr_n, cbr_a0;                        /* 0x80040FCC CdReadyCallback (era) */
+    uint32_t commit_out_n, commit_out_a0, commit_out_r31; /* era commits from outside the movie module (a0!=6 closes) */
+    /* H2 cd_cmd ring + counters (era only) */
+    r1553_cmd_slot_t ring[R1553_RING_N]; uint32_t ring_n;
+    uint32_t n0e, n02, n1b, n06, n09; uint8_t last_mode; uint32_t last_setloc;
+    uint32_t n1b_outside;                          /* whole-run ReadS outside the era (scopes the eventual fix) */
+    /* H3 serves (era only) */
+    uint32_t served, served_post1b, serve_prints;
+    /* stall/beat bookkeeping */
+    uint32_t stall_n, beat_n, prog_5d54, prog_served;
+} g_r1553;
+/* H2: top of cd_cmd (command-register write only, never the status poll) */
+static void r1553_cmd(uint8_t cmd)
+{
+    if (!g_r1553.open) { if (cmd == 0x1Bu) g_r1553.n1b_outside++; return; }
+    {
+        r1553_cmd_slot_t *s = &g_r1553.ring[g_r1553.ring_n % R1553_RING_N];
+        s->cmd = cmd; s->np = cd_param_n;
+        s->p0 = cd_param_n > 0u ? cd_params[0] : 0u; s->p1 = cd_param_n > 1u ? cd_params[1] : 0u; s->p2 = cd_param_n > 2u ? cd_params[2] : 0u;
+        s->seek = cd_seek_lba; s->act = cd_read_active; s->pend = cd_pending; s->sched = cd_scheduled;
+        g_r1553.ring_n++;
+    }
+    switch (cmd) {
+    case 0x0Eu: g_r1553.n0e++; if (cd_param_n > 0u) g_r1553.last_mode = cd_params[0]; break;
+    case 0x02u: g_r1553.n02++;
+        if (cd_param_n >= 3u) { int32_t l = (int32_t)((cd_bcd(cd_params[0]) * 60u + cd_bcd(cd_params[1])) * 75u + cd_bcd(cd_params[2])) - 150;
+            g_r1553.last_setloc = l < 0 ? 0u : (uint32_t)l; }
+        break;
+    case 0x1Bu: g_r1553.n1b++; break;
+    case 0x06u: g_r1553.n06++; break;
+    case 0x09u: g_r1553.n09++; break;
+    default: break;
+    }
+}
+/* H3: cd_data_load after cd_data_n = 2060 (one real serve) */
+static void r1553_serve(void)
+{
+    uint32_t w;
+    if (!g_r1553.open) return;
+    g_r1553.served++;
+    if (g_r1553.n1b) g_r1553.served_post1b++;
+    if (g_r1553.serve_prints < 8u) {
+        g_r1553.serve_prints++;
+        memcpy(&w, cd_data + 12, 4);
+        xenolift_receipt("[mvcam] R1553 SERVE #%u lba=%u setloc=%u hdr=%02X %02X %02X %02X | %02X %02X %02X %02X %02X %02X %02X %02X user0=%08X%s n1B=%u last_cmd=%02X\n",
+            g_r1553.served, cd_seek_lba, g_r1553.last_setloc,
+            cd_data[0], cd_data[1], cd_data[2], cd_data[3], cd_data[4], cd_data[5], cd_data[6], cd_data[7],
+            cd_data[8], cd_data[9], cd_data[10], cd_data[11], w, w == 0x80010160u ? " (STR video)" : "",
+            g_r1553.n1b, cd_last_cmd);
+    }
+}
 
 static void cd_data_load(void)
 {
@@ -1788,6 +1862,7 @@ static void cd_data_load(void)
     if (disc_read_lba(cd_seek_lba, cd_data + 12) != 0)
         memset(cd_data + 12, 0, 2048); /* no disc: zeros */
     cd_data_n = 2060;
+    r1553_serve(); /* R1553 [mvcam] camera only (H3): era-gated serve counter */
     g_sectors_loaded++;
     { /* R1314 (c213/c214, Jos sector-correctness order): the SERVED-SECTOR
        * identity - lba + header + payload signature, so the digest can
@@ -1929,6 +2004,7 @@ static void r1520_arm_check(uint32_t lba)
 }
 static void cd_cmd(uint8_t cmd)
 {
+    r1553_cmd(cmd); /* R1553 [mvcam] camera only (H2): era-gated cmd ring, host statics only */
     if (cmd == 0x02u || cmd == 0x06u || cmd == 0x1Bu) g_r1521_guest_done = 0; /* R1521: a new request begins */
     { /* R1520 [f15] */
         uint32_t lba_arg = 0u;
@@ -6313,16 +6389,16 @@ static int io_special_write(uint32_t p, uint32_t v)
                 if (dma_logs < 40)
                     r861_out("[dma] GPU DMA2 %s %u words @%08X (sync %u)\n", (v & 1u) ? "RAM->VRAM" : "VRAM->RAM", words, addr, sync);
             } else if (ch == 0) {
-                { static uint32_t m0; if (m0++ < 6u || (m0 & 1023u) == 0u)
-                    xenolift_receipt("[mdecdma] R1547 DMA0 in #%u madr=%08X bcr=%08X words=%u first=%08X %08X cur_fn=%08X\n", m0, addr, bcr, words,
+                { /* R1553 [mvcam] camera only (H4): m0 hoisted to file scope g_r1547_m0, same counting */ if (g_r1547_m0++ < 6u || (g_r1547_m0 & 1023u) == 0u)
+                    xenolift_receipt("[mdecdma] R1547 DMA0 in #%u madr=%08X bcr=%08X words=%u first=%08X %08X cur_fn=%08X\n", g_r1547_m0, addr, bcr, words,
                         xenolift_mem_read32(addr), xenolift_mem_read32(addr + 4u), (unsigned)xenolift_cur_fn); }
                 hle_mdec_dma0_in(addr, bcr);
                 done_words = words;
                 if (dma_logs < 40)
                     r861_out("[dma] MDEC-IN DMA0 %u words @%08X -> hle_mdec\n", words, addr);
             } else {
-                { static uint32_t m1; if (m1++ < 6u || (m1 & 1023u) == 0u)
-                    xenolift_receipt("[mdecdma] R1547 DMA1 out #%u madr=%08X bcr=%08X words=%u cur_fn=%08X\n", m1, addr, bcr, words, (unsigned)xenolift_cur_fn); }
+                { /* R1553 [mvcam] camera only (H4): m1 hoisted to file scope g_r1547_m1, same counting */ if (g_r1547_m1++ < 6u || (g_r1547_m1 & 1023u) == 0u)
+                    xenolift_receipt("[mdecdma] R1547 DMA1 out #%u madr=%08X bcr=%08X words=%u cur_fn=%08X\n", g_r1547_m1, addr, bcr, words, (unsigned)xenolift_cur_fn); }
                 hle_mdec_dma1_out(addr, bcr);
                 done_words = words;
                 if (dma_logs < 40)
@@ -16978,6 +17054,178 @@ static void r1527_check(void)
                              fires, cd_seek_lba, f8, (unsigned)xenolift_cur_fn);
     }
 }
+/* R1553 [mvcam] camera only: H1 entry hooks, era open/close, OPEN/STALL/BEAT/CLOSE
+ * printer and the in-runtime verdict (V0..V7/PASS, docs/proposals/R1553 table §3).
+ * Guest cells via memcpy from xenolift_mem only. Zero behaviour. */
+enum { R1553_L_3538 = 0, R1553_L_37CC, R1553_L_41AC, R1553_L_586C, R1553_L_5900, R1553_L_5D54, R1553_L_5A04, R1553_L_5C70,
+       R1553_L_3B00, R1553_L_3D54, R1553_L_3F7C, R1553_L_4318, R1553_L_43B0, R1553_L_4534, R1553_L_45F8, R1553_L_N };
+static uint32_t r1553_g32(uint32_t addr) /* R1553 [mvcam] camera only: memcpy guest word (RAM only) */
+{
+    uint32_t v = 0u;
+    memcpy(&v, xenolift_mem + (addr & 0x1FFFFCu), 4);
+    return v;
+}
+static int r1553_in_movie(uint32_t ra) { return ra >= 0x8006FAF0u && ra < 0x80090000u; }
+static int r1553_handoff_ra(uint32_t ra) { return ra >= 0x80073BA0u && ra <= 0x80073BC0u; } /* ~0x80073BAC */
+static const char *r1553_verdict(const char **why)
+{
+    const uint32_t *L = g_r1553.lib;
+    uint32_t d0 = g_r1547_m0 - g_r1553.m0_open, d1 = g_r1547_m1 - g_r1553.m1_open;
+    if (!g_r1553.recorded) { *why = "no OPEN (era never opened)"; return "V0"; }
+    if (g_r1553.fp_nz == 0u && L[R1553_L_3538] == 0u) { *why = "stage-2 fingerprint 0 and StrLibInit never entered (stream code not resident)"; return "V0"; }
+    if (g_r1553.closed && g_r1553.close_a0 == 1u && r1553_handoff_ra(g_r1553.close_r31) && g_r1553.fe44_open[2] == 1u && L[R1553_L_5A04] > 0u) {
+        *why = "commit(1) from movie handoff, FE46=1, frames assembled"; return "PASS"; }
+    if (g_r1553.closed && (L[R1553_L_4318] || L[R1553_L_43B0]) && r1553_handoff_ra(g_r1553.close_r31)
+        && (g_r1553.close_a0 != g_r1553.fe44_open[2] || g_r1553.close_a0 == 0u)) {
+        *why = "movie finished but handoff a0 != FE46-at-OPEN (FE46 clobbered)"; return "V7"; }
+    if (L[R1553_L_5A04] > 0u && L[R1553_L_3D54] > 0u && (d1 == 0u || d0 <= 2u)) {
+        *why = "frames ready + decode entered, MDEC DMA stalled (DMA1==0 or DMA0 iqtab-only)"; return "V6"; }
+    if (L[R1553_L_5D54] > 0u && L[R1553_L_5A04] == 0u) {
+        *why = "CdInterrupt runs, no frame ever completes (framing / LBA miss)"; return "V5"; }
+    if (g_r1553.served_post1b > 0u && L[R1553_L_5900] == 0u) {
+        *why = "sectors served after ReadS, CdDataCallback never entered (CD_cbready slot)"; return "V4"; }
+    if (L[R1553_L_586C] > 0u && g_r1553.n1b > 0u && g_r1553.served_post1b == 0u && L[R1553_L_5D54] == 0u) {
+        *why = "StartCdRead2 issued ReadS, zero era serves after it, CdInterrupt never ran (drive ignores ReadS)"; return "V3"; }
+    if (L[R1553_L_586C] == 0u && g_r1553.fe44_open[0] == 0xFFu && (!g_r1553.closed || (g_r1553.close_a0 == 0u && r1553_in_movie(g_r1553.close_r31)))) {
+        *why = "FE44=FF movie debug-menu path, no StartCdRead2"; return "V1"; }
+    if (L[R1553_L_586C] == 0u && (g_r1553.err_pre586c > 0u || g_r1553.commit_out_n > 0u || g_r1553.closed)) {
+        *why = "abort before StartCdRead2 (GameHandleError or commit out of state 6)"; return "V2"; }
+    if (g_r1553.open && L[R1553_L_5A04] > 0u) { *why = "era open, frames assembling (still playing)"; return "PLAYING"; }
+    *why = "no table row matched"; return "UNCL";
+}
+static void r1553_dump(const char *kind)
+{
+    const uint32_t *L = g_r1553.lib;
+    const char *why = ""; const char *v = r1553_verdict(&why);
+    uint8_t fe44[4]; uint32_t cbr, cbs, fe04, fdf8, fe1c, k, n;
+    char ring[R1553_RING_N * 40u + 8u]; size_t o = 0;
+    long t = (long)(xl_wall() - g_boot_wall_t0);
+    memcpy(fe44, xenolift_mem + 0x4FE44u, 4);
+    cbr = r1553_g32(0x800564ACu); cbs = r1553_g32(0x800564A8u);
+    fe04 = r1553_g32(0x8004FE04u); fdf8 = r1553_g32(0x8004FDF8u); fe1c = r1553_g32(0x8004FE1Cu);
+    xenolift_receipt("[mvcam] R1553 %s t=%lds verdict=%s (%s) | lib 3538=%u 37CC=%u 41AC=%u 586C=%u 5900=%u 5D54=%u 5A04=%u 5C70=%u 3B00=%u 3D54=%u 3F7C=%u 4318=%u 43B0=%u 4534=%u 45F8=%u | 586C(a0=%08X a1=%08X a2=%08X) 4318.r31=%08X err=%u(a0=%08X r31=%08X pre586C=%u) cbready_set=%u(a0=%08X) out_commits=%u(a0=%u r31=%08X)\n",
+        kind, t, v, why, L[0], L[1], L[2], L[3], L[4], L[5], L[6], L[7], L[8], L[9], L[10], L[11], L[12], L[13], L[14],
+        g_r1553.a586c[0], g_r1553.a586c[1], g_r1553.a586c[2], g_r1553.r4318,
+        g_r1553.err_n, g_r1553.err_a0, g_r1553.err_r31, g_r1553.err_pre586c, g_r1553.cbr_n, g_r1553.cbr_a0,
+        g_r1553.commit_out_n, g_r1553.commit_out_a0, g_r1553.commit_out_r31);
+    xenolift_receipt("[mvcam] R1553 %s cd: n0E=%u mode=%02X n02=%u setloc=%u n1B=%u n06=%u n09=%u served=%u post1B=%u n1B_outside=%u | last_cmd=%02X read_active=%u pend=%u sched=%u arm_int1=%u motor=%d seek=%u stream_live=%u | CD_cbready=%08X%s CD_cbsync=%08X FE04=%08X FDF8=%u FE1C=%u FE44..47=%02X %02X %02X %02X | DMA0 +%u DMA1 +%u (tot %u/%u) later_eras=%u\n",
+        kind, g_r1553.n0e, g_r1553.last_mode, g_r1553.n02, g_r1553.last_setloc, g_r1553.n1b, g_r1553.n06, g_r1553.n09,
+        g_r1553.served, g_r1553.served_post1b, g_r1553.n1b_outside,
+        cd_last_cmd, cd_read_active, cd_pending, cd_scheduled, cd_arm_int1_pending, cd_motor_on, cd_seek_lba, cd_stream_live,
+        cbr, cbr == 0x801D5900u ? "(=CdDataCallback)" : "", cbs, fe04, fdf8, fe1c, fe44[0], fe44[1], fe44[2], fe44[3],
+        g_r1547_m0 - g_r1553.m0_open, g_r1547_m1 - g_r1553.m1_open, g_r1547_m0, g_r1547_m1, g_r1553.later_eras);
+    n = g_r1553.ring_n < R1553_RING_N ? g_r1553.ring_n : R1553_RING_N;
+    ring[0] = 0;
+    for (k = 0; k < n && o + 40u < sizeof ring; k++) {
+        const r1553_cmd_slot_t *s = &g_r1553.ring[(g_r1553.ring_n - n + k) % R1553_RING_N];
+        int w = snprintf(ring + o, sizeof ring - o, " %02X(%02X%02X%02X/%u)@%u/a%up%us%u", s->cmd, s->p0, s->p1, s->p2, s->np, s->seek, s->act, s->pend, s->sched);
+        if (w < 0) break;
+        o += (size_t)w; if (o >= sizeof ring) { o = sizeof ring - 1u; break; }
+    }
+    xenolift_receipt("[mvcam] R1553 %s ring(last %u of %u, cmd(params/n)@seek/act pend sched):%s\n", kind, n, g_r1553.ring_n, ring);
+}
+static void r1553_open(uint8_t via, uint32_t a0)
+{
+    uint32_t i, w, nz = 0;
+    if (g_r1553.recorded) { g_r1553.later_eras++; return; }
+    memset(&g_r1553.lib, 0, sizeof g_r1553.lib);
+    g_r1553.open = 1; g_r1553.recorded = 1; g_r1553.open_via = via;
+    g_r1553.t_open = g_r1553.t_prog = g_r1553.t_beat = xl_wall();
+    g_r1553.open_a0 = a0; g_r1553.open_r31 = r[31];
+    memcpy(g_r1553.fe44_open, xenolift_mem + 0x4FE44u, 4);
+    for (i = 0; i < 135168u; i += 4u) { memcpy(&w, xenolift_mem + 0x1D3000u + i, 4); if (w) nz++; }
+    g_r1553.fp_nz = nz;
+    g_r1553.fp_586c = r1553_g32(0x801D586Cu); g_r1553.fp_5d54 = r1553_g32(0x801D5D54u); g_r1553.fp_5900 = r1553_g32(0x801D5900u);
+    g_r1553.m0_open = g_r1547_m0; g_r1553.m1_open = g_r1547_m1;
+    xenolift_receipt("[mvcam] R1553 OPEN t=%lds via=%s a0=%u r31=%08X FE44..47=%02X %02X %02X %02X (type num ret fade) mounted592C0=%08X | stage2 fp nz=%u/33792 [586C]=%08X [5D54]=%08X [5900]=%08X%s | DMA0/1 tot %u/%u n1B_outside=%u\n",
+        (long)(g_r1553.t_open - g_boot_wall_t0), via == 1 ? "commit(6)" : via == 2 ? "MovieEntry737EC" : "StrLibInit3538",
+        a0, g_r1553.open_r31, g_r1553.fe44_open[0], g_r1553.fe44_open[1], g_r1553.fe44_open[2], g_r1553.fe44_open[3],
+        r1553_g32(0x800592C0u), nz, g_r1553.fp_586c, g_r1553.fp_5d54, g_r1553.fp_5900,
+        nz == 0u ? " <== V0 stream code NOT resident" : "", g_r1547_m0, g_r1547_m1, g_r1553.n1b_outside);
+}
+static void r1553_tick(void)
+{
+    time_t now = xl_wall();
+    if (g_r1553.lib[R1553_L_5D54] != g_r1553.prog_5d54 || g_r1553.served != g_r1553.prog_served) {
+        g_r1553.prog_5d54 = g_r1553.lib[R1553_L_5D54]; g_r1553.prog_served = g_r1553.served; g_r1553.t_prog = now;
+    } else if (g_r1553.stall_n < 3u
+               && ((g_r1553.lib[R1553_L_37CC] > 0u && now - g_r1553.t_prog >= 3)      /* stream started, then >=3 s silent */
+                   || (g_r1553.lib[R1553_L_37CC] == 0u && now - g_r1553.t_open >= 5 && g_r1553.stall_n == 0u))) { /* never reached StartPlayback */
+        g_r1553.stall_n++; g_r1553.t_prog = now;
+        r1553_dump(g_r1553.lib[R1553_L_37CC] ? "STALL" : "STALL(pre-StartPlayback)");
+    }
+    if (now - g_r1553.t_beat >= 10 && g_r1553.beat_n < 6u) { /* era still open: provisional verdict every 10 s (60 s runs may not see CLOSE) */
+        g_r1553.beat_n++; g_r1553.t_beat = now;
+        {
+            const char *why = ""; const char *v = r1553_verdict(&why); const uint32_t *L = g_r1553.lib;
+            xenolift_receipt("[mvcam] R1553 BEAT #%u t=%lds verdict=%s | 37CC=%u 586C=%u 5900=%u 5D54=%u 5A04=%u 3D54=%u n1B=%u served=%u post1B=%u DMA0 +%u DMA1 +%u\n",
+                g_r1553.beat_n, (long)(now - g_boot_wall_t0), v, L[R1553_L_37CC], L[R1553_L_586C], L[R1553_L_5900], L[R1553_L_5D54],
+                L[R1553_L_5A04], L[R1553_L_3D54], g_r1553.n1b, g_r1553.served, g_r1553.served_post1b,
+                g_r1547_m0 - g_r1553.m0_open, g_r1547_m1 - g_r1553.m1_open);
+        }
+    }
+}
+/* H1: called from xenolift_trace (function-entry hot path), cheap switch */
+static void r1553_trace(uint32_t a)
+{
+    static uint32_t tick;
+    int ix = -1;
+    switch (a) {
+    case 0x8001996Cu: { /* CommitGameStateTransition(a0) */
+        uint32_t a0 = r[4];
+        if (a0 == 6u) { if (!g_r1553.open) r1553_open(1, a0); }
+        else if (g_r1553.open) {
+            g_r1553.open = 0; g_r1553.closed = 1;
+            g_r1553.close_a0 = a0; g_r1553.close_r31 = r[31];
+            memcpy(g_r1553.fe44_close, xenolift_mem + 0x4FE44u, 4);
+            if (!r1553_in_movie(r[31])) { g_r1553.commit_out_n++; g_r1553.commit_out_a0 = a0; g_r1553.commit_out_r31 = r[31]; }
+            xenolift_receipt("[mvcam] R1553 CLOSE t=%lds a0=%u r31=%08X%s FE44..47 open=%02X %02X %02X %02X close=%02X %02X %02X %02X era=%lds\n",
+                (long)(xl_wall() - g_boot_wall_t0), a0, r[31], r1553_handoff_ra(r[31]) ? "(movie handoff)" : r1553_in_movie(r[31]) ? "(movie module)" : "(outside movie)",
+                g_r1553.fe44_open[0], g_r1553.fe44_open[1], g_r1553.fe44_open[2], g_r1553.fe44_open[3],
+                g_r1553.fe44_close[0], g_r1553.fe44_close[1], g_r1553.fe44_close[2], g_r1553.fe44_close[3],
+                (long)(xl_wall() - g_r1553.t_open));
+            r1553_dump("CLOSE");
+        }
+        return; }
+    case 0x800737ECu: if (!g_r1553.open && !g_r1553.recorded) r1553_open(2, r[4]); return; /* MovieModuleEntry (fallback open) */
+    case 0x80019EF8u: /* GameHandleError */
+        if (g_r1553.open) {
+            g_r1553.err_n++; g_r1553.err_a0 = r[4]; g_r1553.err_r31 = r[31];
+            if (g_r1553.lib[R1553_L_586C] == 0u) g_r1553.err_pre586c++;
+            if (g_r1553.err_n <= 4u)
+                xenolift_receipt("[mvcam] R1553 ERR #%u GameHandleError a0=%u (0x%X) r31=%08X pre586C=%u\n", g_r1553.err_n, r[4], r[4], r[31], g_r1553.err_pre586c);
+        }
+        return;
+    case 0x80040FCCu: if (g_r1553.open) { g_r1553.cbr_n++; g_r1553.cbr_a0 = r[4]; } return; /* CdReadyCallback(fn) - expect 0x801D5900 */
+    case 0x801D3538u: if (!g_r1553.open && !g_r1553.recorded) r1553_open(3, r[4]);
+        if (g_r1553.open && g_r1553.lib[R1553_L_3538] == 0u) { /* first era StrLibInit: re-take the stage-2 fingerprint */
+            uint32_t i, w, nz = 0;
+            for (i = 0; i < 135168u; i += 4u) { memcpy(&w, xenolift_mem + 0x1D3000u + i, 4); if (w) nz++; }
+            g_r1553.fp2_nz = nz; g_r1553.fp2_586c = r1553_g32(0x801D586Cu);
+            xenolift_receipt("[mvcam] R1553 FP @StrLibInit t=%lds stage2 nz=%u/33792 (OPEN had %u) [586C]=%08X [5D54]=%08X [5900]=%08X r31=%08X\n",
+                (long)(xl_wall() - g_boot_wall_t0), nz, g_r1553.fp_nz, g_r1553.fp2_586c, r1553_g32(0x801D5D54u), r1553_g32(0x801D5900u), r[31]);
+        }
+        ix = R1553_L_3538; break;
+    case 0x801D37CCu: ix = R1553_L_37CC; break;
+    case 0x801D41ACu: ix = R1553_L_41AC; break;
+    case 0x801D586Cu: ix = R1553_L_586C; if (g_r1553.open) { g_r1553.a586c[0] = r[4]; g_r1553.a586c[1] = r[5]; g_r1553.a586c[2] = r[6]; } break;
+    case 0x801D5900u: ix = R1553_L_5900; break;
+    case 0x801D5D54u: ix = R1553_L_5D54; break;
+    case 0x801D5A04u: ix = R1553_L_5A04; break;
+    case 0x801D5C70u: ix = R1553_L_5C70; break;
+    case 0x801D3B00u: ix = R1553_L_3B00; break;
+    case 0x801D3D54u: ix = R1553_L_3D54; break;
+    case 0x801D3F7Cu: ix = R1553_L_3F7C; break;
+    case 0x801D4318u: ix = R1553_L_4318; if (g_r1553.open) g_r1553.r4318 = r[31]; break;
+    case 0x801D43B0u: ix = R1553_L_43B0; break;
+    case 0x801D4534u: ix = R1553_L_4534; break;
+    case 0x801D45F8u: ix = R1553_L_45F8; break;
+    default: break;
+    }
+    if (!g_r1553.open) return;
+    if (ix >= 0) g_r1553.lib[ix]++;
+    if ((++tick & 0xFFFFu) == 0u) r1553_tick(); /* spin-reached cadence (on_alarm is not, C97) */
+}
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
@@ -17077,6 +17325,7 @@ void xenolift_trace(uint32_t a)
             if (g_n++ < 8u) xenolift_receipt("[r1534] FieldLoadNewBundle(%08X,%u): cached kind=%08X but buffer 0x8005A4E0 is NULL - reset to 'none' (-1), no HeapFree(NULL)\n", r[4], r[5], kind);
         }
     }
+    r1553_trace(a); /* R1553 [mvcam] camera only (H1) */
     switch (a) { /* R1500 [chaincam] */
     case 0x8001996Cu: r1501_hit(15); g_ch_commit++;   break; /* CommitGameStateTransition */
     case 0x80019ACCu: r1501_hit(16); g_ch_loop++; g_r1517_inloop = 1; break; /* RunResidentGameLoop (+R1517 latch) */
