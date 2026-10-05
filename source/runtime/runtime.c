@@ -1845,6 +1845,51 @@ int cd_motor_on = 1; /* R212: spindle state — Stop (0x08) turns it OFF;
  * FDF8 write (guest vs runtime). Arms in the main-loop era when the drive first
  * aims into file 15's range. Receipt-only, capped at 1500 lines. */
 static int g_r1517_inloop; /* tentative - defined with the R1517 latch below */
+/* R1550: main-loop era - no h4 fallback site may force ArchiveCurrentFileReadyCallback
+ * (0x8002B084). The game registers it only for plain file reads (0x80029AA0). The field
+ * stream uses 0x8002B5D0 over a slot ring; when the ring is full that callback unregisters
+ * itself and parks itself in the read struct (0x80059F08) for the game's own resume.
+ * R1549q: R1380's post-conversion collector forced the porter on the resumed stream read,
+ * which copied 197218.. linearly 0x801F0C30 -> 0x801F4430 over the task list; the task runner
+ * 0x8001C964 then walked node 0x164 and faulted (3/3 runs that reached it). Boot unchanged. */
+/* R1552 (JOSH-DIAG) [taskcam]: the field faults in the task runner 0x8001C964 walking node 0x164
+ * (4/4 runs that reach t~12s, with and without the R1550 overrun fix). Every walk of the two task
+ * lists (heads gp+0x41C / gp+0x424, next at +0x18, callback at +0x08) records the node set; the
+ * write hook names any non-pointer store into a node's next field or the cursor gp+0x420, and the
+ * CD / OTC DMA paths name any DMA covering a node. Camera only. */
+static uint32_t r1552_node[64], r1552_nn, r1552_lo = 0xFFFFFFFFu, r1552_hi;
+static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
+{
+    static uint32_t c;
+    uint32_t lo = madr & 0x1FFFFCu, hi = lo + n, k;
+    if (!r1552_nn || hi <= r1552_lo || lo > r1552_hi + 0x20u) return;
+    for (k = 0; k < r1552_nn; k++) {
+        uint32_t nd = r1552_node[k] & 0x1FFFFCu;
+        if (nd + 0x20u > lo && nd < hi) {
+            if (c++ < 24u)
+                xenolift_receipt("[taskcam] R1552 %s DMA %08X+%u covers task node %08X (#%u of %u)\n", who, madr, n, r1552_node[k], k, r1552_nn);
+            return;
+        }
+    }
+}
+static uint32_t r1550_h4_fallback(const char *site)
+{
+    static uint32_t n;
+    uint32_t fe08 = *(uint32_t *)(xenolift_mem + 0x4FE08u), fe2c = *(uint32_t *)(xenolift_mem + 0x4FE2Cu);
+    uint32_t fe40 = *(uint32_t *)(xenolift_mem + 0x4FE40u), fdf8 = *(uint32_t *)(xenolift_mem + 0x4FDF8u);
+    /* R1550b: refuse only while a ring stream is live. The stream-open code (0x8002977C/0x8002989C)
+     * sets FE08 = ring base = FE2C + FE40*8 + 32 and the stream callback never advances FE08; a plain
+     * file read moves FE08 along its destination. R1550q: refusing a completed file-18 read
+     * (FDF8=0, FE08=80070AF8) in the movie era cost the menu/field reach - that path keeps the porter. */
+    int ring_live = (fe40 > 0u && fe40 < 64u && fe2c >= 0x80000000u && fe08 == fe2c + fe40 * 8u + 32u
+                     && (int32_t)fdf8 > 0);
+    if (!g_r1517_inloop || !ring_live) return 0x8002B084u;
+    if (n++ < 24u)
+        xenolift_receipt("[r1550] %s: no registered ready callback in the main loop - NOT forcing 0x8002B084 (FE04=%u FE08=%08X FDF8=%u rs+10=%08X)\n",
+                         site, *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FE08u),
+                         *(uint32_t *)(xenolift_mem + 0x4FDF8u), *(uint32_t *)(xenolift_mem + 0x59F08u));
+    return 0u;
+}
 static void r1530_top_sentinel(const char *who); /* R1530 fwd */
 static int g_f15_on; static uint32_t g_f15_n, g_f15_t0;
 static void r1520_ev(const char *ev, uint32_t a1, uint32_t a2, uint32_t a3, const char *why)
@@ -6161,7 +6206,7 @@ static int io_special_write(uint32_t p, uint32_t v)
         static uint32_t otc_n;
         uint32_t madr = io_raw_read32(0x1F8010E0u) & 0x00FFFFFCu;
         uint32_t cnt = io_raw_read32(0x1F8010E4u) & 0xFFFFu, i;
-        if (cnt == 0u) cnt = 0x10000u;
+        if (cnt == 0u) cnt = 0x10000u; r1552_dma_check("OTC", madr - 4u * (cnt - 1u), 4u * cnt); /* R1552 */
         for (i = 0; i < cnt; i++) {
             uint32_t addr = (madr - 4u * i) & 0x001FFFFCu;
             uint32_t val = (i == cnt - 1u) ? 0x00FFFFFFu : ((madr - 4u * (i + 1u)) & 0x00FFFFFFu);
@@ -6565,6 +6610,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                         v, n, bytes, madr, cd_seek_lba, cd_data_pos, cd_data_n,
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
+                    r1552_dma_check("CD", madr, n); /* R1552 */
                 /* R508 CB-DMA camera: c74 verdict — the on-change watcher saw
                  * ZERO guest writes to the callback cell 0x80059F08 all run,
                  * yet cbheal kept finding it empty again. Only DMA blasts memory
@@ -10082,15 +10128,15 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                     uint32_t h4 = xenolift_mem_read32(0x800564ACu);
                     uint32_t save4 = r[4], save5 = r[5];
                     if (h4 < 0x80010000u || h4 >= 0x80060000u) {
-                        h4 = 0x8002B084u; /* R168: known h4 fallback */
-                        r861_out("[cd] spin-drain: h4 cell blank — using known 0x8002B084\n");
+                        h4 = r1550_h4_fallback("spin-drain"); /* R168 known h4 fallback; R1550 none in the main loop */
+                        r861_out("[cd] spin-drain: h4 cell blank — fallback 0x%08X\n", h4);
                     }
                     r[4] = xenolift_mem[0x56789];
                     r[5] = 0x8005A218u;
                     r861_out("[cd] spin-drain: mid-stream stall (LBA %u, FDF8 %u, fifo %u/%u) — dispatching h4 0x%08X\n",
                             cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                             cd_data_pos, cd_data_n, h4);
-                    if (!r1179_forge_blocked("spin-L5476")) { g_guest_depth++, xenolift_dispatch(h4), g_guest_depth--; }
+                    if (h4 != 0u && !r1179_forge_blocked("spin-L5476")) { g_guest_depth++, xenolift_dispatch(h4), g_guest_depth--; }
                     r[4] = save4; r[5] = save5; /* restore h2's args */
                 }
                 r861_out("[cd] spin-kick: dispatch h2 0x%08X (a0=%u)\n", h2, r[4]);
@@ -10457,15 +10503,15 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                     uint32_t h4 = xenolift_mem_read32(0x800564ACu);
                     uint32_t save4 = r[4], save5 = r[5];
                     if (h4 < 0x80010000u || h4 >= 0x80060000u) {
-                        h4 = 0x8002B084u; /* R168: known h4 fallback */
-                        r861_out("[cd] spin-drain: h4 cell blank — using known 0x8002B084\n");
+                        h4 = r1550_h4_fallback("spin-drain"); /* R168 known h4 fallback; R1550 none in the main loop */
+                        r861_out("[cd] spin-drain: h4 cell blank — fallback 0x%08X\n", h4);
                     }
                     r[4] = xenolift_mem[0x56789];
                     r[5] = 0x8005A218u;
                     r861_out("[cd] spin-drain: mid-stream stall (LBA %u, FDF8 %u, fifo %u/%u) — dispatching h4 0x%08X\n",
                             cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
                             cd_data_pos, cd_data_n, h4);
-                    if (!r1179_forge_blocked("spin-L5769")) { g_guest_depth++, xenolift_dispatch(h4), g_guest_depth--; }
+                    if (h4 != 0u && !r1179_forge_blocked("spin-L5769")) { g_guest_depth++, xenolift_dispatch(h4), g_guest_depth--; }
                     r[4] = save4; r[5] = save5; /* restore h2's args */
                 }
                 r861_out("[cd] spin-kick: dispatch h2 0x%08X (a0=%u)\n", h2, r[4]);
@@ -11771,6 +11817,26 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
         static uint32_t bt_n;
         if (bt_n++ < 24u) xenolift_receipt("[bundletrip] R1534 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X\n",
             w * 8u, a, v, *(uint32_t *)(xenolift_mem + ((a & 0x1FFFFFu) & ~3u)), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31]);
+        return;
+    }
+    if (r1552_nn && v != 0u && (w < 4u || v < 0x80000000u || v >= 0x80200000u)) { /* R1552 [taskcam] */
+        uint32_t pa = (a & 0x1FFFFFu) & ~3u, k, hit = 0xFFFFFFFFu;
+        if (pa == 0x5958Cu || pa == 0x59590u || pa == 0x59594u) hit = 0xFFFFFFFEu;
+        else if (pa >= r1552_lo && pa <= r1552_hi + 0x20u)
+            for (k = 0; k < r1552_nn; k++) if (pa == (r1552_node[k] & 0x1FFFFCu) + 0x18u) { hit = k; break; }
+        if (hit != 0xFFFFFFFFu) {
+            static uint32_t tw_n;
+            if (tw_n++ < 24u)
+                xenolift_receipt("[taskcam] R1552 write%u ea=%08X v=%08X %s%u sw_active=%d sw_line=%u cur_fn=%08X ra=%08X a0=%08X\n",
+                    w * 8u, a, v, hit == 0xFFFFFFFEu ? "list-cell " : "node#", hit == 0xFFFFFFFEu ? 0u : hit,
+                    xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31], r[4]);
+        }
+    }
+    if ((((a & 0x1FFFFFu) & ~3u) == 0x59F08u) && g_r1517_inloop) { /* R1550 [rscbtrip] */
+        static uint32_t rs_n;
+        if (rs_n++ < 40u) xenolift_receipt("[rscbtrip] R1550 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X h4=%08X FE04=%u FDF8=%u\n",
+            w * 8u, a, v, *(uint32_t *)(xenolift_mem + 0x59F08u), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31],
+            *(uint32_t *)(xenolift_mem + 0x564ACu), *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FDF8u));
         return;
     }
     if (((a & 0x1FFFFFu) & ~3u) != 0x6FAF0u) return;
@@ -14904,7 +14970,7 @@ cd_seek_lba, xenolift_mem_read32(0x8004FDF8u),
          * sector into the destination, advances remaining-byte state). Re-arm
          * the slot only-when-zero, same discipline as the pad/latch heals. */
         static uint32_t cbheal_n;
-        if (fld3_era && cd_scheduled
+        if (fld3_era && cd_scheduled && !g_r1517_inloop /* R1550 */
             && xenolift_mem_read32(0x80059F08u) == 0u
             && cbheal_n < 400u) {
             cbheal_n++;
@@ -16972,6 +17038,35 @@ void xenolift_trace(uint32_t a)
             xenolift_receipt("[sprpkt] R1540 ALLOC sprite=%08X count=%u flags=%u (x24=%u) prev[32]=%08X prev[44]=%08X ra=%08X\n", sp, r[5], r[6], r[5] * 24u, p32, p44, r[31]);
         if (a == 0x800230A8u && (n2++ < 40u || p44 == 0u))
             xenolift_receipt("[sprpkt] R1540 DESTROY sprite=%08X [32]=%08X [44]=%08X ra=%08X%s\n", sp, p32, p44, r[31], p44 ? "" : "  <== NULL packets");
+    }
+    if (a == 0x8001C964u || a == 0x8001C9F8u) { /* R1552 [taskcam]: map both task lists, flag a bad link */
+        static const uint32_t heads[2] = { 0x5958Cu, 0x59594u };
+        static uint32_t bad_n, map_n;
+        uint32_t h, node, nn = 0, lo = 0xFFFFFFFFu, hi = 0;
+        for (h = 0; h < 2u; h++) {
+            uint32_t prev = 0x80000000u | heads[h], steps = 0;
+            memcpy(&node, xenolift_mem + heads[h], 4);
+            while (node != 0u && steps++ < 256u) {
+                if ((node & 3u) || node < 0x80000000u || node >= 0x80200000u) {
+                    if (bad_n++ < 8u) {
+                        uint32_t pw[8], pp = prev & 0x1FFFFCu; memcpy(pw, xenolift_mem + pp, 32);
+                        xenolift_receipt("[taskcam] R1552 BAD LINK list%u step %u: %08X -> %08X | prev words %08X %08X %08X %08X %08X %08X %08X %08X | walker=%08X ra=%08X\n",
+                            h, steps, prev, node, pw[0], pw[1], pw[2], pw[3], pw[4], pw[5], pw[6], pw[7], a, r[31]);
+                    }
+                    break;
+                }
+                if (nn < 64u) {
+                    uint32_t pn = node & 0x1FFFFCu;
+                    r1552_node[nn++] = node; if (pn < lo) lo = pn; if (pn > hi) hi = pn;
+                }
+                prev = node; memcpy(&node, xenolift_mem + (node & 0x1FFFFCu) + 0x18u, 4);
+            }
+        }
+        r1552_nn = nn; r1552_lo = lo; r1552_hi = hi;
+        if (nn && map_n < 3u) { map_n++;
+            xenolift_receipt("[taskcam] R1552 map #%u: %u nodes, %08X..%08X, first %08X %08X %08X %08X (walker=%08X ra=%08X)\n",
+                map_n, nn, 0x80000000u | lo, 0x80000000u | hi, r1552_node[0], nn > 1 ? r1552_node[1] : 0u, nn > 2 ? r1552_node[2] : 0u, nn > 3 ? r1552_node[3] : 0u, a, r[31]);
+        }
     }
     if (a == 0x8001B484u) { /* R1534: FieldLoadNewBundle with a "previous bundle" but no buffer -> nothing to free */
         uint32_t kind, buf; memcpy(&kind, xenolift_mem + 0x4F334u, 4); memcpy(&buf, xenolift_mem + 0x5A4E0u, 4);
@@ -20855,7 +20950,7 @@ int prod = xenolift_lzss_hle(r[4], r[5], w0);
             /* R793: count + gate BEFORE the truncating fopen (c376 churn) */
             for (uint32_t _g = 0; _g < _sz; _g += 4u)
                 if (xenolift_mem_read32(_base + _g)) _nn++;
-            FILE *_fo = xenolift_fault_gate((long)_nn, "fldcap R686")
+            FILE *_fo = (getenv("XENOLIFT_STAGE2_CAPTURE") && xenolift_fault_gate((long)_nn, "fldcap R686")) /* R1551b: emit inputs never change mid-run unless opted in */
                       ? fopen("overlay_fault.bin", "wb") : NULL;
             unsigned char *_buf = (unsigned char*)malloc(_sz);
             if (_buf && _fo) {
@@ -27023,7 +27118,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                         uint32_t h4 = *(uint32_t *)(xenolift_mem + 0x564AC);
                         if (!(h4 >= 0x80010000u && h4 < 0x80060000u)) {
                             uint32_t rs_h4 = xenolift_mem_read32(0x80059EF8u + 0x10u);
-                            h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : 0x8002B084u;
+                            h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : r1550_h4_fallback("R1380-postconv");
                         }
                         if (h4 != 0u) {
                             r[4] = xenolift_mem[0x56789]; r[5] = 0x8005A218u;
@@ -28802,7 +28897,9 @@ void xenolift_unknown(uint32_t word)
             memcpy(xenolift_mem + (0x8004FE04u & 0x1FFFFFFFu), &zero, 4);
         }
         { /* dump 0x801D3000-0x801F4000 for the emitter */
-            FILE *sf = fopen("stage2_region.bin", "wb");
+            /* R1551b: opt-in only (XENOLIFT_STAGE2_CAPTURE=1). This dump rewrote the emitter's input
+             * mid-run (R1551q t~15s), so the next build compiled a different movie player. */
+            FILE *sf = getenv("XENOLIFT_STAGE2_CAPTURE") ? fopen("stage2_region.bin", "wb") : NULL;
             if (sf) {
                 fwrite(xenolift_mem + (base - 0x80000000u), 1, 0x21000u, sf);
                 fclose(sf);
@@ -29208,7 +29305,7 @@ void xenolift_unknown(uint32_t word)
             { long _nnz = 0;   /* R793: gate before the truncating fopen (c376 churn) */
               for (uint32_t _g = 0; _g < 0x21000u; _g += 4u)
                   if (xenolift_mem_read32(0x8006F000u + _g)) _nnz++;
-              if (xenolift_fault_gate(_nnz, "ovlfault R681")) {
+              if (getenv("XENOLIFT_STAGE2_CAPTURE") && xenolift_fault_gate(_nnz, "ovlfault R681")) { /* R1551b */
             FILE *of = fopen("overlay_fault.bin", "wb");
             if (of) {
                 fwrite(xenolift_mem + (0x8006F000u - 0x80000000u), 1, 0x21000u, of);
@@ -31466,7 +31563,7 @@ static void cd_force_deliver_int1(const char *why)
                     h4 = 0u;
                 } else if (!(h4 >= 0x80010000u && h4 < 0x80060000u)) {
                     uint32_t rs_h4 = xenolift_mem_read32(0x80059EF8u + 0x10u);
-                    h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : 0x8002B084u;
+                    h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : r1550_h4_fallback("collector-R206");
                 }
                 if (h4 != 0u) { /* R1182: R1181 zeroed h4 but this site dispatched unconditionally -> dispatch(0) x12 in c373 */
                     r[4] = xenolift_mem[0x56789]; r[5] = 0x8005A218u;

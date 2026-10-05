@@ -1743,7 +1743,12 @@ echo "=HEAPFIX="; grep "\[heapfix\]" run.log.d | head -16  # R441/R443 ledger fi
 echo "=DMASHIELD="; grep "\[dmashield\]" run.log.d | head -24  # R442: record-page shield verdicts - expect clips ONLY on the staging-top overshoot sectors; [frclash] may still log (it fires on the same intersect) but [recdump] must stay healthy at fault time  # R441: double-book fix verdicts - expect ONE redirect on cycle 1; then [frclash] must go silent and [recdump] must stay healthy at fault time
 echo "=FLDSEC="; grep "\[fldsec\]" run.log.d | head -80  # R445: per-sector delivery clock - the pump-tuning data
 # R704: promote the field-era stage-2 capture for the next fresh emit (capture-compile)
-if [ -f stage2_field.bin ] && [ $(stat -f%z stage2_field.bin 2>/dev/null || stat -c%s stage2_field.bin) -ge 135168 ]; then
+# R1551: OFF by default (STAGE2_PROMOTE=1 re-enables). Once the field ran, R1549q's run promoted
+# the complete movie player (23185 nz words) over the partial image every recent build used
+# (10707), so the next build compiled a different 0x801D3000 module and the game sat in the
+# movie state instead of skipping to menu/field. A test run must never silently change the
+# next build's code; movie playback gets its own deliberate change.
+if [ "${STAGE2_PROMOTE:-0}" = "1" ] && [ -f stage2_field.bin ] && [ $(stat -f%z stage2_field.bin 2>/dev/null || stat -c%s stage2_field.bin) -ge 135168 ]; then
   NZ=$(xxd -p stage2_field.bin 2>/dev/null | tr -d '0a\n' | tr -d '0' | wc -c)
   if [ "$NZ" -gt 4000 ]; then
     if [ ! -f stage2_region.bin ]; then
