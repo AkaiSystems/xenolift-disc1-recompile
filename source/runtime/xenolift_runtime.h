@@ -82,8 +82,11 @@ static inline uint32_t LWR(uint32_t a, uint32_t v)
 }
 static inline void SWL(uint32_t a, uint32_t v)
 {
+    /* R1522: SWL keeps memory's HIGH bytes (psx-spx LE: o=0 -> (W & FFFFFF00) | (v >> 24)).
+     * The mask was copied from LWL (which keeps the REGISTER's low bytes) and used >>,
+     * clearing the wrong bytes on every unaligned store (111 SWL sites in disc1.c). */
     uint32_t o = a & 3u, W = xenolift_mem_read32(a & ~3u);
-    uint32_t keep = (o == 3u) ? 0u : (0xFFFFFFFFu >> ((o + 1u) * 8));
+    uint32_t keep = (o == 3u) ? 0u : (0xFFFFFFFFu << ((o + 1u) * 8));
     W = (W & keep) | (v >> ((3u - o) * 8));
     xenolift_mem_write32(a & ~3u, W);
 }

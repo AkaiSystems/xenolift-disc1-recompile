@@ -1876,7 +1876,7 @@ static void r1520_ev(const char *ev, uint32_t a1, uint32_t a2, uint32_t a3, cons
 static int g_r1521_guest_done; static uint32_t g_r1521_declined;
 static void r1520_arm_check(uint32_t lba)
 {
-    if (!g_f15_on && g_r1517_inloop && lba >= 108995u && lba < 109041u) {
+    if (!g_f15_on && g_r1517_inloop && lba >= 108933u && lba < 109041u) { /* R1525: widened to file#14 (108933..) */
         g_f15_on = 1;
         xenolift_receipt("[f15] R1520 ARMED (drive aimed at LBA %u, inside file#15 108995..109040)\n", lba);
     }
@@ -6327,6 +6327,28 @@ static int io_special_write(uint32_t p, uint32_t v)
              * for the current request) or exhausted (pos == n). Mid-
              * pair (header drained, seek already anchored) is left
              * untouched so the data phase continues the same sector. */
+            { /* R1526 (JOSH-DIAG): NO EARLY SECTOR INTO AN OLD SLOT. R1520/R1525 [f15] receipts
+               * (file#14 read, 2 runs): a 2048-byte data DMA to the SAME destination as the last
+               * completed data DMA, with the FIFO already exhausted, ran from the drive handler h2
+               * (fn 8002AC18). The guest had already moved FE04 to the next LBA, so R106 below
+               * re-anchored and loaded that sector BEFORE the drive delivered it, writing it over the
+               * previous sector's slot (LBA 108949 -> 801E4E80, 108954 -> 801E7680). The compressed
+               * field module then decoded wrong from ~56 KB on, and the interpreter stopped on garbage
+               * at 0x80085898. Hardware never fetches the next sector early; a repeat DMA from an
+               * empty FIFO must not write. Serve 0 bytes and keep memory as it is. */
+                static uint32_t r1526_last_madr, r1526_n;
+                uint32_t r1526_madr = io_raw_read32(0x1F8010B0u);
+                if (bytes == 2048u && cd_data_loaded && cd_data_pos >= cd_data_n && cd_data_n != 0u
+                    && r1526_madr == r1526_last_madr) {
+                    if (r1526_n++ < 24u)
+                        xenolift_receipt("[r1526] repeat data DMA -> %08X from an exhausted FIFO DECLINED (seek=%u FE04=%u cur_fn=%08X) - no early sector into the old slot\n",
+                                         r1526_madr, cd_seek_lba, xenolift_mem_read32(0x8004FE04u), (unsigned)xenolift_cur_fn);
+                    io_raw_write32(0x1F8010B0u, r1526_madr);
+                    io_raw_write32(0x1F8010B8u, 0x00000000u); /* done, nothing transferred */
+                    return 1;
+                }
+                if (bytes == 2048u) r1526_last_madr = r1526_madr;
+            }
             {
                 uint32_t want = xenolift_mem_read32(0x8004FE04u);
                 /* R107 mid-pair guard: 0 < pos < n means the header
@@ -6473,7 +6495,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                     r861_out("[cd-dma] CHCR=%08X %u/%u bytes -> 0x%08X (LBA %u, fifo %u/%u, FDF8=%u)\n",
                         v, n, bytes, madr, cd_seek_lba, cd_data_pos, cd_data_n,
                         xenolift_mem_read32(0x8004FDF8u));
-                    r1520_ev("DMA", madr, n, cd_seek_lba, NULL); /* R1520 */
+                    r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                 /* R508 CB-DMA camera: c74 verdict — the on-change watcher saw
                  * ZERO guest writes to the callback cell 0x80059F08 all run,
                  * yet cbheal kept finding it empty again. Only DMA blasts memory
@@ -20281,13 +20303,18 @@ r491_carry_done: ;
         static int r1325_n;
         uint32_t h0_ = xenolift_mem_read32(0x800C4A6Cu);
         uint32_t h1_ = xenolift_mem_read32(0x800C4A70u);
-        int valid_ = (h1_ == 0x84000000u && h0_ >= 0x800C4270u && h0_ <= 0x800CC270u);
+        int valid_ = (h1_ == 0x84000000u && ((h0_ >= 0x800C4270u && h0_ <= 0x800CC270u) || h0_ == 0x801FC000u)); /* R1524b: a top-chained head is valid */
         if (!valid_) {
+            /* R1524 (JOSH-DIAG): chain the seed to the TRUE heap top, the R1318 state-6 fix applied to
+             * state 1. R1325 seeded a terminator 32 KB in (0x800CC268, flags 0x80200000), so the field-era
+             * heap was 0x800C4270..0x800CC270 only. R1523 [callout] receipts: FieldMain's 17th native call
+             * HeapAlloc(0x14000 = 81920) walks to that fake terminator, fails, AbortOnGameFault(130) ->
+             * the error dispatcher -> state 0 KernelMenuMain, where the game sits polling the pad. The game's
+             * own HeapRelocate links the new head to the existing chain, which ends at the real top
+             * sentinel 0x801FBFF8 (data 0x801FC000). No fake terminator is written any more. */
             memset(xenolift_mem + 0xC4270u, 0, 0x8000u);
-            xenolift_mem_write32(0x800C4A6Cu, 0x800CC270u);
+            xenolift_mem_write32(0x800C4A6Cu, 0x801FC000u);
             xenolift_mem_write32(0x800C4A70u, 0x84000000u);
-            xenolift_mem_write32(0x800CC268u, 0x800CC270u);
-            xenolift_mem_write32(0x800CC26Cu, 0x80200000u);
             if (r1325_n < 8) { r1325_n++;
                 r861_out("[arenaseed] R1325 dispatcher arena RESEEDED at walk entry: pre head={%08X %08X} -> head={next=%08X flags=%08X} terminator={next=%08X flags=%08X} (#%d)\n",
                         h0_, h1_, xenolift_mem_read32(0x800C4A6Cu), xenolift_mem_read32(0x800C4A70u),
@@ -25399,10 +25426,12 @@ if (pad809_presses < 300 &&
                 uint32_t pre1b = xenolift_mem_read32(0x800C4274u);
                 memset(xenolift_mem + 0xC4270u, 0, 0x8000u);
                 r861_out("[heapzero1] R1321 state-1 heap region 0x800C4270..0x800CC270 ZEROED before the install walk (pre w0=%08X w1=%08X, 32768 bytes)\n", pre1a, pre1b);
-                xenolift_mem_write32(0x800C4A6Cu, 0x800CC270u);
+                /* R1524b (JOSH-DIAG): R1321's seed gets the same fix as R1325 (R1524): the head chains to the
+                 * TRUE heap top 0x801FC000 and no fake terminator is planted at 0x800CC268. With the fake one,
+                 * FieldMain's HeapAlloc(0x14000) walked into it, failed, and AbortOnGameFault(130) sent the
+                 * game to the KernelMenu (R1526q: R1325 silent because it judged this seed valid). */
+                xenolift_mem_write32(0x800C4A6Cu, 0x801FC000u);
                 xenolift_mem_write32(0x800C4A70u, 0x84000000u);
-                xenolift_mem_write32(0x800CC268u, 0x800CC270u);
-                xenolift_mem_write32(0x800CC26Cu, 0x80200000u);
                 r861_out("[heapseed1] R1321 state-1 heap SEEDED with the same semantics: head@800C4A6C={next=%08X flags=%08X} terminator@800CC268={next=%08X flags=%08X} head cell 59320=%08X\n",
                         xenolift_mem_read32(0x800C4A6Cu), xenolift_mem_read32(0x800C4A70u),
                         xenolift_mem_read32(0x800CC268u), xenolift_mem_read32(0x800CC26Cu),
@@ -31885,6 +31914,28 @@ int r1394_dispatch_guard(unsigned int t)
 /* R1394: the bounded MIPS interpreter (v1). Returns 0 = ok (the fn
  * completed and control was dispatched onward); 2 = budget exhausted;
  * 3 = unsupported opcode; never silent. */
+/* R1523 (JOSH-DIAG) [interpc]: WHERE IS THE INTERPRETED FIELD LOOPING? After
+ * R1519/R1521 the game reaches field state 1, the coordinator 0x80077E88 runs
+ * under R1394, the CD goes idle - but the game never submits a drawing list
+ * (dma2_sends frozen at 5) and the hot native fns are the controller readers.
+ * Sample the interpreter pc every 2^20 steps and keep a ring of the last 16
+ * call-out targets (native fns the module calls); receipt both every 2^23 steps. */
+static uint64_t g_r1523_steps; static uint32_t g_r1523_pcs[8], g_r1523_pi, g_r1523_co[16], g_r1523_ci, g_r1523_n;
+static void r1523_tick(uint32_t pc, uint32_t entry)
+{
+    g_r1523_steps++;
+    if ((g_r1523_steps & 0xFFFFFu) == 0u) g_r1523_pcs[g_r1523_pi++ & 7u] = pc;
+    if ((g_r1523_steps & 0x7FFFFFu) == 0u && g_r1523_n < 120u) {
+        unsigned i; char b[400]; int o = 0;
+        for (i = 0; i < 16u; i++) o += snprintf(b + o, sizeof b - o, " %08X", g_r1523_co[(g_r1523_ci + i) & 15u]);
+        g_r1523_n++;
+        xenolift_receipt("[interpc] R1523 #%u steps=%lluM entry=%08X pcs %08X %08X %08X %08X %08X %08X %08X %08X | callouts(old->new):%s | dma2=%u t=%lds\n",
+            g_r1523_n, (unsigned long long)(g_r1523_steps >> 20), entry,
+            g_r1523_pcs[g_r1523_pi & 7u], g_r1523_pcs[(g_r1523_pi + 1u) & 7u], g_r1523_pcs[(g_r1523_pi + 2u) & 7u], g_r1523_pcs[(g_r1523_pi + 3u) & 7u],
+            g_r1523_pcs[(g_r1523_pi + 4u) & 7u], g_r1523_pcs[(g_r1523_pi + 5u) & 7u], g_r1523_pcs[(g_r1523_pi + 6u) & 7u], g_r1523_pcs[(g_r1523_pi + 7u) & 7u],
+            b, 0u, (long)(xl_wall() - g_boot_wall_t0));
+    }
+}
 static int r1394_interp(uint32_t entry)
 {
     uint32_t pc = entry, npc = entry + 4;
@@ -31914,8 +31965,14 @@ static int r1394_interp(uint32_t entry)
         int32_t imm;
         if (pc < 0x8006F000u || pc >= 0x80090000u) {
             /* control has left the module window */
-            if (act == 1) { xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--; return 0; }
+            if (act == 1) { { static uint32_t xo_n; if (xo_n < 60u) { xo_n++; xenolift_receipt("[callout] R1523 EXIT-OUT #%u jr/j to %08X (entry=%08X ra=%08X sp=%08X)\n", xo_n, pc, entry, r[31], r[29]); } }
+                xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--; return 0; }
             if (act == 2) {
+                g_r1523_co[g_r1523_ci++ & 15u] = pc; /* R1523 */
+                { static uint32_t co_n; struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+                  if (co_n < 300u) { co_n++; /* R1523b: every call-out in order - the last one before silence never returned */
+                    xenolift_receipt("[callout] R1523 #%u -> %08X from %08X a0=%08X a1=%08X a2=%08X a3=%08X sp=%08X entry=%08X t=%ld.%03lds\n",
+                        co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--;
                 pc = act_ret; npc = act_ret + 4; act = 0;
                 continue;
@@ -31934,17 +31991,21 @@ static int r1394_interp(uint32_t entry)
             if (r680j_live < 16u) { r680j_live++; r861_out("[ovljump] R680J flow %08X -> %08X\n", (unsigned)r680j_prev_pc, (unsigned)pc); }
         } else { r680j_seq++; }
         r680j_prev = npc; r680j_prev_pc = pc;
+        r1523_tick(pc, entry); /* R1523 */
         w = xenolift_mem_read32(pc);
         op = w >> 26; rs = (w >> 21) & 31; rt = (w >> 16) & 31;
         rd = (w >> 11) & 31; sa = (w >> 6) & 31; fn_ = w & 63;
         immu = w & 0xFFFFu; imm = (int16_t)immu;
         if (op == 0x00u) { /* SPECIAL */
-            if (fn_ == 0x00u) { r[rd] = r[rs] << sa; }
-            else if (fn_ == 0x02u) { r[rd] = r[rs] >> sa; }
-            else if (fn_ == 0x03u) { r[rd] = (uint32_t)((int32_t)r[rs] >> sa); }
-            else if (fn_ == 0x04u) { r[rd] = r[rs] << (r[rt] & 31); }
-            else if (fn_ == 0x06u) { r[rd] = r[rs] >> (r[rt] & 31); }
-            else if (fn_ == 0x07u) { r[rd] = (uint32_t)((int32_t)r[rs] >> (r[rt] & 31)); }
+            /* R1522: shifts take the SOURCE from rt (sll rd,rt,sa / sllv rd,rt,rs). The old arms read
+             * r[rs] - always $zero for sll/srl/sra - so every constant shift in interpreted module
+             * code returned 0, and the variable shifts had their operands swapped. */
+            if (fn_ == 0x00u) { r[rd] = r[rt] << sa; }
+            else if (fn_ == 0x02u) { r[rd] = r[rt] >> sa; }
+            else if (fn_ == 0x03u) { r[rd] = (uint32_t)((int32_t)r[rt] >> sa); }
+            else if (fn_ == 0x04u) { r[rd] = r[rt] << (r[rs] & 31); }
+            else if (fn_ == 0x06u) { r[rd] = r[rt] >> (r[rs] & 31); }
+            else if (fn_ == 0x07u) { r[rd] = (uint32_t)((int32_t)r[rt] >> (r[rs] & 31)); }
             else if (fn_ == 0x08u) { /* jr */
                 tgt = r[rs];
                 act = (tgt < 0x8006F000u || tgt >= 0x80090000u) ? 1 : 0;
@@ -32020,35 +32081,19 @@ static int r1394_interp(uint32_t entry)
         else if (op == 0x0Fu) { r[rt] = immu << 16; }
         else if (op == 0x20u) { uint32_t v = xenolift_mem_read8(r[rs] + (uint32_t)imm); r[rt] = (uint32_t)(int32_t)(int8_t)v; }
         else if (op == 0x21u) { uint32_t v = xenolift_mem_read16(r[rs] + (uint32_t)imm); r[rt] = (uint32_t)(int32_t)(int16_t)v; }
-        else if (op == 0x22u) { /* LWL */
-            uint32_t a = r[rs] + (uint32_t)imm, old = xenolift_mem_read32(a & ~3u), sh = (a & 3u) * 8u;
-            uint32_t m = (a & 3u) == 0u ? 0xFFFFFFFFu : (0xFFFFFFFFu >> sh);
-            r[rt] = (r[rt] & ~m) | ((old << sh) & m);
-        }
+        else if (op == 0x22u) { r[rt] = LWL(r[rs] + (uint32_t)imm, r[rt]); } /* R1522: shared LE helper (the inline formula was not LE LWL) */
         else if (op == 0x23u) { r[rt] = xenolift_mem_read32(r[rs] + (uint32_t)imm); }
         else if (op == 0x24u) { r[rt] = xenolift_mem_read8(r[rs] + (uint32_t)imm); }
         else if (op == 0x25u) { r[rt] = xenolift_mem_read16(r[rs] + (uint32_t)imm); }
-        else if (op == 0x26u) { /* LWR */
-            uint32_t a = r[rs] + (uint32_t)imm, old = xenolift_mem_read32(a & ~3u), sh = (3u - (a & 3u)) * 8u;
-            uint32_t m = (a & 3u) == 3u ? 0xFFFFFFFFu : (0xFFFFFFFFu << sh);
-            r[rt] = (r[rt] & ~m) | ((old >> sh) & m);
-        }
+        else if (op == 0x26u) { r[rt] = LWR(r[rs] + (uint32_t)imm, r[rt]); } /* R1522 */
         else if (op == 0x28u) { { static uint32_t r1431_n; uint32_t r1431_ea = r[rs] + (uint32_t)imm; uint8_t r1431_nv = (uint8_t)(r[rt] & 0xFFu);
             if (r1431_n < 8u && (r1431_ea & 3u) == 3u && r1431_ea >= 0x8006F000u && r1431_ea < 0x80090000u && ((r1431_nv == 0x00u && xenolift_mem[r1431_ea - 0x80000000u] == 0x03u) || (r1431_nv == 0xCFu && (xenolift_mem[r1431_ea - 0x80000000u] == 0x03u || xenolift_mem[r1431_ea - 0x80000000u] == 0x00u)))) { r1431_n++;
                 r861_out("[wrsrc] ISB %u ea=%08X new=%02X cur_fn=%08X r31=%08X @t=%lds\n", r1431_n, r1431_ea, (unsigned)r1431_nv, (unsigned)xenolift_cur_fn, (unsigned)r[31], (long)(xl_wall() - g_boot_wall_t0)); } }
             xenolift_mem_write8(r[rs] + (uint32_t)imm, r[rt] & 0xFFu); }
         else if (op == 0x29u) { xenolift_mem_write16(r[rs] + (uint32_t)imm, r[rt] & 0xFFFFu); }
-        else if (op == 0x2Au) { /* SWL */
-            uint32_t a = r[rs] + (uint32_t)imm, old = xenolift_mem_read32(a & ~3u), sh = (a & 3u) * 8u;
-            uint32_t m = (a & 3u) == 0u ? 0xFFFFFFFFu : (0xFFFFFFFFu >> sh);
-            xenolift_mem_write32(a & ~3u, (old & ~m) | ((r[rt] >> sh) & m));
-        }
+        else if (op == 0x2Au) { SWL(r[rs] + (uint32_t)imm, r[rt]); } /* R1522 */
         else if (op == 0x2Bu) { xenolift_mem_write32(r[rs] + (uint32_t)imm, r[rt]); }
-        else if (op == 0x2Eu) { /* SWR */
-            uint32_t a = r[rs] + (uint32_t)imm, old = xenolift_mem_read32(a & ~3u), sh = (3u - (a & 3u)) * 8u;
-            uint32_t m = (a & 3u) == 3u ? 0xFFFFFFFFu : (0xFFFFFFFFu << sh);
-            xenolift_mem_write32(a & ~3u, (old & ~m) | ((r[rt] << sh) & m));
-        }
+        else if (op == 0x2Eu) { SWR(r[rs] + (uint32_t)imm, r[rt]); } /* R1522 */
         else if (op == 0x12u) { /* COP2: the GTE */
             uint32_t sub = (w >> 21) & 31;
             if (sub == 0u) { r[rt] = hle_gte_read_data(rd); }
@@ -32081,6 +32126,7 @@ else if (op == 0x3Au) { /* SWC2 */ /* R1412 (c551): SWC2 is opcode 0x3A per the 
     }
 }
  if (uns_n < 16u) { uns_n++; r861_out("[ovlint] R1394 UNSUPPORTED op=%02X at pc=%08X w=%08X\n", op, pc, w); } return 3; }
+        r[0] = 0u; /* R1522: $zero is architected - I-type ops with rt=0 must not leave it nonzero */
         pc = npc; npc = pc + 4;
     }
     r861_out("[ovlint] R1394 BUDGET EXHAUSTED fn=%08X last pc=%08X - the explicit stop class\n", entry, pc);
