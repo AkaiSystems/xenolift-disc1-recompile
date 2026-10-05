@@ -93,6 +93,11 @@ static const uint8_t ZIGZAG[64] = {
 /* Zagzig table: ZAGZIG[ZIGZAG[i]] = i */
 static uint8_t ZAGZIG[64];
 
+/* R1571: cmd1 takes up to 0xFFFF parameter words (2 halfwords each); a whole 320x240 24bpp frame
+ * is 57,600 output words and the HLE decodes a frame at once (DMA0 is synchronous) */
+#define MDEC_IN_HALFS  (1u << 17)
+#define MDEC_OUT_WORDS (1u << 17)
+
 /* Internal MDEC State */
 typedef struct {
     uint8_t *ram;               /* Pointer to 2MB main RAM */
@@ -102,7 +107,8 @@ typedef struct {
     uint32_t output_depth;      /* 0=4bit, 1=8bit, 2=24bit, 3=15bit */
     bool output_signed;         /* bit 24 */
     bool output_bit15;          /* bit 23 */
-    uint32_t remaining_words;   /* parameter 16-bit words remaining */
+    uint32_t remaining_words;   /* parameter 32-bit words remaining (R1571) */
+    uint32_t param_words;       /* R1571: parameter words received for the current command */
 
     /* Control & Status flags */
     bool data_in_enable;        /* Control bit 30: Enable DMA0 & status bit 28 */
@@ -116,12 +122,12 @@ typedef struct {
     int16_t scale_table[64];    /* Scale table */
 
     /* Data Input Stream Buffer (16-bit halfwords) */
-    uint16_t in_buf[65536];
+    uint16_t in_buf[MDEC_IN_HALFS];
     size_t in_count;
     size_t in_read_pos;
 
     /* Output FIFO (32-bit words) */
-    uint32_t out_fifo[8192];
+    uint32_t out_fifo[MDEC_OUT_WORDS];
     size_t out_count;
     size_t out_read_pos;
 } MdecState;
@@ -177,6 +183,7 @@ void hle_mdec_reset(void) {
     g_mdec.output_signed = false;
     g_mdec.output_bit15 = false;
     g_mdec.remaining_words = 0xFFFF;
+    g_mdec.param_words = 0;
     g_mdec.data_in_enable = false;
     g_mdec.data_out_enable = false;
     g_mdec.busy = false;
@@ -203,7 +210,7 @@ uint32_t hle_mdec_get_status(void) {
     }
 
     /* Bit 30: Data-In FIFO Full (0=No, 1=Full) */
-    if (g_mdec.in_count >= 65536) {
+    if (g_mdec.in_count + 1 >= MDEC_IN_HALFS) {
         stat |= (1u << 30);
     }
 
@@ -248,158 +255,140 @@ bool hle_mdec_is_busy(void) {
     return g_mdec.busy;
 }
 
-/* 8x8 Integer IDCT implementation */
-static void idct_8x8(const int32_t *in_block, int32_t *out_block) {
-    for (int y = 0; y < 8; y++) {
-        for (int x = 0; x < 8; x++) {
-            double sum = 0.0;
-            for (int u = 0; u < 8; u++) {
-                for (int v = 0; v < 8; v++) {
-                    double cu = (u == 0) ? (1.0 / sqrt(2.0)) : 1.0;
-                    double cv = (v == 0) ? (1.0 / sqrt(2.0)) : 1.0;
-                    double val = in_block[v * 8 + u];
-                    double cos_u = cos((2.0 * x + 1.0) * u * M_PI / 16.0);
-                    double cos_v = cos((2.0 * y + 1.0) * v * M_PI / 16.0);
-                    sum += cu * cv * val * cos_u * cos_v;
-                }
-            }
-            out_block[y * 8 + x] = (int32_t)floor(0.25 * sum + 0.5);
-        }
-    }
+/* R1571: decoder core rewritten to psx-spx "MDEC Decompression". The old core
+ * (a) emitted nothing for 24bpp, the depth every movie uses, (b) emitted each 8x8 Y block on its
+ * own instead of one 16x16 macroblock in row order, and (c) counted parameters in halfwords, so
+ * every command ended halfway and the rest of its data was parsed as new commands.
+ * IDCT: 0.25 * sum cu*cv*X*cos*cos, which is real_idct_core with the default scale table; done
+ * separably (rows, then columns) from a cached cosine table. */
+static double g_idct_c[8][8]; /* [x][u] = cu * cos((2x+1) u pi / 16) */
+
+static void idct_init(void) {
+    static bool inited = false;
+    if (inited) return;
+    for (int x = 0; x < 8; x++)
+        for (int u = 0; u < 8; u++)
+            g_idct_c[x][u] = (u == 0 ? (1.0 / sqrt(2.0)) : 1.0) * cos((2.0 * x + 1.0) * u * M_PI / 16.0);
+    inited = true;
 }
 
-/* RLE decode one 8x8 block from input buffer */
+static void idct_8x8(const int32_t *in_block, int32_t *out_block) {
+    double tmp[64];
+    idct_init();
+    for (int v = 0; v < 8; v++)
+        for (int x = 0; x < 8; x++) {
+            double s = 0.0;
+            for (int u = 0; u < 8; u++) s += in_block[v * 8 + u] * g_idct_c[x][u];
+            tmp[v * 8 + x] = 0.5 * s;
+        }
+    for (int x = 0; x < 8; x++)
+        for (int y = 0; y < 8; y++) {
+            double s = 0.0;
+            for (int v = 0; v < 8; v++) s += tmp[v * 8 + x] * g_idct_c[y][v];
+            out_block[y * 8 + x] = (int32_t)floor(0.5 * s + 0.5);
+        }
+}
+
+/* RLE decode one 8x8 block (psx-spx rl_decode_block) */
 static bool rl_decode_block(const uint8_t *qt, int32_t *out_block) {
-    int32_t freq_block[64];
-    memset(freq_block, 0, sizeof(freq_block));
+    int32_t blk[64];
+    memset(blk, 0, sizeof(blk));
 
-    if (g_mdec.in_read_pos >= g_mdec.in_count) return false;
-
-    /* Skip padding 0xFE00 at start */
-    while (g_mdec.in_read_pos < g_mdec.in_count && g_mdec.in_buf[g_mdec.in_read_pos] == 0xFE00) {
+    while (g_mdec.in_read_pos < g_mdec.in_count && g_mdec.in_buf[g_mdec.in_read_pos] == 0xFE00)
         g_mdec.in_read_pos++;
-    }
-
     if (g_mdec.in_read_pos >= g_mdec.in_count) return false;
 
-    /* First entry: DC value + q_scale */
     uint16_t n = g_mdec.in_buf[g_mdec.in_read_pos++];
-    uint32_t q_scale = (n >> 10) & 0x3F;
-    int dc = signed_10bit(n & 0x3FF);
-
-    int val;
-    if (q_scale == 0) {
-        val = dc * 2;
-    } else {
-        val = dc * qt[0];
-    }
-    val = clamp_s11(val);
-    freq_block[ZAGZIG[0]] = val;
-
-    /* Subsequent entries: AC values or EOB (0xFE00) */
+    int q_scale = (n >> 10) & 0x3F;
     int k = 0;
-    while (k < 63 && g_mdec.in_read_pos < g_mdec.in_count) {
-        n = g_mdec.in_buf[g_mdec.in_read_pos++];
-        if (n == 0xFE00) {
-            break;
-        }
-
-        uint32_t len = (n >> 10) & 0x3F;
-        int ac = signed_10bit(n & 0x3FF);
-        k += (int)len + 1;
-        if (k > 63) break;
-
-        if (q_scale == 0) {
-            val = ac * 2;
-        } else {
-            val = (ac * qt[k] * (int)q_scale + 4) / 8;
-        }
+    int val = signed_10bit(n) * qt[0];
+    for (;;) {
+        if (q_scale == 0) val = signed_10bit(n) * 2;
         val = clamp_s11(val);
-        freq_block[ZAGZIG[k]] = val;
+        if (q_scale > 0) blk[ZAGZIG[k]] = val;
+        else blk[k] = val;
+        if (g_mdec.in_read_pos >= g_mdec.in_count) break;
+        n = g_mdec.in_buf[g_mdec.in_read_pos++];
+        k += ((n >> 10) & 0x3F) + 1;
+        if (k > 63) break; /* 0xFE00 = end of block */
+        val = (signed_10bit(n) * qt[k] * q_scale + 4) / 8;
     }
 
-    idct_8x8(freq_block, out_block);
+    idct_8x8(blk, out_block);
     return true;
 }
 
-/* Process macroblocks in input buffer */
+static void mdec_emit_bytes(const uint8_t *b, size_t n) {
+    for (size_t i = 0; i + 3 < n; i += 4) {
+        if (g_mdec.out_count >= MDEC_OUT_WORDS) return;
+        g_mdec.out_fifo[g_mdec.out_count++] = (uint32_t)b[i] | ((uint32_t)b[i + 1] << 8) |
+                                              ((uint32_t)b[i + 2] << 16) | ((uint32_t)b[i + 3] << 24);
+    }
+}
+
+static inline uint8_t mdec_u8(int v) { /* signed -128..127 -> output byte */
+    v = clamp_s8(v);
+    return (uint8_t)(g_mdec.output_signed ? (v & 0xFF) : ((v + 128) & 0xFF));
+}
+
+/* Process macroblocks in the input buffer */
 static void mdec_process_decode(void) {
     while (g_mdec.in_read_pos < g_mdec.in_count) {
-        int32_t Cr[64], Cb[64], Y1[64], Y2[64], Y3[64], Y4[64];
         size_t saved_pos = g_mdec.in_read_pos;
 
-        g_mdec.current_block = 4; /* Cr */
+        if (g_mdec.output_depth <= 1) {
+            /* monochrome: one 8x8 Y block -> 64 bytes (8bpp) or 32 bytes (4bpp) */
+            int32_t Y[64];
+            uint8_t px[64];
+            g_mdec.current_block = 4;
+            if (!rl_decode_block(g_mdec.iq_y, Y)) { g_mdec.in_read_pos = saved_pos; break; }
+            for (int i = 0; i < 64; i++) px[i] = mdec_u8(Y[i]);
+            if (g_mdec.output_depth == 1) {
+                mdec_emit_bytes(px, 64);
+            } else {
+                uint8_t nib[32];
+                for (int i = 0; i < 32; i++) nib[i] = (uint8_t)((px[2 * i] >> 4) | (px[2 * i + 1] & 0xF0));
+                mdec_emit_bytes(nib, 32);
+            }
+            continue;
+        }
+
+        /* colour: Cr, Cb (8x8, low resolution), then Y1..Y4 -> one 16x16 macroblock */
+        int32_t Cr[64], Cb[64], Y[64];
+        uint8_t rgb[16 * 16 * 3];
+        g_mdec.current_block = 4;
         if (!rl_decode_block(g_mdec.iq_uv, Cr)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        g_mdec.current_block = 5; /* Cb */
+        g_mdec.current_block = 5;
         if (!rl_decode_block(g_mdec.iq_uv, Cb)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        g_mdec.current_block = 0; /* Y1 */
-        if (!rl_decode_block(g_mdec.iq_y, Y1)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        g_mdec.current_block = 1; /* Y2 */
-        if (!rl_decode_block(g_mdec.iq_y, Y2)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        g_mdec.current_block = 2; /* Y3 */
-        if (!rl_decode_block(g_mdec.iq_y, Y3)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        g_mdec.current_block = 3; /* Y4 */
-        if (!rl_decode_block(g_mdec.iq_y, Y4)) { g_mdec.in_read_pos = saved_pos; break; }
-
-        int32_t *Y_blocks[4] = { Y1, Y2, Y3, Y4 };
-
-        for (int blk = 0; blk < 4; blk++) {
-            int32_t *Y = Y_blocks[blk];
-            int xx_off = (blk == 1 || blk == 3) ? 8 : 0;
-            int yy_off = (blk >= 2) ? 8 : 0;
-
-            uint16_t block_pixels[64];
-
-            for (int y = 0; y < 8; y++) {
+        bool ok = true;
+        for (int blk = 0; blk < 4 && ok; blk++) {
+            g_mdec.current_block = (uint32_t)blk;
+            if (!rl_decode_block(g_mdec.iq_y, Y)) { ok = false; break; }
+            int xx = (blk & 1) * 8, yy = (blk >> 1) * 8;
+            for (int y = 0; y < 8; y++)
                 for (int x = 0; x < 8; x++) {
-                    int cx = (x + xx_off) / 2;
-                    int cy = (y + yy_off) / 2;
-
-                    int cr_v = Cr[cy * 8 + cx];
-                    int cb_v = Cb[cy * 8 + cx];
-                    int y_v  = Y[y * 8 + x];
-
-                    int r = y_v + (int)(1.402 * cr_v);
-                    int g = y_v - (int)(0.3437 * cb_v) - (int)(0.7143 * cr_v);
-                    int b = y_v + (int)(1.772 * cb_v);
-
-                    r = clamp_s8(r);
-                    g = clamp_s8(g);
-                    b = clamp_s8(b);
-
-                    if (!g_mdec.output_signed) {
-                        r = clamp_u8(r + 128);
-                        g = clamp_u8(g + 128);
-                        b = clamp_u8(b + 128);
-                    }
-
-                    if (g_mdec.output_depth == 3) {
-                        /* 15bpp mode */
-                        uint16_t r5 = (uint16_t)((r >> 3) & 0x1F);
-                        uint16_t g5 = (uint16_t)((g >> 3) & 0x1F);
-                        uint16_t b5 = (uint16_t)((b >> 3) & 0x1F);
-                        uint16_t bit15 = g_mdec.output_bit15 ? 0x8000u : 0u;
-                        block_pixels[y * 8 + x] = bit15 | (b5 << 10) | (g5 << 5) | r5;
-                    } else if (g_mdec.output_depth == 2) {
-                        block_pixels[y * 8 + x] = 0;
-                    }
+                    int ci = ((x + xx) >> 1) + ((y + yy) >> 1) * 8;
+                    double cr = Cr[ci], cb = Cb[ci];
+                    int yv = Y[y * 8 + x];
+                    int r = yv + (int)(1.402 * cr);
+                    int g = yv + (int)((-0.3437 * cb) + (-0.7143 * cr));
+                    int b = yv + (int)(1.772 * cb);
+                    uint8_t *o = &rgb[((y + yy) * 16 + (x + xx)) * 3];
+                    o[0] = mdec_u8(r); o[1] = mdec_u8(g); o[2] = mdec_u8(b);
                 }
-            }
+        }
+        if (!ok) { g_mdec.in_read_pos = saved_pos; break; }
 
-            if (g_mdec.output_depth == 3) {
-                /* 15bpp: 64 pixels = 32 uint32 words */
-                for (int i = 0; i < 64; i += 2) {
-                    uint32_t word = ((uint32_t)block_pixels[i + 1] << 16) | (uint32_t)block_pixels[i];
-                    if (g_mdec.out_count < 8192) {
-                        g_mdec.out_fifo[g_mdec.out_count++] = word;
-                    }
-                }
+        if (g_mdec.output_depth == 2) {
+            mdec_emit_bytes(rgb, sizeof rgb); /* 24bpp: R,G,B bytes, 192 words */
+        } else {
+            uint8_t h[16 * 16 * 2]; /* 15bpp: 128 words */
+            for (int i = 0; i < 256; i++) {
+                uint16_t p = (uint16_t)((rgb[i * 3] >> 3) | ((rgb[i * 3 + 1] >> 3) << 5) | ((rgb[i * 3 + 2] >> 3) << 10));
+                if (g_mdec.output_bit15) p |= 0x8000u;
+                h[i * 2] = (uint8_t)p; h[i * 2 + 1] = (uint8_t)(p >> 8);
             }
+            mdec_emit_bytes(h, sizeof h);
         }
     }
 }
@@ -409,85 +398,65 @@ void hle_mdec_port_write(uint32_t addr, uint32_t v) {
 
     if (reg == 0x00) {
         if (!g_mdec.busy) {
-            /* New command word */
+            /* New command word; status bits 26-23 mirror its bits 28-25 */
             g_mdec.current_cmd = (v >> 29) & 7u;
+            g_mdec.output_depth = (v >> 27) & 3u;
+            g_mdec.output_signed = (v & (1u << 26)) != 0;
+            g_mdec.output_bit15 = (v & (1u << 25)) != 0;
+            g_mdec.param_words = 0;
             g_mdec.in_count = 0;
             g_mdec.in_read_pos = 0;
-            g_mdec.out_count = 0;
-            g_mdec.out_read_pos = 0;
 
             if (g_mdec.current_cmd == 1) {
-                /* Cmd 1: Decode Macroblock(s) */
-                g_mdec.output_depth = (v >> 27) & 3u;
-                g_mdec.output_signed = (v & (1u << 26)) != 0;
-                g_mdec.output_bit15 = (v & (1u << 25)) != 0;
+                g_mdec.out_count = 0;
+                g_mdec.out_read_pos = 0;
                 g_mdec.remaining_words = v & 0xFFFFu;
-                g_mdec.busy = true;
+                g_mdec.busy = g_mdec.remaining_words != 0;
                 hle_out("[mdec] cmd1 decode started: depth=%u words=%u\n",
                         g_mdec.output_depth, g_mdec.remaining_words);
             } else if (g_mdec.current_cmd == 2) {
-                /* Cmd 2: Set Quant Table(s) */
                 bool color = (v & 1u) != 0;
-                g_mdec.remaining_words = color ? 32u : 16u; /* 128 bytes (32 16b words) or 64 bytes (16 16b words) */
+                g_mdec.remaining_words = color ? 32u : 16u; /* 64 bytes luma (+ 64 bytes colour) */
                 g_mdec.busy = true;
                 hle_out("[mdec] cmd2 set_iqtab started: color=%d\n", color);
             } else if (g_mdec.current_cmd == 3) {
-                /* Cmd 3: Set Scale Table */
-                g_mdec.remaining_words = 32u; /* 64 halfwords = 32 16b words */
+                g_mdec.remaining_words = 32u; /* 64 signed halfwords */
                 g_mdec.busy = true;
                 hle_out("[mdec] cmd3 set_scale started\n");
             } else {
-                g_mdec.remaining_words = v & 0xFFFFu;
+                g_mdec.remaining_words = 0xFFFFu;
                 g_mdec.busy = false;
             }
         } else {
-            /* Parameter word for current active command (32-bit write = 2 16-bit parameter units) */
+            /* Parameter word for the active command */
+            uint32_t idx = g_mdec.param_words++;
             if (g_mdec.current_cmd == 2) {
-                size_t bytes_recv = (g_mdec.in_count * 2);
-                if (bytes_recv < 64) {
-                    g_mdec.iq_y[bytes_recv + 0] = (uint8_t)(v & 0xFF);
-                    g_mdec.iq_y[bytes_recv + 1] = (uint8_t)((v >> 8) & 0xFF);
-                    g_mdec.iq_y[bytes_recv + 2] = (uint8_t)((v >> 16) & 0xFF);
-                    g_mdec.iq_y[bytes_recv + 3] = (uint8_t)((v >> 24) & 0xFF);
-                } else if (bytes_recv < 128) {
-                    size_t uv_idx = bytes_recv - 64;
-                    g_mdec.iq_uv[uv_idx + 0] = (uint8_t)(v & 0xFF);
-                    g_mdec.iq_uv[uv_idx + 1] = (uint8_t)((v >> 8) & 0xFF);
-                    g_mdec.iq_uv[uv_idx + 2] = (uint8_t)((v >> 16) & 0xFF);
-                    g_mdec.iq_uv[uv_idx + 3] = (uint8_t)((v >> 24) & 0xFF);
-                }
-                g_mdec.in_count += 2;
-                g_mdec.remaining_words = (g_mdec.remaining_words >= 2) ? (g_mdec.remaining_words - 2) : 0;
-                if (g_mdec.remaining_words == 0) {
-                    g_mdec.busy = false;
-                    g_mdec.remaining_words = 0xFFFF;
-                    hle_out("[mdec] cmd2 set_iqtab finished\n");
-                }
+                uint32_t byte = idx * 4u;
+                uint8_t *t = byte < 64u ? &g_mdec.iq_y[byte] : (byte < 128u ? &g_mdec.iq_uv[byte - 64u] : NULL);
+                if (t) { t[0] = (uint8_t)v; t[1] = (uint8_t)(v >> 8); t[2] = (uint8_t)(v >> 16); t[3] = (uint8_t)(v >> 24); }
             } else if (g_mdec.current_cmd == 3) {
-                size_t hw_idx = g_mdec.in_count;
-                if (hw_idx < 64) {
-                    g_mdec.scale_table[hw_idx + 0] = (int16_t)(v & 0xFFFF);
-                    g_mdec.scale_table[hw_idx + 1] = (int16_t)((v >> 16) & 0xFFFF);
-                }
-                g_mdec.in_count += 2;
-                g_mdec.remaining_words = (g_mdec.remaining_words >= 2) ? (g_mdec.remaining_words - 2) : 0;
-                if (g_mdec.remaining_words == 0) {
-                    g_mdec.busy = false;
-                    g_mdec.remaining_words = 0xFFFF;
-                    hle_out("[mdec] cmd3 set_scale finished\n");
+                uint32_t hw = idx * 2u;
+                if (hw < 64u) {
+                    g_mdec.scale_table[hw] = (int16_t)(v & 0xFFFF);
+                    g_mdec.scale_table[hw + 1] = (int16_t)(v >> 16);
                 }
             } else if (g_mdec.current_cmd == 1) {
-                if (g_mdec.in_count + 1 < 65536) {
+                if (g_mdec.in_count + 1 < MDEC_IN_HALFS) {
                     g_mdec.in_buf[g_mdec.in_count++] = (uint16_t)(v & 0xFFFF);
-                    g_mdec.in_buf[g_mdec.in_count++] = (uint16_t)((v >> 16) & 0xFFFF);
+                    g_mdec.in_buf[g_mdec.in_count++] = (uint16_t)(v >> 16);
                 }
-                g_mdec.remaining_words = (g_mdec.remaining_words >= 2) ? (g_mdec.remaining_words - 2) : 0;
-                if (g_mdec.remaining_words == 0) {
-                    g_mdec.busy = false;
-                    g_mdec.remaining_words = 0xFFFF;
+            }
+            if (g_mdec.remaining_words > 0) g_mdec.remaining_words--;
+            if (g_mdec.remaining_words == 0) {
+                g_mdec.busy = false;
+                g_mdec.remaining_words = 0xFFFF;
+                if (g_mdec.current_cmd == 1) {
                     mdec_process_decode();
-                    hle_out("[mdec] cmd1 decode complete: produced %zu words\n",
-                            g_mdec.out_count);
+                    hle_out("[mdec] cmd1 decode complete: produced %u words\n", (unsigned)g_mdec.out_count);
+                } else if (g_mdec.current_cmd == 2) {
+                    hle_out("[mdec] cmd2 set_iqtab finished\n");
+                } else if (g_mdec.current_cmd == 3) {
+                    hle_out("[mdec] cmd3 set_scale finished\n");
                 }
             }
         }

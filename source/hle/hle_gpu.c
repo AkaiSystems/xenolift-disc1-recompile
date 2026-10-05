@@ -810,8 +810,8 @@ void gpu_gp1_write(uint32_t v)
         break;
     case 0x08: {
         static const uint16_t hres[4] = {256, 320, 512, 640};
-        g_disp_w = hres[(param >> 4) & 3u];
-        g_disp_h = (param & 0x04u) ? 480u : 240u;
+        g_disp_w = (param & 0x40u) ? 368u : hres[param & 3u]; /* R1573: bits 0-1 (+6), not 4-5 */
+        g_disp_h = ((param & 0x24u) == 0x24u) ? 480u : 240u;
         break;
     }
     default:
