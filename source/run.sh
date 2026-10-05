@@ -201,6 +201,15 @@ if bad in s:
     s = s.replace(bad, fix, 1)
     open('disc1.c','w').write(s)
     print('[emit] R224 fallthrough-jr-ra guard APPLIED')
+elif "L_80019558:;\n{\nL_8001955C:;\n/* nop */\nreturn;\n}\n}" in s and 'R224 fallthrough-jr-ra guard' not in s:
+    # R1536b: with annotation seeds (R1536) ClearMemory 0x80019560 is a function, so the stub's tail
+    # jr ra is emitted as a plain C return - the cold-boot case (start set r31=0x80019578) must still
+    # continue into GameBootstrap. Same guard, new anchor.
+    bad2 = "L_80019558:;\n{\nL_8001955C:;\n/* nop */\nreturn;\n}\n}"
+    fix2 = "L_80019558:;\n{\nL_8001955C:;\n/* nop */\n/* R224 fallthrough-jr-ra guard (R1536b anchor) */\nif (r[31] == 0x80019578u)\n    xenolift_fn_80019578_GameBootstrap___Initializes_graphics_input_storage_archives_audio_and_core_resources_before_entering_the_initial_game_state_();\nreturn;\n}\n}"
+    s = s.replace(bad2, fix2, 1)
+    open('disc1.c','w').write(s)
+    print('[emit] R224 fallthrough-jr-ra guard APPLIED (R1536b anchor)')
 elif 'R224 fallthrough-jr-ra guard' in s:
     print('[emit] R224 guard already present')
 else:

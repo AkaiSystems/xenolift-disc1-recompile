@@ -676,6 +676,25 @@ fn main() {
         data_scan_count, mat_count, prologue_count
     );
 
+    // R1536 (JOSH-DIAG): seed every annotated function entry (annotations.csv = the 1,219 functions of
+    // this exact binary). The pointer/prologue scans miss entries whose first instruction is not the
+    // sp adjust (FieldLoadNewBundle 0x8001B484 starts lui/lw before addiu sp) and functions reached only
+    // from overlay modules; module code calling them hit R807 (456 named EXE functions had no
+    // dispatch case before this).
+    {
+        let mut ann = 0usize;
+        if let Ok(txt) = std::fs::read_to_string("annotations.csv") {
+            for line in txt.lines() {
+                let a = line.split(',').next().unwrap_or("").trim().trim_start_matches("0x");
+                if let Ok(addr) = u32::from_str_radix(a, 16) {
+                    if addr >= t_addr && addr < region_end && (addr & 3) == 0 && ptr_entries.insert(addr) {
+                        ann += 1;
+                    }
+                }
+            }
+        }
+        println!("R1536 annotation seeds: +{} function entries", ann);
+    }
     // walk the code from the entry point; mark what is actually reachable
     let (visited, functions, jr_targets) = discovery::discover(t_addr, &insts, pc0, &ptr_entries);
     println!(

@@ -1845,11 +1845,12 @@ int cd_motor_on = 1; /* R212: spindle state — Stop (0x08) turns it OFF;
  * FDF8 write (guest vs runtime). Arms in the main-loop era when the drive first
  * aims into file 15's range. Receipt-only, capped at 1500 lines. */
 static int g_r1517_inloop; /* tentative - defined with the R1517 latch below */
+static void r1530_top_sentinel(const char *who); /* R1530 fwd */
 static int g_f15_on; static uint32_t g_f15_n, g_f15_t0;
 static void r1520_ev(const char *ev, uint32_t a1, uint32_t a2, uint32_t a3, const char *why)
 {
     struct timespec ts; uint32_t ms, f8, fe04, fe08, fe1c, fe34;
-    if (!g_f15_on || g_f15_n >= 1500u) return;
+    if (!g_f15_on || g_f15_n >= 6000u) return; /* R1538: cap 1500 -> 6000 (movie-state reads were past the cap) */
     clock_gettime(CLOCK_MONOTONIC, &ts);
     ms = (uint32_t)((uint32_t)ts.tv_sec * 1000u + (uint32_t)(ts.tv_nsec / 1000000L));
     if (g_f15_n == 0u) g_f15_t0 = ms;
@@ -6167,6 +6168,20 @@ static int io_special_write(uint32_t p, uint32_t v)
                 while (nodes < 0x10000u) {
                     uint32_t hdr = xenolift_mem_read32(cur);
                     uint32_t n = hdr >> 24, i;
+                    { /* R1531 (JOSH-DIAG) [bigprim]: the frames are one flat 0x7CBF (248,40,248) over both
+                       * 320x224 buffers. Log the first 24 LARGE primitives (fill 02 / flat rect 60-63 /
+                       * textured rect 64-67, area >= 200x200) after 200 lists, with the raw words. */
+                        static uint32_t bp_n, bp_lists; uint32_t w0 = n ? xenolift_mem_read32(cur + 4u) : 0u, c = w0 >> 24;
+                        if (nodes == 0u) bp_lists++;
+                        if (bp_lists > 200u && bp_n < 24u && n >= 3u && (c == 0x02u || (c >= 0x60u && c <= 0x67u))) {
+                            uint32_t w1 = xenolift_mem_read32(cur + 8u), w2 = xenolift_mem_read32(cur + 12u);
+                            uint32_t w3 = n >= 4u ? xenolift_mem_read32(cur + 16u) : 0u;
+                            uint32_t hw = (c >= 0x64u) ? w3 : w2, ww = hw & 0xFFFFu, hh = hw >> 16;
+                            if (ww * hh >= 40000u) { bp_n++;
+                                xenolift_receipt("[bigprim] R1531 #%u list#%u node@%08X n=%u cmd=%02X words %08X %08X %08X %08X (w=%u h=%u) cur_fn=%08X\n",
+                                    bp_n, bp_lists, cur, n, c, w0, w1, w2, w3, ww, hh, (unsigned)xenolift_cur_fn); }
+                        }
+                    }
                     for (i = 1; i <= n; i++) {
                         uint32_t w = xenolift_mem_read32(cur + 4u * i);
                         gpu_gp0(w); gpu_gp0_write(w); xl_gpu_writes++;
@@ -11698,6 +11713,12 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
         }
         return;
     }
+    if ((((a & 0x1FFFFFu) & ~3u) == 0x4F330u) || (((a & 0x1FFFFFu) & ~3u) == 0x4F334u)) { /* R1534 [bundletrip] */
+        static uint32_t bt_n;
+        if (bt_n++ < 24u) xenolift_receipt("[bundletrip] R1534 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X\n",
+            w * 8u, a, v, *(uint32_t *)(xenolift_mem + ((a & 0x1FFFFFu) & ~3u)), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31]);
+        return;
+    }
     if (((a & 0x1FFFFFu) & ~3u) != 0x6FAF0u) return;
     if (w == 4u && v >= 0x80000000u && v < 0x80200000u) return;
     if (n < 16u) {
@@ -16788,11 +16809,96 @@ static void r1514_watch(uint32_t a)
  * rewrite ([jtwatch] silent), fewer reboots, more boots reach MainLoop. */
 static int g_r1517_inloop;
 static uint32_t g_r1517_declined;
+/* R1527 (JOSH-DIAG): RE-RAISE A LOST DATA-READY INTERRUPT. R1524c [f15] timeline (movie
+ * module's file#1 read, LBA 108561, 88604 B): 8 sectors stream normally, then INT1 for 108569
+ * is re-asserted while the game's handler is still finishing 108568; the sector loads, the
+ * game acknowledges twice, the pending flag clears, and the data callback never runs for it.
+ * The read sits 120 s at FDF8=72220 with a loaded, unread sector and nothing pending.
+ * Hardware keeps signalling data-ready for a sector sitting in its buffer, so: if a ReadN is
+ * active, the loaded sector is unread (pos 0), the game still owes bytes at that LBA, and no
+ * interrupt is pending or scheduled for 65536 consecutive checks, raise INT1 through the
+ * runtime's own next-sector path (cd_pending + flag 0x800578A6). */
+static void r1535_check(void)
+{
+    /* R1535 (JOSH-DIAG): RE-RAISE A LOST PAUSE COMPLETION (INT2). R1534q [f15]: the field-data read
+     * finishes at LBA 119531, the game arms the next request (FDF8=55060 @119559) and issues Pause;
+     * its drive handler 8002A68C then sits in FE1C=6, whose case (0x8002A894) waits for INT2: on
+     * INT2 it sets FE1C=1 and issues the next command, anything else -> retry state 10. The runtime
+     * logged "Pause complete: INT2 armed" but the handler never saw it; nothing pending for 90 s. */
+    static uint32_t still, fires;
+    uint32_t fe1c;
+    if (cd_last_cmd != 0x09u || cd_pending != 0u || cd_scheduled) { still = 0u; return; }
+    memcpy(&fe1c, xenolift_mem + 0x4FE1Cu, 4);
+    if (fe1c != 6u) { still = 0u; return; }
+    if (++still < 65536u) return;
+    still = 0u;
+    if (fires >= 512u) return;
+    fires++;
+    cd_resp[0] = 0x02u; cd_resp_n = 1; cd_resp_pos = 0;
+    cd_pending = 2, g_pend_line = __LINE__;
+    if (fires <= 16u)
+        xenolift_receipt("[r1535] lost Pause INT2 re-raised #%u: FE1C=6 waiting, nothing pending (seek=%u FDF8=%u cur_fn=%08X)\n",
+                         fires, cd_seek_lba, xenolift_mem_read32(0x8004FDF8u), (unsigned)xenolift_cur_fn);
+}
+static void r1527_check(void)
+{
+    static uint32_t still, fires;
+    if (!(cd_read_active && cd_data_loaded && cd_pending == 0 && !cd_scheduled && cd_last_cmd == 0x06u
+          && cd_data_pos == 0u && cd_data_n >= 2048u)) { still = 0u; return; }
+    if (++still < 65536u) return;
+    still = 0u;
+    {
+        uint32_t f8, fe04; memcpy(&f8, xenolift_mem + 0x4FDF8u, 4); memcpy(&fe04, xenolift_mem + 0x4FE04u, 4);
+        if (f8 == 0u || f8 > 0x01000000u || fe04 != cd_seek_lba || fires >= 4096u) return;
+        fires++;
+        cd_pending = 1, g_pend_line = __LINE__;
+        { uint16_t one = 1; memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2); }
+        if (fires <= 16u)
+            xenolift_receipt("[r1527] lost INT1 re-raised #%u: LBA %u loaded+unread, FDF8=%u owed, nothing pending (cur_fn=%08X)\n",
+                             fires, cd_seek_lba, f8, (unsigned)xenolift_cur_fn);
+    }
+}
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
     if (g_ct_active) r1510_sample(); /* R1510 [cdtrace] */
     r1514_watch(a); /* R1514 [jtwatch] */
+    r1527_check(); /* R1527 */
+    { /* R1538 (JOSH-DIAG): VRAM snapshot every 4 s to /tmp/jtwatch/vram_tNNN.bin (+ display rect in the
+       * file name), so field-era frames can be viewed - the end-of-run vram.bin only shows the last state. */
+        static uint32_t tick; static time_t last;
+        if ((++tick & 0xFFFFu) == 0u) {
+            time_t now = xl_wall();
+            if (now - last >= 4 && g_boot_wall_t0) {
+                char nm[128]; int fd;
+                last = now;
+                snprintf(nm, sizeof nm, "/tmp/jtwatch/vram_t%03ld_%ux%u_at%u_%u.bin", (long)(now - g_boot_wall_t0),
+                         gpu_disp_w, gpu_disp_h, gpu_disp_x, gpu_disp_y);
+                fd = open(nm, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd >= 0) { if (write(fd, gpu_vram, 2u * 1024u * 512u) < 0) {} close(fd); }
+            }
+        }
+    }
+    r1535_check(); /* R1535 */
+    if (a == 0x80022FC4u || a == 0x800230A8u) { /* R1540 [sprpkt]: sprite frame-packet alloc vs destroy */
+        static uint32_t n1, n2;
+        uint32_t sp = r[4], p32 = 0, p44 = 0;
+        if (sp >= 0x80000000u && sp < 0x80200000u) { memcpy(&p32, xenolift_mem + (sp & 0x1FFFFFu) + 32u, 4);
+            if (p32 >= 0x80000000u && p32 < 0x80200000u) memcpy(&p44, xenolift_mem + (p32 & 0x1FFFFFu) + 44u, 4); }
+        if (a == 0x80022FC4u && n1++ < 40u)
+            xenolift_receipt("[sprpkt] R1540 ALLOC sprite=%08X count=%u flags=%u (x24=%u) prev[32]=%08X prev[44]=%08X ra=%08X\n", sp, r[5], r[6], r[5] * 24u, p32, p44, r[31]);
+        if (a == 0x800230A8u && (n2++ < 40u || p44 == 0u))
+            xenolift_receipt("[sprpkt] R1540 DESTROY sprite=%08X [32]=%08X [44]=%08X ra=%08X%s\n", sp, p32, p44, r[31], p44 ? "" : "  <== NULL packets");
+    }
+    if (a == 0x8001B484u) { /* R1534: FieldLoadNewBundle with a "previous bundle" but no buffer -> nothing to free */
+        uint32_t kind, buf; memcpy(&kind, xenolift_mem + 0x4F334u, 4); memcpy(&buf, xenolift_mem + 0x5A4E0u, 4);
+        if (kind != 0xFFFFFFFFu && buf == 0u) {
+            static uint32_t g_n;
+            xenolift_mem_write32(0x8004F334u, 0xFFFFFFFFu);
+            xenolift_mem_write32(0x8004F330u, 0xFFFFFFFFu);
+            if (g_n++ < 8u) xenolift_receipt("[r1534] FieldLoadNewBundle(%08X,%u): cached kind=%08X but buffer 0x8005A4E0 is NULL - reset to 'none' (-1), no HeapFree(NULL)\n", r[4], r[5], kind);
+        }
+    }
     switch (a) { /* R1500 [chaincam] */
     case 0x8001996Cu: r1501_hit(15); g_ch_commit++;   break; /* CommitGameStateTransition */
     case 0x80019ACCu: r1501_hit(16); g_ch_loop++; g_r1517_inloop = 1; break; /* RunResidentGameLoop (+R1517 latch) */
@@ -18692,7 +18798,13 @@ void xenolift_trace(uint32_t a)
                 if (r1381_fired && r1381_fe04 != 108995u) {
                     r1381_fired = 0; r1381_since = 0; /* R1386 (c465 receipts): the drain stepper advances FE04 sector-by-sector, so this branch fires ONE PASS after the arm - the r1385 watcher state must live independent of r1381_fired */
                 }
-                if (!r1381_fired
+                /* R1528 (JOSH-DIAG): R1384 DISABLED. Its premise ("the field module never issues file 15
+                 * through the file layer") no longer holds: across 8 runs (R1521c..R1527q) it fired once,
+                 * and that was the only run where file 15 never started - it wrote FDF8=92180 (a whole-file
+                 * request the game never made), forced INT1, and the first sector went to the stale
+                 * file-14 destination 0x801F7E80 instead of the ring. In the 7 quiet runs the game's own
+                 * stream read file 15 and went on to LBA 120610+. FDF8 in the field band is the guest's. */
+                if (0 && !r1381_fired
                     && r1381_fe04 == 108995u
                     && r1381_fe08 >= 0x8006FAF8u && r1381_fe08 < 0x80080000u
                     && r1381_fdf8 == 0u
@@ -19189,7 +19301,13 @@ void xenolift_trace(uint32_t a)
                                  * on regression (decompressor/heap fault). */
                                 int r1366_whole = (cmap == 14u && cdest == 0x801DD680u);
                                 if (r1366_whole) {
-                                    uint32_t r1366_span = ((r479_max + 2047u) / 2048u) * 2048u;
+                                    /* R1529 (JOSH-DIAG): declared size + 8, not whole sectors. Measured from the disc:
+                                     * the LZSS stream of file#14 consumes 125307 B of its declared 125304 (files 6-18:
+                                     * at most +5). The sector round-up (126976) wrote 1672 B past the 125304-byte
+                                     * allocation - over the following heap headers and the heap-top sentinel at
+                                     * 0x801FBFF8 (1280 B past) - and HeapFreeAllBlocks then looped on a NULL link
+                                     * (R1528q: 524000 NULL-traps from 0x8003227C -> runaway -> crash-kit restart). */
+                                    uint32_t r1366_span = (r479_max + 8u + 3u) & ~3u;
                                     uint32_t r1366_dsg = cdest - 0x80000000u;
                                     if (r1366_dsg + r1366_span <= 0x200000u) {
                                         r479_max = r1366_span;
@@ -20315,6 +20433,7 @@ r491_carry_done: ;
             memset(xenolift_mem + 0xC4270u, 0, 0x8000u);
             xenolift_mem_write32(0x800C4A6Cu, 0x801FC000u);
             xenolift_mem_write32(0x800C4A70u, 0x84000000u);
+            r1530_top_sentinel("R1325");
             if (r1325_n < 8) { r1325_n++;
                 r861_out("[arenaseed] R1325 dispatcher arena RESEEDED at walk entry: pre head={%08X %08X} -> head={next=%08X flags=%08X} terminator={next=%08X flags=%08X} (#%d)\n",
                         h0_, h1_, xenolift_mem_read32(0x800C4A6Cu), xenolift_mem_read32(0x800C4A70u),
@@ -25396,8 +25515,13 @@ if (pad809_presses < 300 &&
                  * proceeds. */
                     xenolift_mem_write32(0x80077C54u, 0x8007F458u);
                     xenolift_mem_write32(0x80077C58u, 0x84000000u);
-                    xenolift_mem_write32(0x8007F450u, 0x8007F458u);
-                    xenolift_mem_write32(0x8007F454u, 0x80200000u);
+                    /* R1539 (JOSH-DIAG): pass-through to the TRUE heap top, not a terminator 32 KB in. The movie
+                     * module (file#18) sizes its stage buffer by probing the top: s0 = HeapAlloc(4,1);
+                     * HeapAlloc((s0 & 0xFFFFFF) - 0x1D3008, 1). With this terminator the probe returned 0x8007F44C,
+                     * the size came out 0xFFEAC444, and the file-1 read landed on low memory (R1538q, R1524c). */
+                    xenolift_mem_write32(0x8007F450u, 0x801FC000u);
+                    xenolift_mem_write32(0x8007F454u, 0x84000000u);
+                    r1530_top_sentinel("R1275");
                     r861_out("[heapseed] R1275 state-6 heap SEEDED with fn_80031A68 semantics: head@77C54={next=%08X flags=%08X} terminator@77F450={next=%08X flags=%08X} head cell 59320=%08X (game-set)\n",
                             xenolift_mem_read32(0x80077C54u), xenolift_mem_read32(0x80077C58u),
                             xenolift_mem_read32(0x8007F450u), xenolift_mem_read32(0x8007F454u),
@@ -25432,6 +25556,7 @@ if (pad809_presses < 300 &&
                  * game to the KernelMenu (R1526q: R1325 silent because it judged this seed valid). */
                 xenolift_mem_write32(0x800C4A6Cu, 0x801FC000u);
                 xenolift_mem_write32(0x800C4A70u, 0x84000000u);
+                r1530_top_sentinel("R1321");
                 r861_out("[heapseed1] R1321 state-1 heap SEEDED with the same semantics: head@800C4A6C={next=%08X flags=%08X} terminator@800CC268={next=%08X flags=%08X} head cell 59320=%08X\n",
                         xenolift_mem_read32(0x800C4A6Cu), xenolift_mem_read32(0x800C4A70u),
                         xenolift_mem_read32(0x800CC268u), xenolift_mem_read32(0x800CC26Cu),
@@ -25593,7 +25718,7 @@ if (pad809_presses < 300 &&
              * true sentinel. State-6 installs keep the original seed
              * (fires only at st==1). Worst case unchanged: a
              * floor-refused serve is protective, never corrupting. */
-            if (st == 1u) {
+            if (1) { /* R1539: every state (was st == 1 only) */
                 xenolift_mem_write32(0x8007F450u, 0x801FC000u);
                 xenolift_mem_write32(0x8007F454u, 0x84000000u);
                 r861_out("[mountrep] R1318 state-6 seed terminator re-pointed: next=0x801FC000 flags=0x84000000 (chains to the true heap-top sentinel 801FBFF8; PASS = the 125304 hand returns a real block)\n");
@@ -31838,6 +31963,22 @@ static int r1393_guard(unsigned int fn)
 #include <string.h>
 #include <unistd.h>
 static unsigned int g_r1394_hi, g_r1394_lo;
+/* R1530 (JOSH-DIAG): the state-1 heap seeds (R1321/R1325, chained to the top by R1524) need a
+ * real terminator at the heap-top sentinel 0x801FBFF8. R1529q: the sentinel read {0,0} at the
+ * mount (something zeroed it - the R1395 heap-band clear is the likely writer), HeapFree freed it as
+ * a block ([rootw] 801FBFFC 0 -> 84000000), the walk followed its NULL next, HeapFree(NULL) ->
+ * AbortOnGameFault(131) -> restart. Restore the game's own sentinel values when they are not a
+ * terminator: {next=0x801FC000, flags=0x80200000} (receipted [rootw] values; flags & 01E00000 ==
+ * 00200000 is the walk's end test). The address is reserved by InitializeGameHeap's end. */
+static void r1530_top_sentinel(const char *who)
+{
+    static uint32_t n;
+    uint32_t f; memcpy(&f, xenolift_mem + 0x1FBFFCu, 4);
+    if ((f & 0x01E00000u) == 0x00200000u) return;
+    xenolift_mem_write32(0x801FBFF8u, 0x801FC000u);
+    xenolift_mem_write32(0x801FBFFCu, 0x80200000u);
+    if (n++ < 8u) xenolift_receipt("[r1530] heap-top sentinel restored by %s (flags were %08X)\n", who, f);
+}
 static int r1394_interp(uint32_t entry);
 /* R680J (c680): the jump-trail ring for the R1394 interpreter - the missing
  * transfer receipt (c677/c678/c679: the walk reached +0x168FC data-as-code;
@@ -31846,11 +31987,33 @@ static uint32_t r680j_pc[32], r680j_tg[32], r680j_wr, r680j_live, r680j_seq, r68
 
 /* R1394: the dispatch-level guard. Returns 1 = handled (the emitted
  * translation must NOT run); 0 = proceed natively. */
+/* R1533 (JOSH-DIAG): THE INTERPRETER WINDOW = THE MOUNTED MODULE'S EXTENT. The window was fixed at
+ * 0x8006F000..0x80090000 (the 132 KB emit-era reference), but the field module (file#14) spans
+ * 0x8006FAF0..0x800AF5EE - the game's own descriptor gdesc[1] = {80077E88, 800AF5E4, ...}. R1532q:
+ * FieldMain's 25th call-out went to 0x800A3074 (field-module code past 0x80090000), was treated as
+ * native, had no dispatch case -> R807. The end now comes from gdesc[cur][1] (table 0x8002808C +
+ * state*16, mounted state at 0x800592C0), never below 0x80090000. Past the reference there is no
+ * emitted translation, so those addresses always interpret. */
+static uint32_t r1533_wend(void)
+{
+    /* R1533b: the mounted-state cell 0x800592C0 is stamped -1 by runtime heals (R812/R821), so derive
+     * the end from the descriptor table alone: the largest module end among descriptors whose entry
+     * lies in the module area (field gdesc[1] = {80077E88, 800AF5E4}). */
+    uint32_t e, best = 0x80090000u;
+    for (e = 0; e < 8u; e++) {
+        uint32_t d0, d1;
+        memcpy(&d0, xenolift_mem + 0x2808Cu + e * 16u, 4);
+        memcpy(&d1, xenolift_mem + 0x2808Cu + e * 16u + 4u, 4);
+        if (d0 >= 0x8006F000u && d0 < 0x80200000u && d1 > best && d1 < 0x80200000u) best = d1;
+    }
+    return best;
+}
 int r1394_dispatch_guard(unsigned int t)
 {
     unsigned char lw[16];
     int rc;
-    if (t < 0x8006F000u || t >= 0x80090000u) { return 0; }
+    uint32_t r1533_end = r1533_wend();
+    if (t < 0x8006F000u || t >= r1533_end) { return 0; }
     if (g_r1393_ref_loaded == 0) {
         FILE *f = fopen("emit_ref.bin", "rb");
         if (!f) { r861_out("[ovlstop] R1393 emit_ref.bin missing - guard INACTIVE\n"); g_r1393_ref_loaded = -1; return 0; }
@@ -31861,7 +32024,7 @@ int r1394_dispatch_guard(unsigned int t)
     }
     if (g_r1393_ref_loaded < 0) { return 0; }
     memcpy(lw, xenolift_mem + (t - 0x80000000u), 16);
-    if (memcmp(lw, g_r1393_ref + (t - 0x8006F000u), 16) == 0) { return 0; }
+    if (t < 0x80090000u && memcmp(lw, g_r1393_ref + (t - 0x8006F000u), 16) == 0) { return 0; } /* R1533: no reference past 0x80090000 */
     xenolift_cur_fn = t;
     {
         static unsigned int gn = 0;
@@ -31938,10 +32101,13 @@ static void r1523_tick(uint32_t pc, uint32_t entry)
 }
 static int r1394_interp(uint32_t entry)
 {
+    const uint32_t r1533_end = r1533_wend(); /* R1533: window end = mounted module end */
     uint32_t pc = entry, npc = entry + 4;
     int act = 0;            /* 0 = in-module flow; 1 = exit-out pending; 2 = call-out pending */
     uint32_t act_ret = 0;   /* the link address for a call-out */
-    long long budget = 4000000;
+    long long budget = 0x3FFFFFFFFFFFFFFFLL; /* R1537: FieldMain (0x80077E88) is the field's main loop and never returns - the old
+                                              * 4M-instruction cap stopped it (R1536b: BUDGET EXHAUSTED at pc 800A7784 -> exit 99). The external
+                                              * run killer bounds runaway loops. */
     static unsigned int ent_n = 0, uns_n = 0;
     ent_n++;
     if (ent_n <= 32u || (ent_n % 4096u) == 0u)
@@ -31963,14 +32129,25 @@ static int r1394_interp(uint32_t entry)
     while (budget-- > 0) {
         uint32_t w, op, rs, rt, rd, sa, fn_, immu, tgt;
         int32_t imm;
-        if (pc < 0x8006F000u || pc >= 0x80090000u) {
+        if (pc < 0x8006F000u || pc >= r1533_end) {
             /* control has left the module window */
             if (act == 1) { { static uint32_t xo_n; if (xo_n < 60u) { xo_n++; xenolift_receipt("[callout] R1523 EXIT-OUT #%u jr/j to %08X (entry=%08X ra=%08X sp=%08X)\n", xo_n, pc, entry, r[31], r[29]); } }
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--; return 0; }
             if (act == 2) {
                 g_r1523_co[g_r1523_ci++ & 15u] = pc; /* R1523 */
+                if (pc == 0x80031BDCu) { /* R1532 [heapchain]: walk the chain at every interpreted HeapAlloc call-out */
+                    static uint32_t hc_n; uint32_t cur = xenolift_mem_read32(0x80059320u), k; char b[700]; int o = 0;
+                    for (k = 0; k < 24u && cur >= 0x80010000u && cur < 0x80200000u && o < (int)sizeof b - 40; k++) {
+                        uint32_t nx = xenolift_mem_read32(cur - 8u), fl = xenolift_mem_read32(cur - 4u);
+                        o += snprintf(b + o, sizeof b - o, " %08X{n=%08X f=%08X}", cur, nx, fl);
+                        if ((fl & 0x01E00000u) == 0x00200000u || nx == cur) break;
+                        cur = nx;
+                    }
+                    if (hc_n++ < 40u) xenolift_receipt("[heapchain] R1532 HeapAlloc(%08X,%u) from %08X entry=%08X head59320=%08X chain:%s\n",
+                        r[4], r[5], act_ret - 8u, entry, xenolift_mem_read32(0x80059320u), b);
+                }
                 { static uint32_t co_n; struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
-                  if (co_n < 300u) { co_n++; /* R1523b: every call-out in order - the last one before silence never returned */
+                  if (co_n < 3000u) { co_n++; /* R1540: cap 300 -> 3000 */ /* R1523b: every call-out in order - the last one before silence never returned */
                     xenolift_receipt("[callout] R1523 #%u -> %08X from %08X a0=%08X a1=%08X a2=%08X a3=%08X sp=%08X entry=%08X t=%ld.%03lds\n",
                         co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--;
@@ -32008,14 +32185,14 @@ static int r1394_interp(uint32_t entry)
             else if (fn_ == 0x07u) { r[rd] = (uint32_t)((int32_t)r[rt] >> (r[rs] & 31)); }
             else if (fn_ == 0x08u) { /* jr */
                 tgt = r[rs];
-                act = (tgt < 0x8006F000u || tgt >= 0x80090000u) ? 1 : 0;
+                act = (tgt < 0x8006F000u || tgt >= r1533_end) ? 1 : 0;
                 pc = npc; npc = tgt;
                 continue; /* the slot executes next iteration */
             }
             else if (fn_ == 0x09u) { /* jalr */
                 uint32_t tv = r[rs];
                 r[rd] = npc + 4;
-                if (tv < 0x8006F000u || tv >= 0x80090000u) { act = 2; act_ret = r[rd]; }
+                if (tv < 0x8006F000u || tv >= r1533_end) { act = 2; act_ret = r[rd]; }
                 else { act = 0; }
                 pc = npc; npc = tv;
                 continue;
@@ -32061,17 +32238,17 @@ static int r1394_interp(uint32_t entry)
             if (rt == 0x10u || rt == 0x11u) { r[31] = npc + 4; }
             if (cond) {
                 tgt = pc + 4 + ((int32_t)imm << 2);
-                if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; }
+                if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; }
                 pc = npc; npc = tgt;
                 continue;
             }
         }
-        else if (op == 0x02u) { tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; } pc = npc; npc = tgt; continue; }
-        else if (op == 0x03u) { r[31] = npc + 4; tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 2; act_ret = r[31]; } pc = npc; npc = tgt; continue; }
-        else if (op == 0x04u) { if (r[rs] == r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x05u) { if (r[rs] != r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x06u) { if ((int32_t)r[rs] <= 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x07u) { if ((int32_t)r[rs] > 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= 0x80090000u) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x02u) { tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; }
+        else if (op == 0x03u) { r[31] = npc + 4; tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 2; act_ret = r[31]; } pc = npc; npc = tgt; continue; }
+        else if (op == 0x04u) { if (r[rs] == r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x05u) { if (r[rs] != r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x06u) { if ((int32_t)r[rs] <= 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x07u) { if ((int32_t)r[rs] > 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
         else if (op == 0x08u || op == 0x09u) { r[rt] = r[rs] + (uint32_t)imm; }
         else if (op == 0x0Au) { r[rt] = ((int32_t)r[rs] < imm) ? 1u : 0u; }
         else if (op == 0x0Bu) { r[rt] = (r[rs] < (uint32_t)imm) ? 1u : 0u; }
@@ -32087,7 +32264,7 @@ static int r1394_interp(uint32_t entry)
         else if (op == 0x25u) { r[rt] = xenolift_mem_read16(r[rs] + (uint32_t)imm); }
         else if (op == 0x26u) { r[rt] = LWR(r[rs] + (uint32_t)imm, r[rt]); } /* R1522 */
         else if (op == 0x28u) { { static uint32_t r1431_n; uint32_t r1431_ea = r[rs] + (uint32_t)imm; uint8_t r1431_nv = (uint8_t)(r[rt] & 0xFFu);
-            if (r1431_n < 8u && (r1431_ea & 3u) == 3u && r1431_ea >= 0x8006F000u && r1431_ea < 0x80090000u && ((r1431_nv == 0x00u && xenolift_mem[r1431_ea - 0x80000000u] == 0x03u) || (r1431_nv == 0xCFu && (xenolift_mem[r1431_ea - 0x80000000u] == 0x03u || xenolift_mem[r1431_ea - 0x80000000u] == 0x00u)))) { r1431_n++;
+            if (r1431_n < 8u && (r1431_ea & 3u) == 3u && r1431_ea >= 0x8006F000u && r1431_ea < r1533_end && ((r1431_nv == 0x00u && xenolift_mem[r1431_ea - 0x80000000u] == 0x03u) || (r1431_nv == 0xCFu && (xenolift_mem[r1431_ea - 0x80000000u] == 0x03u || xenolift_mem[r1431_ea - 0x80000000u] == 0x00u)))) { r1431_n++;
                 r861_out("[wrsrc] ISB %u ea=%08X new=%02X cur_fn=%08X r31=%08X @t=%lds\n", r1431_n, r1431_ea, (unsigned)r1431_nv, (unsigned)xenolift_cur_fn, (unsigned)r[31], (long)(xl_wall() - g_boot_wall_t0)); } }
             xenolift_mem_write8(r[rs] + (uint32_t)imm, r[rt] & 0xFFu); }
         else if (op == 0x29u) { xenolift_mem_write16(r[rs] + (uint32_t)imm, r[rt] & 0xFFFFu); }
