@@ -1858,6 +1858,8 @@ static int g_r1517_inloop; /* tentative - defined with the R1517 latch below */
  * write hook names any non-pointer store into a node's next field or the cursor gp+0x420, and the
  * CD / OTC DMA paths name any DMA covering a node. Camera only. */
 static uint32_t r1552_node[64], r1552_nn, r1552_lo = 0xFFFFFFFFu, r1552_hi;
+static uint32_t g_r1557_issue_fe1c, g_r1557_issue_cmd = 0xFFu; /* R1557b: archive marker at command issue */
+static uint32_t g_r1557_guest_fe1c; /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
 static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
 {
     static uint32_t c;
@@ -1937,6 +1939,7 @@ static void cd_cmd(uint8_t cmd)
             lba_arg = l < 0 ? 0u : (uint32_t)l;
             r1520_arm_check(lba_arg);
         } else r1520_arm_check(cd_seek_lba);
+        g_r1557_issue_fe1c = g_r1557_guest_fe1c; g_r1557_issue_cmd = cmd; /* R1557b/c: the game's own marker, not the cell (R113 zeroes it before the write lands) */
         r1520_ev("CMD", cmd, lba_arg, cd_last_cmd, cmd == 0x02u ? "setloc" : cmd == 0x06u ? "readN" : cmd == 0x1Bu ? "readS" : cmd == 0x09u ? "pause" : cmd == 0x01u ? "getstat" : cmd == 0x0Eu ? "setmode" : NULL);
     }
     /* R533 [cmdtl]: field-era command timeline - c101: dirack4 fired 3x, the
@@ -5302,6 +5305,28 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                     else if (cd_last_cmd == 0x08u) lad_target = 7u;
                     else if (cd_last_cmd == 0x0Au) lad_target = 9u;
                     else if (cd_last_cmd == 0x0Eu) lad_target = 12u;
+                    { /* R1557b: decide by the issuer. The archive layer sets its FE1C marker before every
+                       * command it issues (5 Pause, 9 its own Setmode at 0x8002A428, 11 GetTN, 12 retry
+                       * Setmode); the movie player issues with the archive idle (FE1C=0 at issue). */
+                      uint32_t at_issue = (g_r1557_issue_cmd == cd_last_cmd) ? g_r1557_issue_fe1c : 0xFFFFFFFFu;
+                      if (g_r1517_inloop && cd_last_cmd == 0x0Eu && (at_issue == 9u || at_issue == 12u))
+                          lad_target = at_issue;
+                      if (!(g_r1517_inloop && at_issue == 0u)) at_issue = 0xFFFFFFFFu; /* only the idle-issuer case skips */
+                      if (at_issue == 0u) lad_target = 0u;
+                    }
+                    if (g_r1517_inloop && lad_target == 0u && fe1c == 0u && (cd_last_cmd == 0x0Eu || cd_last_cmd == 0x09u
+                                                                          || cd_last_cmd == 0x13u || cd_last_cmd == 0x08u || cd_last_cmd == 0x0Au)) {
+                        /* R1557: main loop - never rewrite FE1C. FE1C=0 means the archive layer did not
+                         * issue this command (the movie player's own Setmode 0xC8 was taken for the
+                         * archive's, FE1C forced 0->12, and the 12->8->1 ladder re-seeked to its stale
+                         * record 108561 before the stream's first read). A different ladder state means
+                         * the issuer set it: 0x8002A428 puts FE1C=9 before its Setmode, and the 0x0E->12
+                         * map overwrote it. The sync dispatch below still runs for an intact marker. */
+                        static uint32_t r1557_n;
+                        if (r1557_n++ < 24u)
+                            xenolift_receipt("[r1557] ladder restore SKIPPED: cmd 0x%02X issued with the archive idle (game-written FE1C=0 at issue) - not the archive's (seek=%u)\n",
+                                             cd_last_cmd, cd_seek_lba);
+                    } else
                     if (lad_target != 0u && fe1c != lad_target) {
                         /* R318: the RESTORE is hardware semantics (the pending-handoff
                          * marker survives until INT latency on real HW) — it must ALWAYS
@@ -11848,6 +11873,7 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
             w * 8u, a, v, *(uint32_t *)(xenolift_mem + ((a & 0x1FFFFFu) & ~3u)), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31]);
         return;
     }
+    if ((((a & 0x1FFFFFu) & ~3u) == 0x4FE1Cu) && w == 4u && xenolift_sw_active) g_r1557_guest_fe1c = v; /* R1557c */
     if ((((a & 0x1FFFFFu) & ~3u) == 0x4FE1Cu) && g_r1517_inloop) { /* R1556 [fe1cw]: every archive-state write, main loop */
         uint32_t old; memcpy(&old, xenolift_mem + 0x4FE1Cu, 4);
         if (old != v) {
