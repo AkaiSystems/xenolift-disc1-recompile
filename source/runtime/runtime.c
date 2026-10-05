@@ -980,6 +980,7 @@ static int g_r1385_armed, g_r1385_seen_live, g_r1385_announced; /* R1387 (c468 r
 static uint8_t cd_read_active, cd_data_loaded;
 static void cd_data_load(void);
 static uint8_t g_r1565_mode; /* R1565: last Setmode byte */
+static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static uint8_t cd_last_cmd; /* true decl later (line ~675) keeps init order */
 static uint8_t cd_arm_int1_pending; /* R1205 fwd (tentative - merges with the CD-core definition below): the watcher's arm gate reads it */
@@ -1786,6 +1787,15 @@ static void cd_data_load(void)
             r861_out("[adv599] R607 load-time assert: seek %u -> stream %u (drag-back defeated at payload-read)\n",
                     cd_seek_lba, xenolift_stream_next); }
         cd_seek_lba = xenolift_stream_next;
+    }
+    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && (g_r1565_mode & 0x40u)) {
+        /* R1568: with XA-ADPCM on (Setmode bit 0x40) the drive routes audio sectors to the SPU and raises
+         * no data INT for them. Delivering 106112 (submode 0x64) as data put its junk header into the
+         * movie player's ring slot, which was marked complete and never consumed - every later sector
+         * was refused "slot busy" (R1567 code 4). Skip audio sectors in the player's stream. */
+        static uint32_t xs_n; uint32_t k;
+        for (k = 0; k < 16u && r1568_is_audio(cd_seek_lba); k++) cd_seek_lba++;
+        if (k && xs_n++ < 12u) xenolift_receipt("[r1568] skipped %u XA audio sector(s) in the ReadS stream -> data sector %u\n", k, cd_seek_lba);
     }
     if (disc_read_lba(cd_seek_lba, cd_data + 12) != 0)
         memset(cd_data + 12, 0, 2048); /* no disc: zeros */
@@ -15696,6 +15706,16 @@ static int disc_read_lba(uint32_t lba, void *dst)
     return rr;
 }
 
+/* R1568: raw-image subheader probe - submode bit 0x04 = XA audio (form 2 ADPCM). */
+static int r1568_is_audio(uint32_t lba)
+{
+    unsigned char sm = 0;
+    if (g_disc == NULL || g_sec_bytes != 2352u) return 0;
+    if (fseek(g_disc, (long)lba * 2352L + 18L, SEEK_SET) != 0) return 0;
+    if (fread(&sm, 1, 1, g_disc) != 1) return 0;
+    return (sm & 0x04u) != 0;
+}
+
 /* compare an ISO name (uppercase, may end in ";1") to a path component */
 static int iso_name_eq(const char *iso, uint32_t iso_len, const char *want)
 {
@@ -17078,12 +17098,17 @@ static void r1535_check(void)
 }
 /* R1564 (see the DMA path): a ReadS sector the player only partly read is dropped once nothing is
  * pending, and the next sector is delivered with its own INT1 - the drive keeps streaming. */
-static void r1564_check(void)
+static void r1564_check(uint32_t a)
 {
     static uint32_t still, adv;
+    /* R1564c: only once the player is back in its main loop / VSync wait (its data callback never calls these),
+     * and only if it actually read past the sector start (R1565 starts 2048-mode sectors at 12). R1568q: the
+     * old 16-check window fired inside the callback and dropped frame 2's sector 1 before its header read. */
+    uint32_t start = (g_r1565_mode & 0x20u) ? 0u : 12u;
     if (!(g_r1517_inloop && cd_read_active && cd_last_cmd == 0x1Bu && cd_data_loaded
-          && cd_data_pos > 0u && cd_data_pos < cd_data_n && cd_pending == 0u && !cd_scheduled)) { still = 0u; return; }
-    if (++still < 16u) return; /* R1564b: 256 -> 16 - a 2x drive delivers ~150 sectors/s; the player timed out at ~1/s */
+          && cd_data_pos > start && cd_data_pos < cd_data_n && cd_pending == 0u && !cd_scheduled)) { still = 0u; return; }
+    if (a != 0x8004B54Cu && a != 0x801D3F7Cu) return;
+    if (++still < 2u) return;
     still = 0u;
     cd_data_pos = cd_data_n;
     cd_data_loaded = 0;
@@ -17117,7 +17142,7 @@ void xenolift_trace(uint32_t a)
     if (g_ct_active) r1510_sample(); /* R1510 [cdtrace] */
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
-    r1564_check(); /* R1564 */
+    r1564_check(a); /* R1564/R1564c */
     { /* R1538 (JOSH-DIAG): VRAM snapshot every 4 s to /tmp/jtwatch/vram_tNNN.bin (+ display rect in the
        * file name), so field-era frames can be viewed - the end-of-run vram.bin only shows the last state. */
         static uint32_t tick; static time_t last;
@@ -17191,6 +17216,22 @@ void xenolift_trace(uint32_t a)
         g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
         memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
         g_r1566_busy = 0;
+    }
+    if (a == 0x801D5D54u || a == 0x801D66F8u) { /* R1567 [strcam]: movie player per-sector routine + its DMA starts (camera only) */
+        static uint32_t sc_n, dm_n;
+        #define R1567W(x) (*(uint32_t *)(xenolift_mem + ((x) & 0x1FFFFCu)))
+        if (a == 0x801D5D54u && sc_n++ < 40u) {
+            uint32_t sl = R1567W(0x801E89B4u), sw[8] = {0,0,0,0,0,0,0,0};
+            if (sl >= 0x80000000u && sl < 0x801FFFE0u) memcpy(sw, xenolift_mem + (sl & 0x1FFFFCu), 32);
+            xenolift_receipt("[strcam] R1567 #%u enter: lastres[8908]=%u chan[89E4]=%u startfr[89DC]=%u 8A0C=%u fr[89B8]=%u sec[89BC]=%04X mem[8A04]=%u idx[89F8]=%u ring[8A14]=%08X slot[89B4]=%08X A470=%u | slot %08X %08X %08X %08X %08X %08X %08X %08X | LBA %u fifo %u/%u\n",
+                sc_n, R1567W(0x801E8908u), R1567W(0x801E89E4u), R1567W(0x801E89DCu), R1567W(0x801E8A0Cu), R1567W(0x801E89B8u),
+                R1567W(0x801E89BCu) & 0xFFFFu, R1567W(0x801E8A04u), R1567W(0x801E89F8u), R1567W(0x801E8A14u), sl, R1567W(0x8005A470u),
+                sw[0], sw[1], sw[2], sw[3], sw[4], sw[5], sw[6], sw[7], cd_seek_lba, cd_data_pos, cd_data_n);
+        }
+        if (a == 0x801D66F8u && dm_n++ < 40u)
+            xenolift_receipt("[strcam] R1567 DMA start ch=%u madr=%08X a2=%08X words=%u chcr=%08X ra=%08X\n",
+                r[4], r[5], r[6], r[7], R1567W(r[29] + 16u), r[31]);
+        #undef R1567W
     }
     if (a == 0x8004111Cu) g_r1557_who = 1; /* R1557d: CdControlB = the archive layer's command path */
     else if (a == 0x80040FE4u || a == 0x80041248u) g_r1557_who = (r[31] >= 0x801D3000u && r[31] < 0x801F4000u) ? 2 : 1; /* R1557e: only the movie player (0x801Dxxxx caller) is "not the archive"; libcd's own CdRead callers at 0x80043xxx stay archive */

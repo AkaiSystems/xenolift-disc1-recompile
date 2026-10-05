@@ -669,6 +669,12 @@ fn main() {
         for a in [0x80077C5Cu32, 0x800737EC, 0x80077E88, 0x80070CFC, 0x80088E90, 0x801D3538u32] {
             if ptr_entries.insert(a) { added += 1; }
         }
+        /* R1569: the movie player's entry points called from OUTSIDE the stage-2 image (movie module file 18,
+         * field module file 14: jal 801D3538/37CC/3F7C/43B0). 0x801D3F7C (the frame loop) was never discovered,
+         * so the movie module's call to it was an unresolved jump (R1564cq). */
+        for a in [0x801D3538u32, 0x801D37CC, 0x801D3F7C, 0x801D43B0, 0x801D41AC, 0x801D4318] {
+            if ptr_entries.insert(a) { added += 1; }
+        }
         println!("2f scan: {} extra seeds", added);
     }
     println!(
