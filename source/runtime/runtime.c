@@ -1859,7 +1859,9 @@ static int g_r1517_inloop; /* tentative - defined with the R1517 latch below */
  * CD / OTC DMA paths name any DMA covering a node. Camera only. */
 static uint32_t r1552_node[64], r1552_nn, r1552_lo = 0xFFFFFFFFu, r1552_hi;
 static uint32_t g_r1557_issue_fe1c, g_r1557_issue_cmd = 0xFFu; /* R1557b: archive marker at command issue */
-static uint32_t g_r1557_guest_fe1c; /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
+static uint32_t g_r1557_guest_fe1c;
+static uint32_t g_r1558_co_n;
+static int g_r1557_who, g_r1557_issue_who; /* R1557d: 1 = archive layer issued the command, 2 = another caller (movie player) */ /* R1558: [callout] budget, reset at every dispatcher entry (the movie loop used all 3000) */ /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
 static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
 {
     static uint32_t c;
@@ -1873,6 +1875,15 @@ static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
             return;
         }
     }
+}
+/* R1562: a CD ready callback may live in the movie-player window. The player registers its own
+ * data-ready callback 0x801D5900 (CdReadyCallback in 0x801D586C) for the ReadS stream; every delivery
+ * site only accepted 0x80010000-0x80060000, so it was treated as "no callback" and the stream at
+ * LBA 106105 never delivered a sector (R1557dq: seek parked at 106105, ReadS active, sector loaded). */
+static int r1562_cb_ok(uint32_t h)
+{
+    if (h >= 0x80010000u && h < 0x80060000u) return 1;
+    return g_r1517_inloop && h >= 0x801D3000u && h < 0x801F4000u && !(h & 3u);
 }
 static uint32_t r1550_h4_fallback(const char *site)
 {
@@ -1939,6 +1950,7 @@ static void cd_cmd(uint8_t cmd)
             lba_arg = l < 0 ? 0u : (uint32_t)l;
             r1520_arm_check(lba_arg);
         } else r1520_arm_check(cd_seek_lba);
+        g_r1557_issue_who = g_r1557_who; g_r1557_who = 0; /* R1557d */
         g_r1557_issue_fe1c = g_r1557_guest_fe1c; g_r1557_issue_cmd = cmd; /* R1557b/c: the game's own marker, not the cell (R113 zeroes it before the write lands) */
         r1520_ev("CMD", cmd, lba_arg, cd_last_cmd, cmd == 0x02u ? "setloc" : cmd == 0x06u ? "readN" : cmd == 0x1Bu ? "readS" : cmd == 0x09u ? "pause" : cmd == 0x01u ? "getstat" : cmd == 0x0Eu ? "setmode" : NULL);
     }
@@ -5311,10 +5323,13 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                       uint32_t at_issue = (g_r1557_issue_cmd == cd_last_cmd) ? g_r1557_issue_fe1c : 0xFFFFFFFFu;
                       if (g_r1517_inloop && cd_last_cmd == 0x0Eu && (at_issue == 9u || at_issue == 12u))
                           lad_target = at_issue;
-                      if (!(g_r1517_inloop && at_issue == 0u)) at_issue = 0xFFFFFFFFu; /* only the idle-issuer case skips */
-                      if (at_issue == 0u) lad_target = 0u;
+                      /* R1557d: the marker can go stale (R113's instant release zeroes the cell unseen), so the
+                       * skip is decided by the ISSUER: 0x8004111C (CdControlB), or CdControl / CdControlF called
+                       * from archive code 0x80028000-0x8002BFFF = archive; anything else (the movie player at
+                       * 0x801Dxxxx) is not the archive's command and gets no restore. */
+                      if (g_r1517_inloop && g_r1557_issue_cmd == cd_last_cmd && g_r1557_issue_who == 2) lad_target = 0u;
                     }
-                    if (g_r1517_inloop && lad_target == 0u && fe1c == 0u && (cd_last_cmd == 0x0Eu || cd_last_cmd == 0x09u
+                    if (g_r1517_inloop && lad_target == 0u && g_r1557_issue_who == 2 && (cd_last_cmd == 0x0Eu || cd_last_cmd == 0x09u
                                                                           || cd_last_cmd == 0x13u || cd_last_cmd == 0x08u || cd_last_cmd == 0x0Au)) {
                         /* R1557: main loop - never rewrite FE1C. FE1C=0 means the archive layer did not
                          * issue this command (the movie player's own Setmode 0xC8 was taken for the
@@ -5324,7 +5339,7 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                          * map overwrote it. The sync dispatch below still runs for an intact marker. */
                         static uint32_t r1557_n;
                         if (r1557_n++ < 24u)
-                            xenolift_receipt("[r1557] ladder restore SKIPPED: cmd 0x%02X issued with the archive idle (game-written FE1C=0 at issue) - not the archive's (seek=%u)\n",
+                            xenolift_receipt("[r1557] ladder restore SKIPPED: cmd 0x%02X issued by a non-archive caller (movie player) - not the archive's (seek=%u)\n",
                                              cd_last_cmd, cd_seek_lba);
                     } else
                     if (lad_target != 0u && fe1c != lad_target) {
@@ -6643,6 +6658,10 @@ static int io_special_write(uint32_t p, uint32_t v)
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                     r1552_dma_check("CD", madr, n); /* R1552 */
+                    if ((madr & 0x1FFFFCu) < 0xADB80u && (madr & 0x1FFFFCu) + n > 0xADB00u) { /* R1560: CD DMA over the field selector cells */
+                        static uint32_t sd_n;
+                        if (sd_n++ < 16u) xenolift_receipt("[selw] R1560 CD DMA %08X+%u (LBA %u) covers 800ADB00..800ADB80\n", madr, n, cd_seek_lba);
+                    }
                 /* R508 CB-DMA camera: c74 verdict — the on-change watcher saw
                  * ZERO guest writes to the callback cell 0x80059F08 all run,
                  * yet cbheal kept finding it empty again. Only DMA blasts memory
@@ -10159,7 +10178,7 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                         if (midstream_stall) {
                     uint32_t h4 = xenolift_mem_read32(0x800564ACu);
                     uint32_t save4 = r[4], save5 = r[5];
-                    if (h4 < 0x80010000u || h4 >= 0x80060000u) {
+                    if (!r1562_cb_ok(h4)) {
                         h4 = r1550_h4_fallback("spin-drain"); /* R168 known h4 fallback; R1550 none in the main loop */
                         r861_out("[cd] spin-drain: h4 cell blank — fallback 0x%08X\n", h4);
                     }
@@ -10545,7 +10564,7 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                         if (midstream_stall) {
                     uint32_t h4 = xenolift_mem_read32(0x800564ACu);
                     uint32_t save4 = r[4], save5 = r[5];
-                    if (h4 < 0x80010000u || h4 >= 0x80060000u) {
+                    if (!r1562_cb_ok(h4)) {
                         h4 = r1550_h4_fallback("spin-drain"); /* R168 known h4 fallback; R1550 none in the main loop */
                         r861_out("[cd] spin-drain: h4 cell blank — fallback 0x%08X\n", h4);
                     }
@@ -11874,6 +11893,16 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
         return;
     }
     if ((((a & 0x1FFFFFu) & ~3u) == 0x4FE1Cu) && w == 4u && xenolift_sw_active) g_r1557_guest_fe1c = v; /* R1557c */
+    if ((((a & 0x1FFFFFu) & ~3u) == 0xADB64u) || (((a & 0x1FFFFFu) & ~3u) == 0xADB08u)) { /* R1560 [selw]: field selector/flag writers */
+        static uint32_t sw_n;
+        if (sw_n++ < 60u) {
+            void *bt[8]; int k = backtrace(bt, 8), i, o = 0; char b[300];
+            for (i = 0; i < k && o < (int)sizeof b - 24; i++) o += snprintf(b + o, sizeof b - o, " %p", bt[i]);
+            xenolift_receipt("[selw] R1560 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X a0=%08X a1=%08X depth=%d base=%p bt:%s\n",
+                w * 8u, a, v, *(uint32_t *)(xenolift_mem + ((a & 0x1FFFFFu) & ~3u)), xenolift_sw_active, xenolift_sw_line,
+                (unsigned)xenolift_cur_fn, r[31], r[4], r[5], g_guest_depth, (void *)_dyld_get_image_header(0), b);
+        }
+    }
     if ((((a & 0x1FFFFFu) & ~3u) == 0x4FE1Cu) && g_r1517_inloop) { /* R1556 [fe1cw]: every archive-state write, main loop */
         uint32_t old; memcpy(&old, xenolift_mem + 0x4FE1Cu, 4);
         if (old != v) {
@@ -17108,6 +17137,18 @@ void xenolift_trace(uint32_t a)
             xenolift_receipt("[sprpkt] R1540 ALLOC sprite=%08X count=%u flags=%u (x24=%u) prev[32]=%08X prev[44]=%08X ra=%08X\n", sp, r[5], r[6], r[5] * 24u, p32, p44, r[31]);
         if (a == 0x800230A8u && (n2++ < 40u || p44 == 0u))
             xenolift_receipt("[sprpkt] R1540 DESTROY sprite=%08X [32]=%08X [44]=%08X ra=%08X%s\n", sp, p32, p44, r[31], p44 ? "" : "  <== NULL packets");
+    }
+    if (a == 0x8004111Cu) g_r1557_who = 1; /* R1557d: CdControlB = the archive layer's command path */
+    else if (a == 0x80040FE4u || a == 0x80041248u) g_r1557_who = (r[31] >= 0x801D3000u && r[31] < 0x801F4000u) ? 2 : 1; /* R1557e: only the movie player (0x801Dxxxx caller) is "not the archive"; libcd's own CdRead callers at 0x80043xxx stay archive */
+    if (a == 0x800799D4u || a == 0x80029AFCu || a == 0x8001B3A8u || a == 0x8001B044u) { /* R1558b: compiled-path twin of the [scnset]/[qread] hooks */
+        static uint32_t cs_n;
+        if (cs_n++ < 60u) {
+            uint32_t qw[6] = {0,0,0,0,0,0}, qa = r[4] & 0x1FFFFCu;
+            if (a == 0x80029AFCu && qa + 24u <= 0x200000u) memcpy(qw, xenolift_mem + qa, 24);
+            xenolift_receipt("[scnset] R1558b compiled entry %08X ra=%08X a0=%08X sel[800ADB64]=%08X F370=%08X DB08=%08X | req %08X %08X %08X %08X %08X %08X\n",
+                a, r[31], r[4], *(uint32_t *)(xenolift_mem + 0xADB64u), *(uint32_t *)(xenolift_mem + 0x4F370u),
+                *(uint32_t *)(xenolift_mem + 0xADB08u), qw[0], qw[1], qw[2], qw[3], qw[4], qw[5]);
+        }
     }
     if (a == 0x8001C964u || a == 0x8001C9F8u) { /* R1552 [taskcam]: map both task lists, flag a bad link */
         static const uint32_t heads[2] = { 0x5958Cu, 0x59594u };
@@ -26195,6 +26236,7 @@ if (pad809_presses < 300 &&
                         xenolift_mem_read32(0x800592BCu));
             }
         }
+        g_r1558_co_n = 0u; /* R1558 */
         if (r670d < 8u) {
             r670d++;
             r861_out("[phase] R670 DISPATCHER entry #%u @t=%lds: req=%08X idx(FAEC)=%08X cur=%08X F0C=%u FDF8=%08X latch(9330)=%08X r31=%08X\n",
@@ -27186,9 +27228,9 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                                 xenolift_mem_read32(0x8004FDF8u), cd_data_pos, cd_data_n, cd_seek_lba);
                     if (slots1380 & 4u) {
                         uint32_t h4 = *(uint32_t *)(xenolift_mem + 0x564AC);
-                        if (!(h4 >= 0x80010000u && h4 < 0x80060000u)) {
+                        if (!(r1562_cb_ok(h4))) {
                             uint32_t rs_h4 = xenolift_mem_read32(0x80059EF8u + 0x10u);
-                            h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : r1550_h4_fallback("R1380-postconv");
+                            h4 = (r1562_cb_ok(rs_h4)) ? rs_h4 : r1550_h4_fallback("R1380-postconv");
                         }
                         if (h4 != 0u) {
                             r[4] = xenolift_mem[0x56789]; r[5] = 0x8005A218u;
@@ -27745,15 +27787,15 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                  * collector R1181 patched - c373 still receipted "wl: h4 cell + read-struct both empty -
                  * known-native h4 0x8002B084" -> dispatch -> same 21s nested CD_sync park. Empty cell = the
                  * game registered no ready callback = nothing to call. */
-                if (g_firstfault_stop && !(h4 >= 0x80010000u && h4 < 0x80060000u)) {
+                if (g_firstfault_stop && !(r1562_cb_ok(h4))) {
                     static int r1182_n;
                     if (r1182_n < 12) { r1182_n++;
                         xenolift_receipt("[firstfault] R1182 wait-loop h4 cell empty (%08X) - NO fallback callback (pending=%u last_cmd=%02X Intr.sync=%02X Intr.ready=%02X)\n",
                                          h4, (unsigned)cd_pending, cd_last_cmd, xenolift_mem[0x56788], xenolift_mem[0x56789]); }
                     h4 = 0u;
-                } else if (!(h4 >= 0x80010000u && h4 < 0x80060000u)) {
+                } else if (!(r1562_cb_ok(h4))) {
                     uint32_t rs_h4 = xenolift_mem_read32(0x80059EF8u + 0x10u);
-                    if (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) {
+                    if (r1562_cb_ok(rs_h4)) {
                         r861_out("[cd] wl: h4 cell empty — falling back to read-struct handler 0x%08X\n", rs_h4);
                         h4 = rs_h4;
                     } else {
@@ -27782,7 +27824,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                         }
                     }
                 }
-                if (h4 >= 0x80010000u && h4 < 0x80060000u && cd_last_cmd == 0x13u) {
+                if (r1562_cb_ok(h4) && cd_last_cmd == 0x13u) {
                     /* R309: h4 (0x8002B084) = ArchiveCurrentFileReadyCallback — SECTOR-DATA
                      * handler only (manual cycle-57). Dispatching it after a GetTN command
                      * completion is WRONG ROUTING: h4 never reads the response FIFO; it
@@ -27797,7 +27839,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     uint16_t one = 1;
                     memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
                     r861_out("[cd] TOC-ROUTE: GetTN completion -> state machine (slot-2), NOT h4 (sector handler)\n");
-                } else if (h4 >= 0x80010000u && h4 < 0x80060000u) {
+                } else if (r1562_cb_ok(h4)) {
                     r[4] = xenolift_mem[0x56789];
                     r[5] = 0x8005A218u;
                     r861_out("[cd] wait-loop: dispatch h4 0x%08X (a0=%u)\n", h4, r[4]);
@@ -31624,16 +31666,16 @@ static void cd_force_deliver_int1(const char *why)
                  * R845 re-force door. The game had NO ready callback registered (cell 0x800564AC empty,
                  * read-struct empty) - it never asked for this call. Under first-fault-stop an empty cell
                  * means nothing is dispatched; the game's own getintr polling owns the INT. */
-                if (g_firstfault_stop && !(h4 >= 0x80010000u && h4 < 0x80060000u)) {
+                if (g_firstfault_stop && !(r1562_cb_ok(h4))) {
                     static int r1181_n;
                     if (r1181_n < 12) { r1181_n++;
                         xenolift_receipt("[firstfault] R1181 h4 cell empty (%08X, read-struct %08X) - NO fallback callback dispatched (slot=%u pending=%u last_cmd=%02X Intr.sync=%02X Intr.ready=%02X)\n",
                                          h4, xenolift_mem_read32(0x80059EF8u + 0x10u), slots, (unsigned)cd_pending,
                                          cd_last_cmd, xenolift_mem[0x56788], xenolift_mem[0x56789]); }
                     h4 = 0u;
-                } else if (!(h4 >= 0x80010000u && h4 < 0x80060000u)) {
+                } else if (!(r1562_cb_ok(h4))) {
                     uint32_t rs_h4 = xenolift_mem_read32(0x80059EF8u + 0x10u);
-                    h4 = (rs_h4 >= 0x80010000u && rs_h4 < 0x80060000u) ? rs_h4 : r1550_h4_fallback("collector-R206");
+                    h4 = (r1562_cb_ok(rs_h4)) ? rs_h4 : r1550_h4_fallback("collector-R206");
                 }
                 if (h4 != 0u) { /* R1182: R1181 zeroed h4 but this site dispatched unconditionally -> dispatch(0) x12 in c373 */
                     r[4] = xenolift_mem[0x56789]; r[5] = 0x8005A218u;
@@ -32351,6 +32393,13 @@ static uint64_t g_r1523_steps; static uint32_t g_r1523_pcs[8], g_r1523_pi, g_r15
 static void r1523_tick(uint32_t pc, uint32_t entry)
 {
     g_r1523_steps++;
+    if (pc == 0x800799D4u) { /* R1558: field scene setup entry - its module load is file ([800ADB64]&0x7F)+5 */
+        static uint32_t ss_n;
+        if (ss_n++ < 16u)
+            xenolift_receipt("[scnset] R1558 #%u field scene setup 800799D4: sel[800ADB64]=%08X F370=%08X DB08=%08X DB30=%08X ra=%08X\n",
+                ss_n, *(uint32_t *)(xenolift_mem + 0xADB64u), *(uint32_t *)(xenolift_mem + 0x4F370u),
+                *(uint32_t *)(xenolift_mem + 0xADB08u), *(uint32_t *)(xenolift_mem + 0xADB30u), r[31]);
+    }
     if ((g_r1523_steps & 0xFFFFFu) == 0u) g_r1523_pcs[g_r1523_pi++ & 7u] = pc;
     if ((g_r1523_steps & 0x7FFFFFu) == 0u && g_r1523_n < 120u) {
         unsigned i; char b[400]; int o = 0;
@@ -32376,6 +32425,16 @@ static int r1394_interp(uint32_t entry)
     ent_n++;
     if (ent_n <= 32u || (ent_n % 4096u) == 0u)
         r861_out("[ovlint] R1394 interp entry #%u fn=%08X r31=%08X sp=%08X\n", ent_n, entry, (unsigned)r[31], (unsigned)r[29]);
+    uint32_t r1561_ra = r[31]; /* R1561: the caller's return address at interpreter entry */
+    if (entry == 0x80077E88u) { /* R1559: dump the field module at FieldMain's first entry for an offline diff against the disc image (not an emit input) */
+        static int fd_done;
+        if (!fd_done) { fd_done = 1;
+            FILE *ff = fopen("field_entry_dump.bin", "wb");
+            if (ff) { fwrite(xenolift_mem + 0x6FAF0u, 1, 0x800AF5F0u - 0x8006FAF0u, ff); fclose(ff); }
+            xenolift_receipt("[fldump] R1559 field module 8006FAF0..800AF5F0 dumped at FieldMain entry -> field_entry_dump.bin (sel=%08X DB08=%08X)\n",
+                             *(uint32_t *)(xenolift_mem + 0xADB64u), *(uint32_t *)(xenolift_mem + 0xADB08u));
+        }
+    }
 { /* R782A [ovldecl] c782 - THE ENTRY-HEALTH DECLINE. The c778-c781 receipts: the dispatch to the module-6 entry 800737EC is LEGITIMATE (the game phase table row 6, the R154 install; the R731 chain: cb-cell 0x8001809C, jalr 80019C04, return 80019C0C); the entry IS real code in the emit-era reference (R1393 comment: bytes at 0x800737EC match the emitted bodies, c491/c495); but the epoch heapclr wipes the window and the reinstall is a STREAM (winw receipts: fn=800286CC writes prologues, jals and strings back in) - THE DISPATCH FIRED BEFORE THE STREAM REACHED +0x47EC, the entry held remnant garbage (CE53EBD4, op 0x33; the prior op 0x38 stop = the same class), and the interpreter stopped loudly per the c493 contract. THE FIX = THE R1396 ANCHOR-BOUNCE CONTRACT EXTENDED TO GARBAGE-AT-ENTRY: at the interpreter entry, if the first word is the receipted undefined-op garbage class, DECLINE bounded (return 0 - the dispatcher re-enters per state request, R1232) so the install lands and the NEXT entry interprets real code; the loud stop stays as the fallback after the decline cap. */
     static uint32_t r782a_w; static uint32_t r782a_n; static int r782a_pn;
     uint32_t r782a_cw = xenolift_mem_read32(pc);
@@ -32395,6 +32454,16 @@ static int r1394_interp(uint32_t entry)
         int32_t imm;
         if (pc < 0x8006F000u || pc >= r1533_end) {
             /* control has left the module window */
+            if (act == 1 && pc == r1561_ra && r1561_ra != 0u) {
+                /* R1561: a plain return to the compiled code that called this interpreted function (e.g. an
+                 * object callback via jalr at 0x80024DA0 returning to 0x80024DA8). The caller continues after
+                 * its dispatch call returns; dispatching the return address (mid-function, no case) raised
+                 * R807 and restarted the game (R1560q, field t=33..54s). */
+                static uint32_t rr_n;
+                if (rr_n++ < 12u)
+                    xenolift_receipt("[r1561] interpreted fn %08X returned to its compiled caller %08X - plain return, no dispatch\n", entry, pc);
+                return 0;
+            }
             if (act == 1) { { static uint32_t xo_n; if (xo_n < 60u) { xo_n++; xenolift_receipt("[callout] R1523 EXIT-OUT #%u jr/j to %08X (entry=%08X ra=%08X sp=%08X)\n", xo_n, pc, entry, r[31], r[29]); } }
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--; return 0; }
             if (act == 2) {
@@ -32410,10 +32479,17 @@ static int r1394_interp(uint32_t entry)
                     if (hc_n++ < 40u) xenolift_receipt("[heapchain] R1532 HeapAlloc(%08X,%u) from %08X entry=%08X head59320=%08X chain:%s\n",
                         r[4], r[5], act_ret - 8u, entry, xenolift_mem_read32(0x80059320u), b);
                 }
-                { static uint32_t co_n; struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
-                  if (co_n < 3000u) { co_n++; /* R1540: cap 300 -> 3000 */ /* R1523b: every call-out in order - the last one before silence never returned */
+                if (pc == 0x80029AFCu) { /* R1558: decode every queued-read request (field scene setup loads its module this way) */
+                    static uint32_t qr_n; uint32_t qw[8], qa = r[4] & 0x1FFFFCu;
+                    if (qr_n++ < 40u && qa + 32u <= 0x200000u) { memcpy(qw, xenolift_mem + qa, 32);
+                        xenolift_receipt("[qread] R1558 #%u queued read req@%08X: %08X %08X %08X %08X %08X %08X %08X %08X | file#(lo16 @+8)=%u sel[800ADB64]=%08X from %08X\n",
+                            qr_n, r[4], qw[0], qw[1], qw[2], qw[3], qw[4], qw[5], qw[6], qw[7], qw[2] & 0xFFFFu,
+                            *(uint32_t *)(xenolift_mem + 0xADB64u), act_ret - 8u); }
+                }
+                { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+                  if (g_r1558_co_n < 3000u) { g_r1558_co_n++; /* R1540: cap 300 -> 3000; R1558: per dispatcher era */ /* R1523b: every call-out in order - the last one before silence never returned */
                     xenolift_receipt("[callout] R1523 #%u -> %08X from %08X a0=%08X a1=%08X a2=%08X a3=%08X sp=%08X entry=%08X t=%ld.%03lds\n",
-                        co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
+                        g_r1558_co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--;
                 pc = act_ret; npc = act_ret + 4; act = 0;
                 continue;
