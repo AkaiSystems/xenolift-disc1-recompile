@@ -4848,8 +4848,15 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
       uint32_t f18_n = 0;
       while (f18_rem > 0u && f18_n < 16u) {
           uint32_t f18_chunk = (f18_rem < 2048u) ? f18_rem : 2048u;
-          cd_data_load();
-          memcpy(xenolift_mem + (f18_dst & 0x1FFFFFFFu), cd_data + 12u, f18_chunk);
+          /* R1553: read LBA 109158+n straight from the image. cd_data_load() went through the FIFO
+           * re-anchor, which snaps the seek back to FE04 (still 109158 - nothing here advances it),
+           * so the slots got 109158,109159,109158,109159,... The unpacked movie module then held
+           * garbage from 0x80073818 (w=4C3C0280), R1463D declined the "partial install", the
+           * error dispatcher sent the game to the Kernel Menu, and R371 auto-picked Field.
+           * Real-console RAM (DuckStation, Disc 1, during the movie) shows the module byte-exact. */
+          { uint8_t f18_sec[2048];
+            if (disc_read_lba(109158u + f18_n, f18_sec) != 0) break;
+            memcpy(xenolift_mem + (f18_dst & 0x1FFFFFFFu), f18_sec, f18_chunk); }
           f18_dst += 0x800u;
           f18_rem = (f18_rem > 2048u) ? (f18_rem - 2048u) : 0u;
           xenolift_mem_write32(0x8004FDF8u, f18_rem);
@@ -10144,6 +10151,17 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                                 xenolift_mem_read32(0x8004FE14u), xenolift_mem_read32(0x8004FE08u),
                                 xenolift_mem_read32(0x8004FE38u), xenolift_mem_read32(0x8004FE48u),
                                 xenolift_mem_read32(0x80059EF8u), xenolift_mem_read32(0x80059F10u));
+                        /* R1554: never forge the sync event mid-read. A real drive raises INT1 per sector
+                         * during ReadN, never INT2; h2 with a0=2 made the movie module's file-1 read
+                         * (R1553q, 108561.., FDF8=64028) take its retry path (FE1C 0->10->11, Getstat,
+                         * GetTN, Pause) and never resume. The h4 drain above delivers the sector; the
+                         * h2 kick stays for R164's post-read queued-request case. */
+                        if (midstream_stall) {
+                            static uint32_t r1554_n;
+                            if (r1554_n++ < 12u)
+                                xenolift_receipt("[r1554] spin-kick h2 (a0=%u) SKIPPED mid-read (LBA %u FDF8=%u) - data drain only\n",
+                                                 r[4], cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
+                        } else
                         if (!r1179_forge_blocked("spin-L5484")) { g_guest_depth++, xenolift_dispatch(h2), g_guest_depth--; }
                     }
                 }
@@ -10519,6 +10537,17 @@ r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + 
                                 xenolift_mem_read32(0x8004FE14u), xenolift_mem_read32(0x8004FE08u),
                                 xenolift_mem_read32(0x8004FE38u), xenolift_mem_read32(0x8004FE48u),
                                 xenolift_mem_read32(0x80059EF8u), xenolift_mem_read32(0x80059F10u));
+                        /* R1554: never forge the sync event mid-read. A real drive raises INT1 per sector
+                         * during ReadN, never INT2; h2 with a0=2 made the movie module's file-1 read
+                         * (R1553q, 108561.., FDF8=64028) take its retry path (FE1C 0->10->11, Getstat,
+                         * GetTN, Pause) and never resume. The h4 drain above delivers the sector; the
+                         * h2 kick stays for R164's post-read queued-request case. */
+                        if (midstream_stall) {
+                            static uint32_t r1554_n;
+                            if (r1554_n++ < 12u)
+                                xenolift_receipt("[r1554] spin-kick h2 (a0=%u) SKIPPED mid-read (LBA %u FDF8=%u) - data drain only\n",
+                                                 r[4], cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
+                        } else
                         if (!r1179_forge_blocked("spin-L5777")) { g_guest_depth++, xenolift_dispatch(h2), g_guest_depth--; }
                     }
                 }
@@ -11818,6 +11847,16 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
         if (bt_n++ < 24u) xenolift_receipt("[bundletrip] R1534 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X\n",
             w * 8u, a, v, *(uint32_t *)(xenolift_mem + ((a & 0x1FFFFFu) & ~3u)), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31]);
         return;
+    }
+    if ((((a & 0x1FFFFFu) & ~3u) == 0x4FE1Cu) && g_r1517_inloop) { /* R1556 [fe1cw]: every archive-state write, main loop */
+        uint32_t old; memcpy(&old, xenolift_mem + 0x4FE1Cu, 4);
+        if (old != v) {
+            static uint32_t fw_n;
+            if (fw_n++ < 400u)
+                xenolift_receipt("[fe1cw] R1556 FE1C %u -> %u (w%u) sw_active=%d sw_line=%u cur_fn=%08X ra=%08X a0=%08X FE20=%u last_cmd=%02X pend=%u seek=%u\n",
+                    old, v, w * 8u, xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31], r[4],
+                    *(uint32_t *)(xenolift_mem + 0x4FE20u), cd_last_cmd, (unsigned)cd_pending, cd_seek_lba);
+        }
     }
     if (r1552_nn && v != 0u && (w < 4u || v < 0x80000000u || v >= 0x80200000u)) { /* R1552 [taskcam] */
         uint32_t pa = (a & 0x1FFFFFu) & ~3u, k, hit = 0xFFFFFFFFu;
@@ -16950,9 +16989,14 @@ static void r1535_check(void)
     if (cd_last_cmd != 0x09u || cd_pending != 0u || cd_scheduled) { still = 0u; return; }
     memcpy(&fe1c, xenolift_mem + 0x4FE1Cu, 4);
     if (fe1c != 6u) { still = 0u; return; }
-    if (++still < 65536u) return;
+    /* R1555: 65536 -> 256 checks. Hardware completes a Pause within milliseconds of the INT3 ack.
+     * R1554q: the movie player's stop routine (0x801D4318: CdControl(Pause) until accepted, then
+     * the archive idle wait) looped for 100 s - each heal-forged event that reached the handler
+     * while it sat in FE1C=6 sent it to retry state 10 and a fresh Pause long before 65536 checks,
+     * so the completion arrived once in the whole run. */
+    if (++still < (g_r1517_inloop ? 256u : 65536u)) return; /* R1555b: boot keeps the old window (R1555q: 16 boot fires, MainLoop 3s -> 7s) */
     still = 0u;
-    if (fires >= 512u) return;
+    if (fires >= 4096u) return;
     fires++;
     cd_resp[0] = 0x02u; cd_resp_n = 1; cd_resp_pos = 0;
     cd_pending = 2, g_pend_line = __LINE__;
