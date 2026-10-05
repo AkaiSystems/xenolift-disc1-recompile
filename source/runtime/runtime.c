@@ -979,6 +979,8 @@ static int r835_f5_fired;
 static int g_r1385_armed, g_r1385_seen_live, g_r1385_announced; /* R1387 (c468 receipts): file-scope so the fire site and the mv-loop watcher share state (the R1381 host goes cold after the bell) */
 static uint8_t cd_read_active, cd_data_loaded;
 static void cd_data_load(void);
+static uint8_t g_r1565_mode; /* R1565: last Setmode byte */
+static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static uint8_t cd_last_cmd; /* true decl later (line ~675) keeps init order */
 static uint8_t cd_arm_int1_pending; /* R1205 fwd (tentative - merges with the CD-core definition below): the watcher's arm gate reads it */
 static int xenolift_coord_text_poisoned(void); /* R1206 fwd: the watcher's late-capture poison check */
@@ -1812,6 +1814,12 @@ static void cd_data_load(void)
         }
         r861_out("[cd] sector LBA %u loaded into data FIFO (header %02X:%02X:%02X + 2048 bytes)\n",
             cd_seek_lba, cd_data[0], cd_data[1], cd_data[2]);
+    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && !(g_r1565_mode & 0x20u)) {
+        /* R1565: 2048-byte sector mode (Setmode bit 0x20 clear, e.g. the movie player's 0xC8): the drive
+         * FIFO holds only the user data. Our FIFO always carries the 12-byte header first, so the player's
+         * 32-byte STR-header read got header+20 data bytes and no sector was ever recognised as video. */
+        cd_data_pos = 12u;
+    }
 }
 
 /* Commands in the kernel's per-command handler table (0x80056570): their
@@ -1861,7 +1869,8 @@ static uint32_t r1552_node[64], r1552_nn, r1552_lo = 0xFFFFFFFFu, r1552_hi;
 static uint32_t g_r1557_issue_fe1c, g_r1557_issue_cmd = 0xFFu; /* R1557b: archive marker at command issue */
 static uint32_t g_r1557_guest_fe1c;
 static uint32_t g_r1558_co_n;
-static int g_r1557_who, g_r1557_issue_who; /* R1557d: 1 = archive layer issued the command, 2 = another caller (movie player) */ /* R1558: [callout] budget, reset at every dispatcher entry (the movie loop used all 3000) */ /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
+static int g_r1557_who, g_r1557_issue_who;
+static uint32_t g_r1566_dma_cb[8]; static int g_r1566_pending, g_r1566_busy; /* R1566: DMA-complete callbacks (DMACallback via 0x8004B7A0) */ /* R1557d: 1 = archive layer issued the command, 2 = another caller (movie player) */ /* R1558: [callout] budget, reset at every dispatcher entry (the movie loop used all 3000) */ /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
 static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
 {
     static uint32_t c;
@@ -2210,6 +2219,8 @@ static void cd_cmd(uint8_t cmd)
                 r861_out("[xfer] R1314 POS intent (Setloc): lba=%u seq=%u (positioning only - NO serve authority)\n", lba_now, cd_sched_seq); }
             cd_pos_lba = lba_now; cd_pos_t = xl_wall();
         } else if (cmd == 0x06u || cmd == 0x1Bu) {
+            if (cmd == 0x1Bu && g_r1517_inloop && !(g_r1565_mode & 0x20u) && cd_data_loaded && cd_data_pos == 0u)
+                cd_data_pos = 12u; /* R1565b: the first stream sector was loaded at Setloc time (cmd 02) - align it to the user data too */
             /* R1314 (c214, Jos PSX-SPX correction): the STREAM arms ONLY at
              * ReadN (06) and ReadS (1B). 0x09 is PAUSE - INT3 then INT2, it
              * ENDS reading; the old label booked Pause commands as read
@@ -2453,6 +2464,7 @@ static void cd_cmd(uint8_t cmd)
          * STR streaming. Log the transition; 2x does not change our
          * instant-serve model but flags the STR phase in the digest. */
         uint8_t m = cd_params[0];
+        g_r1565_mode = m; /* R1565 */
         r861_out("[cd] Setmode 0x%02X (speed=%sx XA=%s realidx=%s ReportAF=%s)\n",
                 m, (m & 0x80u) ? "2x" : "1x", (m & 0x20u) ? "on" : "off",
                 (m & 0x08u) ? "raw" : "cooked", (m & 0x10u) ? "on" : "off");
@@ -2592,7 +2604,7 @@ static int cd_write(uint32_t p, uint32_t v)
             }
             cd_resp_n = cd_resp_pos = 0;
             if (was_pending && was_level == 3u && cd_read_active
-                && cd_last_cmd == 0x06u) { /* R1317 (c222): PAUSE (09) no longer rides the ReadN INT1 ack-pair - Jos PSX-SPX corrected model; the R163-era ReadS grouping retired */
+                && (cd_last_cmd == 0x06u || (cd_last_cmd == 0x1Bu && g_r1517_inloop))) { /* R1563: ReadS (1B) streams like ReadN - its INT3 ack is followed by INT1 per sector; with ReadS excluded the movie player's stream at LBA 106105 never got a data event (main loop only; boot unchanged) */ /* R1317 (c222): PAUSE (09) no longer rides the ReadN INT1 ack-pair - Jos PSX-SPX corrected model; the R163-era ReadS grouping retired */
                 /* this ack pair concludes a ReadN's INT3: after the
                  * final 802-ack, raise INT1 (sector data ready). */
                 cd_arm_int1_pending = 1;
@@ -6658,6 +6670,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                     r1552_dma_check("CD", madr, n); /* R1552 */
+                    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && g_r1566_dma_cb[3] >= 0x80010000u) g_r1566_pending = 1; /* R1566 */
                     if ((madr & 0x1FFFFCu) < 0xADB80u && (madr & 0x1FFFFCu) + n > 0xADB00u) { /* R1560: CD DMA over the field selector cells */
                         static uint32_t sd_n;
                         if (sd_n++ < 16u) xenolift_receipt("[selw] R1560 CD DMA %08X+%u (LBA %u) covers 800ADB00..800ADB80\n", madr, n, cd_seek_lba);
@@ -6746,6 +6759,10 @@ static int io_special_write(uint32_t p, uint32_t v)
                         r861_out("[cd] stream stop: bytes=%u FDF8=%u (no next arm)\n",
                                 bytes, xenolift_mem_read32(0x8004FDF8u));
                     }
+                } else if (bytes > 12u && g_r1517_inloop && cd_last_cmd == 0x1Bu) {
+                    /* R1564: the movie player's ReadS stream reads the 32-byte STR header per sector and
+                     * leaves the rest; one INT1 per sector on hardware. No remainder re-arm here -
+                     * r1564_check() advances to the next sector once the callback has returned. */
                 } else if (bytes > 12u) {
                     /* R109: partial DATA drain — the FIFO still holds
                      * this sector's remainder. On real hardware the
@@ -17059,10 +17076,27 @@ static void r1535_check(void)
         xenolift_receipt("[r1535] lost Pause INT2 re-raised #%u: FE1C=6 waiting, nothing pending (seek=%u FDF8=%u cur_fn=%08X)\n",
                          fires, cd_seek_lba, xenolift_mem_read32(0x8004FDF8u), (unsigned)xenolift_cur_fn);
 }
+/* R1564 (see the DMA path): a ReadS sector the player only partly read is dropped once nothing is
+ * pending, and the next sector is delivered with its own INT1 - the drive keeps streaming. */
+static void r1564_check(void)
+{
+    static uint32_t still, adv;
+    if (!(g_r1517_inloop && cd_read_active && cd_last_cmd == 0x1Bu && cd_data_loaded
+          && cd_data_pos > 0u && cd_data_pos < cd_data_n && cd_pending == 0u && !cd_scheduled)) { still = 0u; return; }
+    if (++still < 16u) return; /* R1564b: 256 -> 16 - a 2x drive delivers ~150 sectors/s; the player timed out at ~1/s */
+    still = 0u;
+    cd_data_pos = cd_data_n;
+    cd_data_loaded = 0;
+    cd_seek_lba++;
+    cd_pending = 1, g_pend_line = __LINE__;
+    { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
+    if (adv++ < 24u)
+        xenolift_receipt("[r1564] ReadS sector partly read by the player - remainder dropped, next sector %u flagged (#%u)\n", cd_seek_lba, adv);
+}
 static void r1527_check(void)
 {
     static uint32_t still, fires;
-    if (!(cd_read_active && cd_data_loaded && cd_pending == 0 && !cd_scheduled && cd_last_cmd == 0x06u
+    if (!(cd_read_active && cd_data_loaded && cd_pending == 0 && !cd_scheduled && (cd_last_cmd == 0x06u || (cd_last_cmd == 0x1Bu && g_r1517_inloop)) /* R1563 */
           && cd_data_pos == 0u && cd_data_n >= 2048u)) { still = 0u; return; }
     if (++still < 65536u) return;
     still = 0u;
@@ -17083,6 +17117,7 @@ void xenolift_trace(uint32_t a)
     if (g_ct_active) r1510_sample(); /* R1510 [cdtrace] */
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
+    r1564_check(); /* R1564 */
     { /* R1538 (JOSH-DIAG): VRAM snapshot every 4 s to /tmp/jtwatch/vram_tNNN.bin (+ display rect in the
        * file name), so field-era frames can be viewed - the end-of-run vram.bin only shows the last state. */
         static uint32_t tick; static time_t last;
@@ -17137,6 +17172,25 @@ void xenolift_trace(uint32_t a)
             xenolift_receipt("[sprpkt] R1540 ALLOC sprite=%08X count=%u flags=%u (x24=%u) prev[32]=%08X prev[44]=%08X ra=%08X\n", sp, r[5], r[6], r[5] * 24u, p32, p44, r[31]);
         if (a == 0x800230A8u && (n2++ < 40u || p44 == 0u))
             xenolift_receipt("[sprpkt] R1540 DESTROY sprite=%08X [32]=%08X [44]=%08X ra=%08X%s\n", sp, p32, p44, r[31], p44 ? "" : "  <== NULL packets");
+    }
+    if (a == 0x8004B7A0u && r[4] < 8u) { /* R1566: DMACallback(channel, cb) registration */
+        static uint32_t dr_n;
+        g_r1566_dma_cb[r[4]] = r[5];
+        if (dr_n++ < 16u) xenolift_receipt("[r1566] DMACallback(ch=%u, cb=%08X) registered (ra=%08X)\n", r[4], r[5], r[31]);
+    }
+    if (g_r1566_pending && !g_r1566_busy && g_guest_depth <= 2 && r1562_cb_ok(g_r1566_dma_cb[3])) {
+        /* R1566: deliver the CD DMA-complete interrupt to its registered callback between guest chunks, with
+         * full register save/restore. The movie player's streaming library reads each sector's 32-byte header
+         * by DMA and continues (rest of the sector into its ring) only from this callback; our DMAs complete
+         * synchronously and the callback never ran, so every sector was dropped after its header. */
+        static uint32_t dd_n;
+        uint32_t sr[32], shi = hi, slo = lo, cb = g_r1566_dma_cb[3];
+        g_r1566_pending = 0; g_r1566_busy = 1;
+        memcpy(sr, r, sizeof sr);
+        if (dd_n++ < 24u) xenolift_receipt("[r1566] CD DMA-complete callback %08X dispatched (LBA %u fifo %u/%u)\n", cb, cd_seek_lba, cd_data_pos, cd_data_n);
+        g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
+        memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
+        g_r1566_busy = 0;
     }
     if (a == 0x8004111Cu) g_r1557_who = 1; /* R1557d: CdControlB = the archive layer's command path */
     else if (a == 0x80040FE4u || a == 0x80041248u) g_r1557_who = (r[31] >= 0x801D3000u && r[31] < 0x801F4000u) ? 2 : 1; /* R1557e: only the movie player (0x801Dxxxx caller) is "not the archive"; libcd's own CdRead callers at 0x80043xxx stay archive */
