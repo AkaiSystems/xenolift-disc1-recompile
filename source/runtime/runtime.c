@@ -2315,6 +2315,20 @@ static void cd_cmd(uint8_t cmd)
         }
         r861_out("[cd] Setloc BCD %02X:%02X:%02X -> LBA %u\n",
                 cd_params[0], cd_params[1], cd_params[2], cd_seek_lba);
+        /* R1549: a guest Setloc outside the R155 snapshot's file span means the game has moved on
+         * to a different read; the snapshot is no longer the live request. R1526bq receipt: the
+         * field stream (197211.., 182272 B, ring 0x801F0C30) passed R155's progress gate because
+         * its FDF8 exceeded file 14's 125304, so the kick rewrote FE04 197219->108933 and re-read
+         * file 14 into the stream ring. In-loop only; boot keeps R155 as before. */
+        if (g_r1517_inloop && xenolift_kick2_armed && xenolift_kick2_lba != 0u
+            && (cd_seek_lba < xenolift_kick2_lba
+                || cd_seek_lba >= xenolift_kick2_lba + xenolift_kick2_len / 2048u + 2u)) {
+            static uint32_t r1549_n;
+            if (r1549_n++ < 16u)
+                xenolift_receipt("[r1549] guest Setloc %u outside R155 snapshot (LBA %u len %u) - lost-register kick DISARMED\n",
+                        cd_seek_lba, xenolift_kick2_lba, xenolift_kick2_len);
+            xenolift_kick2_armed = 0;
+        }
         /* R896 (c492, manager - THE TIMING FIX): the c492 death tail proved
          * the install chain runs its factory IMMEDIATELY after the seek and
          * reads the member's NATIVE TABLE from the staging buffer to compute
@@ -6254,11 +6268,16 @@ static int io_special_write(uint32_t p, uint32_t v)
                 if (dma_logs < 40)
                     r861_out("[dma] GPU DMA2 %s %u words @%08X (sync %u)\n", (v & 1u) ? "RAM->VRAM" : "VRAM->RAM", words, addr, sync);
             } else if (ch == 0) {
+                { static uint32_t m0; if (m0++ < 6u || (m0 & 1023u) == 0u)
+                    xenolift_receipt("[mdecdma] R1547 DMA0 in #%u madr=%08X bcr=%08X words=%u first=%08X %08X cur_fn=%08X\n", m0, addr, bcr, words,
+                        xenolift_mem_read32(addr), xenolift_mem_read32(addr + 4u), (unsigned)xenolift_cur_fn); }
                 hle_mdec_dma0_in(addr, bcr);
                 done_words = words;
                 if (dma_logs < 40)
                     r861_out("[dma] MDEC-IN DMA0 %u words @%08X -> hle_mdec\n", words, addr);
             } else {
+                { static uint32_t m1; if (m1++ < 6u || (m1 & 1023u) == 0u)
+                    xenolift_receipt("[mdecdma] R1547 DMA1 out #%u madr=%08X bcr=%08X words=%u cur_fn=%08X\n", m1, addr, bcr, words, (unsigned)xenolift_cur_fn); }
                 hle_mdec_dma1_out(addr, bcr);
                 done_words = words;
                 if (dma_logs < 40)
@@ -6383,10 +6402,13 @@ static int io_special_write(uint32_t p, uint32_t v)
                * field module then decoded wrong from ~56 KB on, and the interpreter stopped on garbage
                * at 0x80085898. Hardware never fetches the next sector early; a repeat DMA from an
                * empty FIFO must not write. Serve 0 bytes and keep memory as it is. */
-                static uint32_t r1526_last_madr, r1526_n;
+                static uint32_t r1526_last_madr, r1526_last_lba = 0xFFFFFFFFu, r1526_n;
                 uint32_t r1526_madr = io_raw_read32(0x1F8010B0u);
-                if (bytes == 2048u && cd_data_loaded && cd_data_pos >= cd_data_n && cd_data_n != 0u
-                    && r1526_madr == r1526_last_madr) {
+                /* R1526b: also decline a repeat into the same destination for a DIFFERENT sector even when
+                 * the FIFO is fresh (R1548q: LBA 108980 -> 0x801F4680, 108979's slot, from the h2 context
+                 * 8002AC18 before its own header DMA). A same-LBA repeat (a genuine retry) is allowed. */
+                if (bytes == 2048u && cd_data_loaded && cd_data_n != 0u && r1526_madr == r1526_last_madr
+                    && (cd_data_pos >= cd_data_n || (cd_data_pos == 0u && cd_seek_lba != r1526_last_lba))) {
                     if (r1526_n++ < 24u)
                         xenolift_receipt("[r1526] repeat data DMA -> %08X from an exhausted FIFO DECLINED (seek=%u FE04=%u cur_fn=%08X) - no early sector into the old slot\n",
                                          r1526_madr, cd_seek_lba, xenolift_mem_read32(0x8004FE04u), (unsigned)xenolift_cur_fn);
@@ -6394,7 +6416,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                     io_raw_write32(0x1F8010B8u, 0x00000000u); /* done, nothing transferred */
                     return 1;
                 }
-                if (bytes == 2048u) r1526_last_madr = r1526_madr;
+                if (bytes == 2048u) { r1526_last_madr = r1526_madr; r1526_last_lba = cd_seek_lba; }
             }
             {
                 uint32_t want = xenolift_mem_read32(0x8004FE04u);
@@ -27577,8 +27599,22 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                          * handler fn_8002B084 is compiled into the image
                          * and stable since R106 (hundreds of proven
                          * dispatches, a0=1) — use it directly. */
+                        if (g_r1517_inloop) {
+                            /* R1548 (JOSH-DIAG): main-loop era - NO forced file callback. The field's stream
+                             * read (file 0x48D, 182272 B owed) targets an 8260-byte ring at 0x801F0BEC and the
+                             * game registers no ready callback: it polls and pulls sectors into the ring itself.
+                             * Forcing ArchiveCurrentFileReadyCallback copied linearly from 0x801F0C30 through
+                             * the heap top, the stack and past 0x80200000 (R1547q), corrupting the field module
+                             * (interp stop 0x80079108). Empty cell = nothing to call (the R1182 rule). */
+                            static uint32_t r1548_n;
+                            if (r1548_n++ < 12u)
+                                xenolift_receipt("[r1548] slot-4 with no registered callback (h4 cell + read-struct empty) - NOT forcing 0x8002B084 (seek=%u FE08=%08X FDF8=%u)\n",
+                                                 cd_seek_lba, xenolift_mem_read32(0x8004FE08u), xenolift_mem_read32(0x8004FDF8u));
+                            h4 = 0u;
+                        } else {
                         r861_out("[cd] wl: h4 cell + read-struct both empty — known-native h4 0x8002B084\n");
                         h4 = 0x8002B084u;
+                        }
                     }
                 }
                 if (h4 >= 0x80010000u && h4 < 0x80060000u && cd_last_cmd == 0x13u) {
