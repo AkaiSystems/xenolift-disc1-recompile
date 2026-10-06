@@ -1000,6 +1000,25 @@ static time_t g_r1597_t1; /* R1597: wall time of the last state-1 (title) dispat
 static time_t g_r1624_t6; /* R1624: last state-6 (movie) entry */
 static volatile int g_r1622_menu;
 static struct timespec g_r1622_t0;
+/* R1630: XENOLIFT_MOVIE_DUMP=<dir> writes every displayed frame in state 6 (the movie) as raw 24-bit RGB rows
+ * (frame_NNNN_<w>x<h>.rgb) so the recompiled build's movie output can be turned into a video. Tooling only. */
+void xl_display_flip(unsigned x, unsigned y, unsigned w, unsigned h)
+{
+    static const char *dir; static int init; static unsigned n;
+    char path[512]; FILE *f; unsigned row;
+    if (!init) { init = 1; dir = getenv("XENOLIFT_MOVIE_DUMP"); }
+    if (!dir || g_r1575_state != 6u || w > 640u || h > 480u) return;
+    if (h > 240u) h = 240u;
+    snprintf(path, sizeof path, "%s/frame_%04u_%ux%u.rgb", dir, n++, w, h);
+    f = fopen(path, "wb"); if (!f) return;
+    for (row = 0; row < h; row++) {
+        const uint8_t *src = (const uint8_t *)gpu_vram + (((y + row) & 511u) * 1024u + (x & 1023u)) * 2u;
+        size_t avail = (size_t)(1024u - (x & 1023u)) * 2u, len = (size_t)w * 3u;
+        fwrite(src, 1, len < avail ? len : avail, f);
+        if (len > avail) { static const uint8_t z[2048]; fwrite(z, 1, len - avail, f); }
+    }
+    fclose(f);
+}
 static int r1597_held(void)
 {
     /* R1597: the title screen (map 490) reads the pad through the SIO stream, which the R1326 virtual player
@@ -12120,6 +12139,8 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
     }
     if ((((a & 0x1FFFFFu) & ~3u) == 0x59F08u) && g_r1517_inloop) { /* R1550 [rscbtrip] */
         static uint32_t rs_n;
+        if (*(int32_t *)(xenolift_mem + 0x4F34Cu) == 4) { static uint32_t m4; if (m4++ < 10u) xenolift_receipt("[rscbtrip] R1628a map4 write ea=%08X v=%08X old=%08X cur_fn=%08X ra=%08X ipc=%08X FE04=%u FDF8=%u\n",
+            a, v, *(uint32_t *)(xenolift_mem + 0x59F08u), (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FDF8u)); }
         if (rs_n++ < 40u) xenolift_receipt("[rscbtrip] R1550 write%u ea=%08X v=%08X old=%08X sw_active=%d sw_line=%u cur_fn=%08X ra=%08X h4=%08X FE04=%u FDF8=%u\n",
             w * 8u, a, v, *(uint32_t *)(xenolift_mem + 0x59F08u), xenolift_sw_active, xenolift_sw_line, (unsigned)xenolift_cur_fn, r[31],
             *(uint32_t *)(xenolift_mem + 0x564ACu), *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FDF8u));
@@ -12220,6 +12241,11 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
                     (unsigned)xenolift_cur_fn, xenolift_sw_width,
                     cd_read_active, cd_scheduled);
         }
+    }
+    if (a == 0x800564ACu && *(int32_t *)(xenolift_mem + 0x4F34Cu) == 4) { /* R1628b [h4w]: ready-callback cell writes on map 4 */
+        static uint32_t h4n; if (h4n++ < 12u) xenolift_receipt("[h4w] R1628b 564AC %08X -> %08X %s cur_fn=%08X r31=%08X ipc=%08X line=%u FE04=%u FDF8=%u @t=%lds\n",
+            xenolift_mem_read32(a), v, xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, xenolift_sw_line,
+            *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FDF8u), (long)(xl_wall() - g_boot_wall_t0));
     }
     if (a == 0x800564ACu || a == 0x800564A8u || a == 0x80056770u) {
         static uint32_t r1204_n;
@@ -17582,6 +17608,20 @@ void xenolift_trace(uint32_t a)
              * machine, and the pad event enqueue 0x80035C0C that the field's input loop dequeues (queue count 0x8005937C
              * stayed 0 here; 16 on a console) - the handler never ran in this runtime. */
             g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
+            { /* R1629 DISABLED (R1629b: stalled the title ring read with one sector left). R1629: state-1 CD reads (title member/file-17 loads, map 4's 507,904-byte ring read) ran at ~14 sectors/s - CD
+               * events reach the guest only at libcd collector entries. Service pending ReadN events here once per frame at
+               * the 2x drive rate (150 sectors/s token bucket, the R1581 rule from state 6). */
+                static uint64_t tb_last; static double tb_tok; static uint32_t sv_n; struct timespec ts; uint64_t now; int k;
+                clock_gettime(CLOCK_MONOTONIC, &ts); now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+                if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
+                tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
+                if (tb_tok > 4.0) tb_tok = 4.0;
+                for (k = 0; g_r1566_dma_cb[3] != 0x8002BB50u /* R1629c: not the archive ring (R1629b stalled it) */ && k < 4 && tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x06u; k++) {
+                    tb_tok -= 1.0;
+                    if (sv_n++ < 4u) xenolift_receipt("[cdirq] R1629 state-1 CD event serviced at the frame wait (pend=%u LBA %u)\n", (unsigned)cd_pending, cd_seek_lba);
+                    xenolift_trace(0x800415B4u);
+                }
+            }
             memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy = 0;
             { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1611 VSync handler run (slot4=%08X, pad queue %u, sys pad %04X)\n",
                   *(uint32_t *)(xenolift_mem + 0x58950u), *(uint32_t *)(xenolift_mem + 0x5937Cu), *(uint16_t *)(xenolift_mem + 0x59570u)); }
@@ -28413,7 +28453,15 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                          * handler fn_8002B084 is compiled into the image
                          * and stable since R106 (hundreds of proven
                          * dispatches, a0=1) — use it directly. */
-                        if (g_r1517_inloop) {
+                        if (0) { /* R1628 fallback disabled: forcing 0x8002B5D0 restarted the game at the title (its ring polls with an empty cell) */
+                            /* R1628: an archive ring read is active (its setup 0x80029EB0 registered DMACallback(3, 0x8002BB50) and
+                             * the ready handler 0x8002B5D0 via 0x80040FCC at 0x8002A1FC), but the read-struct cell was cleared before
+                             * the first sector - map 4's 507,904-byte ring read re-raised INT1 forever. Use the ring's own handler. */
+                            static uint32_t r1628_n;
+                            if (r1628_n++ < 6u) xenolift_receipt("[r1628] ring read with empty ready cell - using the ring handler 0x8002B5D0 (seek=%u FDF8=%u)\n",
+                                cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
+                            h4 = 0x8002B5D0u;
+                        } else if (g_r1517_inloop) {
                             /* R1548 (JOSH-DIAG): main-loop era - NO forced file callback. The field's stream
                              * read (file 0x48D, 182272 B owed) targets an 8260-byte ring at 0x801F0BEC and the
                              * game registers no ready callback: it polls and pulls sectors into the ring itself.

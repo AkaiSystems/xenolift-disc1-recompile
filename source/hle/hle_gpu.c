@@ -838,6 +838,7 @@ void gpu_gp1_write(uint32_t v)
     case 0x05:
         g_disp_x = param & 0x3FFu;
         g_disp_y = (param >> 10) & 0x1FFu;
+        { extern void xl_display_flip(unsigned x, unsigned y, unsigned w, unsigned h); xl_display_flip(g_disp_x, g_disp_y, g_disp_w, g_disp_h); } /* R1630 */
         break;
     case 0x08: {
         static const uint16_t hres[4] = {256, 320, 512, 640};
