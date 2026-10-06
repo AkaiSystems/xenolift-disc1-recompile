@@ -1002,7 +1002,7 @@ static time_t g_r1624_t6; /* R1624: last state-6 (movie) entry */
 /* R1637: the system text (0x800335F4 loads it, [0x80059360] = data+4, locked via 0x800320A4) - our top-down movie and title
  * buffers overwrite it before the title menu; the console keeps it intact in the menu-overlay buffer's tail (0x801F34B4) */
 static uint8_t g_r1637_snap[0x10000]; static uint32_t g_r1637_base, g_r1637_size;
-static volatile int g_r1622_menu; static int g_r1625_done; /* R1625d */ static int g_r1662_follow; /* R1662 */ uint32_t g_r1664_slot, g_r1664_ra; /* R1664 */
+static volatile int g_r1622_menu; static int g_r1625_done; /* R1625d */ static int g_r1662_follow; /* R1662 */ static int g_r1671_ng; /* R1671 */ static long g_r1674_t; /* R1674 */ uint32_t g_r1664_slot, g_r1664_ra; /* R1664 */
 static struct timespec g_r1622_t0;
 /* R1630: XENOLIFT_MOVIE_DUMP=<dir> writes every displayed frame in state 6 (the movie) as raw 24-bit RGB rows
  * (frame_NNNN_<w>x<h>.rgb) so the recompiled build's movie output can be turned into a video. Tooling only. */
@@ -1035,7 +1035,8 @@ static int r1597_held(void)
     if (g_r1622_menu) { /* R1622 */
         struct timespec ts; long ms; clock_gettime(CLOCK_MONOTONIC, &ts);
         ms = (ts.tv_sec - g_r1622_t0.tv_sec) * 1000L + (ts.tv_nsec - g_r1622_t0.tv_nsec) / 1000000L;
-        if (ms >= 300 && ((ms / 100) & 1)) { /* R1625: the cursor (ctx+0x336, ctx=[0x800625A0]) starts on CONTINUE (1); tap Up
+        if (ms >= 1500 && ((ms / 100) & 1)) { /* R1662b: 1.5 s (was 0.3 s) - an immediate Cross (R1662 sets the cursor at entry) hit the menu during its
+                                               * open/fade and the New Game tail looped; 60 Hz pacing (R1653) leaves the 600-frame timeout at 10 s. R1625: the cursor (ctx+0x336, ctx=[0x800625A0]) starts on CONTINUE (1); tap Up
                                                * until it reads 0 = NEW GAME, then Cross (Circle is cancel, action 5) */
             uint32_t ctx = *(uint32_t *)(xenolift_mem + 0x625A0u); int cur = (ctx >= 0x80000000u && ctx < 0x80200000u) ? xenolift_mem[(ctx + 0x336u) & 0x1FFFFFu] : 0;
             /* R1625c: confirm only once the system-text table is ready ([[0x80059360]+0x6C] != 0) - New Game (0x8001B970) converts
@@ -1043,6 +1044,9 @@ static int r1597_held(void)
              * menu's 600-frame idle timeout (cursor moves clear ctx+0x2D8) */
             uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u);
             int ready = tb >= 0x80000000u && tb < 0x80200000u && *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) != 0u;
+            if (g_r1674_t) return (ms - g_r1674_t < 100) ? 3 : 0; /* R1674: exactly one Cross press (100 ms) per menu session - repeated taps queued
+                                                                * extra confirms that re-ran New Game from the frame callback */
+            if (cur == 2 && ready) { g_r1674_t = ms; return 3; }
             int c = (cur != 2 || !ready) ? 7 : 3; /* R1625b: item 2 (0x8001B970, returns 0 -> result 0) is New Game; item 0 is a 3-way settings dialog */
             /* R1625d: one confirm per menu session - later taps drove the follow-on 7-item menu (0x801C55A0, same cursor byte) and
              * re-picked its item 2 forever (R1651) */
@@ -6869,7 +6873,7 @@ static int io_special_write(uint32_t p, uint32_t v)
                         uint32_t dicr = io_raw_read32(0x1F8010F4u);
                         static uint32_t dc_n;
                         if (dc_n++ < 16u) xenolift_receipt("[r1566] CD DMA %u bytes done: DICR=%08X ch3-irq=%u master=%u\n", n, dicr, (dicr >> 19) & 1u, (dicr >> 23) & 1u);
-                        if ((dicr & (1u << 19)) && (dicr & (1u << 23))) { g_r1566_pending |= 8; if (g_r1575_state == 1u && g_r1589_ch3_n < 4u) g_r1589_ch3_n++; } /* R1566c: channel mask; R1589/R1591b: count (state 1, cap 4) */
+                        if ((dicr & (1u << 19)) && (dicr & (1u << 23))) { g_r1566_pending |= 8; if (g_r1575_state == 1u && g_r1589_ch3_n < 4u && g_r1566_dma_cb[3] == 0x8002BB50u /* R1669 */) g_r1589_ch3_n++; } /* R1566c: channel mask; R1589/R1591b: count (state 1, cap 4) */
                         { static uint32_t f1_n; if (g_r1575_state == 1u && f1_n++ < 12u) xenolift_receipt("[r1588] state-1 CD DMA %u bytes (cmd %02X LBA %u) DICR=%08X ch3-irq=%u cb3=%08X\n", n, cd_last_cmd, cd_seek_lba, dicr, (dicr >> 19) & 1u, g_r1566_dma_cb[3]); }
                     }
                     if ((madr & 0x1FFFFCu) < 0xADB80u && (madr & 0x1FFFFCu) + n > 0xADB00u) { /* R1560: CD DMA over the field selector cells */
@@ -17463,6 +17467,7 @@ static void r1591_after_cd_irq(void)
      * archive ring overflow, so map 490's stream kept retrying. State 1 only. */
     uint32_t n;
     if (g_r1575_state != 1u || !g_r1517_inloop || g_r1566_busy || !(g_r1566_pending & 8)) return;
+    if (g_r1566_dma_cb[3] != 0x8002BB50u) return; /* R1669: only the archive ring - the field movie player's ch3 callback goes the state-6 way (counted/replayed here it completed slots before their body DMA: garbled prologue frames) */
     for (n = 0; n < 4u && (g_r1566_pending & 8); n++) {
         uint32_t cb = g_r1566_dma_cb[3], sr[32], shi = hi, slo = lo, sfn = xenolift_cur_fn;
         g_r1566_pending &= ~8;
@@ -17489,7 +17494,7 @@ static void r1644_cd_service(int service) /* R1644b: service=0 -> flags only (no
                     static uint32_t lf, rn; static uint64_t lt;
                     uint32_t f8 = *(uint32_t *)(xenolift_mem + 0x4FDF8u);
                     if (f8 != lf || !cd_read_active) { lf = f8; lt = now; }
-                    else if (cd_read_active && cd_last_cmd == 0x06u && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
+                    else if (cd_read_active && (cd_last_cmd == 0x06u || cd_last_cmd == 0x1Bu /* R1642b: ReadS too (post-New-Game read at LBA 120615 stuck) */) && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
                         cd_pending = 1, g_pend_line = __LINE__;
                         { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
                         if (rn++ < 8u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u)\n", cd_seek_lba, f8);
@@ -17717,8 +17722,8 @@ void xenolift_trace(uint32_t a)
     }
     if (a == 0x80033B34u && g_r1575_state == 1u) { /* R1632 [txtcv]: system-text converter inputs (title-menu hang) */
         static uint32_t tc; uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u), t6c = (tb >= 0x80000000u && tb < 0x80200000u) ? *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) : 0xDEADu;
-        if (tc++ < 16u) xenolift_receipt("[txtcv] R1632 src=%08X dst=%08X n=%08X tbl[59360]=%08X +6C=%08X r31=%08X ipc=%08X @t=%lds\n",
-            r[4], r[5], r[6], tb, t6c, r[31], g_r1590_ipc, (long)(xl_wall() - g_boot_wall_t0));
+        if (tc++ < 48u) xenolift_receipt("[txtcv] R1632 src=%08X dst=%08X n=%08X tbl[59360]=%08X +6C=%08X r31=%08X s0=%08X s1=%08X sp=%08X @t=%lds\n",
+            r[4], r[5], r[6], tb, t6c, r[31], r[16], r[17], r[29], (long)(xl_wall() - g_boot_wall_t0));
     }
     if ((a == 0x8004960Cu || a == 0x800496ACu) && g_r1575_state == 1u) { /* R1613 [mstk]: libgte Push/PopMatrix depth 0x80056D2C */
         int32_t d = *(int32_t *)(xenolift_mem + 0x56D2Cu); static uint32_t mn, mbad;
@@ -17753,6 +17758,8 @@ void xenolift_trace(uint32_t a)
             { uint32_t k2; for (k2 = 0; k2 < 8u; k2++) { /* R1652b: drop a non-code VSync callback slot before the handler dispatches it */
                 uint32_t *sl = (uint32_t *)(xenolift_mem + 0x58940u + 4u * k2);
                 if (*sl != 0u && (*sl < 0x80010000u || *sl >= 0x80200000u)) { static uint32_t cn; if (cn++ < 6u) xenolift_receipt("[vscbw] R1652b slot %u held %08X - cleared\n", k2, *sl); *sl = 0u; } } }
+            if (g_r1622_menu) { static int vd; if (vd++ < 3) { uint32_t *t = (uint32_t *)(xenolift_mem + 0x58940u); /* R1673 [vsmenu]: VSync callbacks while the menu runs */
+                xenolift_receipt("[vsmenu] R1673 VSync slots %08X %08X %08X %08X %08X %08X %08X %08X depth=%d\n", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], (int)g_guest_depth); } }
             if (!(g_r1649_fmv && cd_last_cmd == 0x1Bu && cd_read_active)) /* R1658: not while the field movie streams - the attract movie (state 6) runs without the handler */
                 g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
             r1644_cd_service(1); /* R1644: the R1629/R1642/R1643 state-1 CD service (flags-only from the 0x800286CC poll) */
@@ -33166,7 +33173,7 @@ int r1394_dispatch_guard(unsigned int t)
         xenolift_cur_fn = t;
         if (fn_++ < 16u) r861_out("[f17int] R1610 interpreting file-17 fn %08X (r31=%08X)\n", t, (unsigned)r[31]);
         uint32_t r1641_sp = r[29], r1641_ra = r[31]; /* R1641b */
-        if (t == 0x801C62A8u) { g_r1622_menu = 1; g_r1625_done = 0; g_r1662_follow = 0; clock_gettime(CLOCK_MONOTONIC, &g_r1622_t0); /* R1622 */
+        if (t == 0x801C62A8u) { g_r1622_menu = 1; g_r1625_done = 0; g_r1662_follow = 0; g_r1671_ng = 0; g_r1674_t = 0; clock_gettime(CLOCK_MONOTONIC, &g_r1622_t0); /* R1622 */
             /* R1626: the New Game handler (0x801D9808) takes its answer from the memory-card status word 0x8005957C & 0x700
              * (0x80038824). The console title has 0xB901 there (bit 0x100); with no status bits New Game was declined. */
             uint16_t cs = *(uint16_t *)(xenolift_mem + 0x5957Cu);
@@ -33390,6 +33397,8 @@ static int r1394_interp(uint32_t entry)
                   if (g_r1558_co_n < 3000u) { g_r1558_co_n++; /* R1540: cap 300 -> 3000; R1558: per dispatcher era */ /* R1523b: every call-out in order - the last one before silence never returned */
                     xenolift_receipt("[callout] R1523 #%u -> %08X from %08X a0=%08X a1=%08X a2=%08X a3=%08X sp=%08X entry=%08X t=%ld.%03lds\n",
                         g_r1558_co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
+                if (g_r1622_menu && g_r1625_done) { static uint32_t pg; if (pg++ < 60u) /* R1665 [postng]: call-outs after New Game ran */
+                    xenolift_receipt("[postng] R1665 %08X -> %08X a0=%08X a1=%08X sp=%08X\n", act_ret - 8u, pc, r[4], r[5], r[29]); }
                 if (g_r1622_menu && act_ret - 8u >= 0x801D9000u && act_ret - 8u < 0x801DB000u) { static uint32_t ng; if (ng++ < 40u) /* R1624: New Game handler call-outs */
                     xenolift_receipt("[ngcall] R1624 %08X -> %08X a0=%08X a1=%08X a2=%08X\n", act_ret - 8u, pc, r[4], r[5], r[6]); }
                 { uint32_t sp0 = r[29]; /* R1640 [spdrift]: a call-out that returns with a different sp */
@@ -33407,17 +33416,56 @@ static int r1394_interp(uint32_t entry)
          * (from-pc -> to-pc); the last 32 ring entries and the sequential-step
          * count are dumped at every explicit interpreter stop, so the receipt
          * names the exact transfer that put the walk into the stop class. */
+        { /* R1670 [ngring]: ring of the last 48 non-sequential transitions while the menu runs; dumped once at the 3rd visit to 0x801C5448 */
+            static uint32_t rf[48], rt[48], rra[48], rsp[48], ri, v3, dumped, lastnpc;
+            if (g_r1622_menu) {
+                if (lastnpc && pc != lastnpc) { rf[ri % 48u] = lastnpc - 4u; rt[ri % 48u] = pc; rra[ri % 48u] = r[31]; rsp[ri % 48u] = r[29]; ri++; }
+                lastnpc = npc;
+                if (pc == 0x801C5448u && ++v3 == 3u && !dumped) { uint32_t k; dumped = 1;
+                    for (k = (ri > 48u ? ri - 48u : 0u); k < ri; k++) xenolift_receipt("[ngring] R1670 %08X -> %08X ra=%08X sp=%08X\n", rf[k % 48u], rt[k % 48u], rra[k % 48u], rsp[k % 48u]); }
+            }
+        }
+        { static uint32_t v48, fl; /* R1667 [ngflow]: after the 2nd visit to 0x801C5448 (New Game loop), log the jumps */
+            if (g_r1622_menu && g_r1625_done && pc == 0x801C5448u) v48++;
+            if (v48 >= 2u && r680j_prev != 0u && pc != r680j_prev && fl < 40u) { fl++;
+                xenolift_receipt("[ngflow] R1667 %08X -> %08X ra=%08X sp=%08X\n", (unsigned)r680j_prev_pc, pc, r[31], r[29]); } }
         if (r680j_prev != 0u && pc != r680j_prev) {
             r680j_pc[r680j_wr & 31u] = r680j_prev_pc; r680j_tg[r680j_wr & 31u] = pc; r680j_wr++;
             r680j_seq = 0u;
             if (r680j_live < 16u) { r680j_live++; r861_out("[ovljump] R680J flow %08X -> %08X\n", (unsigned)r680j_prev_pc, (unsigned)pc); }
         } else { r680j_seq++; }
         r680j_prev = npc; r680j_prev_pc = pc;
+        if (g_r1622_menu && g_r1625_done && pc == 0x801C531Cu && r[4] == 7u && g_r1671_ng) { /* R1671: New Game already ran this menu session - a further
+                                                                                         * confirm (queued Cross events) re-ran 0x8001B970 and the menu never left;
+                                                                                         * return 0 at once, as the first call did */
+            static uint32_t sk; if (sk++ < 4u) xenolift_receipt("[r1671] repeat New Game confirm skipped (ra=%08X)\n", r[31]);
+            r[2] = 0u; pc = r[31]; npc = pc + 4u; continue;
+        }
+        if (g_r1622_menu && pc == 0x801C5448u) g_r1671_ng = 1; /* R1671: New Game (0x8001B970) has returned once */
+        if (g_r1622_menu && g_r1671_ng && (pc == 0x801C59D0u || pc == 0x801C5944u || pc == 0x801C5B1Cu || pc == 0x801C5B24u || pc == 0x801C5440u || pc == 0x801C5378u)) { /* R1672 [ngloop] */
+            static uint32_t nl; if (nl++ < 40u) xenolift_receipt("[ngloop] R1672 pc=%08X v0=%08X v1=%08X s0=%08X s1=%08X ra=%08X sp=%08X\n", pc, r[2], r[3], r[16], r[17], r[31], r[29]);
+        }
+        if (0 && g_r1622_menu && g_r1625_done && pc == 0x801C5448u && g_r1664_slot) { /* R1668 OFF (the unwind led to a reboot): New Game's confirm tail re-entered 0x801C5448 with a
+                                                                               * stale ra (R1666/R1667, ~1 run in 2) - unwind 0x801C531C(7)'s frame as its
+                                                                               * epilogue would and return 0 (New Game's own result) to the title loop */
+            static uint32_t v48;
+            if (++v48 >= 2u) {
+                uint32_t fsp = (g_r1664_slot + 4u) - 32u; /* 801C531C frame base: entry sp - 32 */
+                r[16] = xenolift_mem_read32(fsp + 16u); r[17] = xenolift_mem_read32(fsp + 20u); r[18] = xenolift_mem_read32(fsp + 24u);
+                r[29] = fsp + 32u; r[31] = g_r1664_ra; r[2] = 0u;
+                xenolift_receipt("[r1668] New Game tail looped - unwound 801C531C to %08X (sp=%08X)\n", g_r1664_ra, r[29]);
+                pc = g_r1664_ra; npc = pc + 4u; g_r1664_slot = 0; v48 = 0;
+                continue;
+            }
+        }
         r1523_tick(pc, entry); /* R1523 */
         g_r1590_ipc = pc; /* R1590 */
         if (g_r1622_menu && pc == 0x801C5440u) g_r1625_done = 1; /* R1625e: New Game (item 2 -> 0x8001B970) executed - stop tapping */
         if (g_r1622_menu && pc == 0x801C531Cu && r[4] == 7u) { g_r1664_slot = r[29] - 4u; g_r1664_ra = r[31]; } /* R1664: 801C531C(7)'s saved-ra slot (sp-32+28) */
         if (pc == 0x801C59DCu) g_r1664_slot = 0;
+        if (g_r1622_menu && g_r1625_done && (pc == 0x801C5598u || pc == 0x801C59D0u || pc == 0x801C5B1Cu || pc == 0x801C5448u || pc == 0x801C5530u)) { /* R1666 [ngret] */
+            static uint32_t ng; if (ng++ < 30u) xenolift_receipt("[ngret] R1666 pc=%08X ra=%08X sp=%08X s0=%08X s1=%08X v0=%08X\n", pc, r[31], r[29], r[16], r[17], r[2]);
+        }
         if (g_r1622_menu && (pc == 0x801C58ECu || pc == 0x801C55A0u)) { /* R1662: set the menu cursor directly (title menu -> item 2 New Game,
                                                                          * follow-on 7-item menu -> item 0 exit) instead of D-pad taps that raced the menu */
             uint32_t cx = *(uint32_t *)(xenolift_mem + 0x625A0u);
