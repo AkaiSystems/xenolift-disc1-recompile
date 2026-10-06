@@ -991,6 +991,7 @@ static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
 static uint32_t g_r1590_ipc; /* R1590: R1394 interpreter PC of the instruction being executed */
 static uint32_t g_r1599_seen; /* R1599: last FDFC value written through the hook */
+static void r1610_preload_f17(void); /* R1610 */
 static uint32_t g_r1575_state = 0xFFFFFFFFu;
 static time_t g_r1597_t1; /* R1597: wall time of the last state-1 (title) dispatcher entry */
 static int r1597_held(void)
@@ -12121,6 +12122,7 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
     }
     if ((a & 0x1FFFFFFFu) == 0x0004F34Cu) { /* R1586 [mapid]: field map/scene ID writer */
         static uint32_t mi_n;
+        if (v == 490u && getenv("XENOLIFT_PRELOAD_F17")) r1610_preload_f17(); /* R1610 diagnostic */
         if (mi_n++ < 24u) xenolift_receipt("[mapid] R1586 #%u F34C %d -> %d cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n", mi_n,
             (int)*(uint32_t *)(xenolift_mem + 0x4F34Cu), (int)v, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
     }
@@ -17340,8 +17342,9 @@ void xenolift_trace(uint32_t a)
         static uint32_t ps_n; static uint16_t last;
         uint16_t w; memcpy(&w, xenolift_mem + 0x59570u, 2);
         if ((w != last || r1597_held()) && ps_n++ < 40u)
-            xenolift_receipt("[padsys] R1607 buf=%02X %02X %02X %02X | sys(59570)=%04X | held=%d r31=%08X @t=%lds\n",
-                xenolift_mem[0x625FCu], xenolift_mem[0x625FDu], xenolift_mem[0x625FEu], xenolift_mem[0x625FFu], w, r1597_held(), r[31], (long)(xl_wall() - g_boot_wall_t0));
+            xenolift_receipt("[padsys] R1607 buf=%02X %02X %02X %02X | sys(59570)=%04X q=%u | mask B217A=%04X ADB00=%04X FE9C=%04X | held=%d @t=%lds\n",
+                xenolift_mem[0x625FCu], xenolift_mem[0x625FDu], xenolift_mem[0x625FEu], xenolift_mem[0x625FFu], w, *(uint32_t *)(xenolift_mem + 0x5937Cu),
+                *(uint16_t *)(xenolift_mem + 0xB217Au), *(uint16_t *)(xenolift_mem + 0xADB00u), *(uint16_t *)(xenolift_mem + 0xAFE9Cu), r1597_held(), (long)(xl_wall() - g_boot_wall_t0));
         last = w;
     }
     if (a == 0x800286CCu && g_r1517_inloop && g_r1575_state == 1u) {
@@ -17494,9 +17497,14 @@ void xenolift_trace(uint32_t a)
             uint32_t sr[32], shi = hi, slo = lo, sfn = xenolift_cur_fn;
             busy = 1; memcpy(sr, r, sizeof sr);
             r[4] = 0; r[5] = 0;
-            g_guest_depth++, xenolift_dispatch(0x800358BCu), g_guest_depth--;
+            /* R1611: run libetc's VSync interrupt handler instead (Vcount++ and the 8 VSync callbacks at 0x80058940).
+             * GameBootstrap registers the frame callback 0x8003634C in slot 4 (via 0x8004B7D0): frame counter, pad state
+             * machine, and the pad event enqueue 0x80035C0C that the field's input loop dequeues (queue count 0x8005937C
+             * stayed 0 here; 16 on a console) - the handler never ran in this runtime. */
+            g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
             memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy = 0;
-            { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1608 pad state machine run at VSync (sys pad word %04X)\n", *(uint16_t *)(xenolift_mem + 0x59570u)); }
+            { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1611 VSync handler run (slot4=%08X, pad queue %u, sys pad %04X)\n",
+                  *(uint32_t *)(xenolift_mem + 0x58950u), *(uint32_t *)(xenolift_mem + 0x5937Cu), *(uint16_t *)(xenolift_mem + 0x59570u)); }
         }
     }
     if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 6u && r[31] == 0x8004B608u) {
@@ -32839,11 +32847,55 @@ static uint32_t r1533_wend(void)
     }
     return best;
 }
+/* R1610: file 17 (Disc 1, LBA 109123, 70944 B LZSS -> 153864 B) lives at 0x801C5000..0x801EA908 on a console while the
+ * title (map 490) runs; the field calls into it (0x801E72CC, 0x801E8330, ...). Our emitted image there is the movie player,
+ * so when file 17 is resident (pointer-table signature) its code is interpreted like the field module. */
+static int r1610_f17_resident(void)
+{
+    uint32_t w0, w1;
+    memcpy(&w0, xenolift_mem + 0x1C5000u, 4); memcpy(&w1, xenolift_mem + 0x1C5004u, 4);
+    return w0 == 0x801C5448u && w1 == 0x801C53B8u;
+}
+static int r1610_inwin(uint32_t x, uint32_t end)
+{
+    if (x >= 0x8006F000u && x < end) return 1;
+    return x >= 0x801C5000u && x < 0x801EA908u && r1610_f17_resident();
+}
+static void r1610_preload_f17(void) /* diagnostic: XENOLIFT_PRELOAD_F17=1 */
+{
+    static uint8_t src[36u * 2048u];
+    uint32_t i, o = 0, n = 0, size;
+    uint8_t *out = xenolift_mem + 0x1C5000u;
+    for (i = 0; i < 36u; i++) if (disc_read_lba(109123u + i, src + i * 2048u) != 0) return;
+    size = (src[0] | (src[1] << 8) | (src[2] << 16) | ((uint32_t)src[3] << 24)) & 0x3FFFFFu;
+    if (size != 153864u) { xenolift_receipt("[f17pre] R1610 unexpected size %u - skipped\n", size); return; }
+    i = 4;
+    while (n < size && i < sizeof src) {
+        uint8_t ctl = src[i++]; int b;
+        for (b = 0; b < 8 && n < size; b++) {
+            if (ctl & (1u << b)) {
+                uint32_t off = src[i] | ((src[i + 1] & 0xFu) << 8), len = (src[i + 1] >> 4) + 3u, k;
+                i += 2;
+                for (k = 0; k < len && n < size; k++, n++) out[n] = out[n - off];
+            } else out[n++] = src[i++];
+        }
+    }
+    (void)o;
+    xenolift_receipt("[f17pre] R1610 file 17 preloaded at 0x801C5000 (%u bytes, resident=%d)\n", n, r1610_f17_resident());
+}
 int r1394_dispatch_guard(unsigned int t)
 {
     unsigned char lw[16];
     int rc;
     uint32_t r1533_end = r1533_wend();
+    if (t >= 0x801C5000u && t < 0x801EA908u && r1610_f17_resident()) { /* R1610: file-17 code, interpreted */
+        static unsigned int fn_ = 0;
+        xenolift_cur_fn = t;
+        if (fn_++ < 16u) r861_out("[f17int] R1610 interpreting file-17 fn %08X (r31=%08X)\n", t, (unsigned)r[31]);
+        rc = r1394_interp(t);
+        if (rc != 0) { static unsigned int ff_ = 0; if (ff_++ < 8u) r861_out("[f17int] R1610 interpreter FAIL class=%d fn=%08X\n", rc, t); }
+        return 1;
+    }
     if (t < 0x8006F000u || t >= r1533_end) { return 0; }
     if (g_r1393_ref_loaded == 0) {
         FILE *f = fopen("emit_ref.bin", "rb");
@@ -32977,7 +33029,7 @@ static int r1394_interp(uint32_t entry)
     while (budget-- > 0) {
         uint32_t w, op, rs, rt, rd, sa, fn_, immu, tgt;
         int32_t imm;
-        if (pc < 0x8006F000u || pc >= r1533_end) {
+        if (!r1610_inwin(pc, r1533_end)) {
             /* control has left the module window */
             if (act == 1 && pc == r1561_ra && r1561_ra != 0u) {
                 /* R1561: a plain return to the compiled code that called this interpreted function (e.g. an
@@ -33051,7 +33103,7 @@ static int r1394_interp(uint32_t entry)
             else if (fn_ == 0x07u) { r[rd] = (uint32_t)((int32_t)r[rt] >> (r[rs] & 31)); }
             else if (fn_ == 0x08u) { /* jr */
                 tgt = r[rs];
-                act = (tgt < 0x8006F000u || tgt >= r1533_end) ? 1 : 0;
+                act = (!r1610_inwin(tgt, r1533_end)) ? 1 : 0;
                 pc = npc; npc = tgt;
                 continue; /* the slot executes next iteration */
             }
@@ -33082,7 +33134,7 @@ static int r1394_interp(uint32_t entry)
                             (tv && 1) ? 0u : 0u, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); }
                 }
                 r[rd] = npc + 4;
-                if (tv < 0x8006F000u || tv >= r1533_end) { act = 2; act_ret = r[rd]; }
+                if (!r1610_inwin(tv, r1533_end)) { act = 2; act_ret = r[rd]; }
                 else { act = 0; }
                 pc = npc; npc = tv;
                 continue;
@@ -33128,17 +33180,17 @@ static int r1394_interp(uint32_t entry)
             if (rt == 0x10u || rt == 0x11u) { r[31] = npc + 4; }
             if (cond) {
                 tgt = pc + 4 + ((int32_t)imm << 2);
-                if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; }
+                if (!r1610_inwin(tgt, r1533_end)) { act = 1; }
                 pc = npc; npc = tgt;
                 continue;
             }
         }
-        else if (op == 0x02u) { tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; }
-        else if (op == 0x03u) { r[31] = npc + 4; tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 2; act_ret = r[31]; } pc = npc; npc = tgt; continue; }
-        else if (op == 0x04u) { if (r[rs] == r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x05u) { if (r[rs] != r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x06u) { if ((int32_t)r[rs] <= 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
-        else if (op == 0x07u) { if ((int32_t)r[rs] > 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (tgt < 0x8006F000u || tgt >= r1533_end) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x02u) { tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 1; } pc = npc; npc = tgt; continue; }
+        else if (op == 0x03u) { r[31] = npc + 4; tgt = ((pc + 4) & 0xF0000000u) | ((w & 0x3FFFFFFu) << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 2; act_ret = r[31]; } pc = npc; npc = tgt; continue; }
+        else if (op == 0x04u) { if (r[rs] == r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x05u) { if (r[rs] != r[rt]) { tgt = pc + 4 + ((int32_t)imm << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x06u) { if ((int32_t)r[rs] <= 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 1; } pc = npc; npc = tgt; continue; } }
+        else if (op == 0x07u) { if ((int32_t)r[rs] > 0) { tgt = pc + 4 + ((int32_t)imm << 2); if (!r1610_inwin(tgt, r1533_end)) { act = 1; } pc = npc; npc = tgt; continue; } }
         else if (op == 0x08u || op == 0x09u) { r[rt] = r[rs] + (uint32_t)imm; }
         else if (op == 0x0Au) { r[rt] = ((int32_t)r[rs] < imm) ? 1u : 0u; }
         else if (op == 0x0Bu) { r[rt] = (r[rs] < (uint32_t)imm) ? 1u : 0u; }
