@@ -747,6 +747,7 @@ void gpu_gp0_write(uint32_t v)
         if (!g_blit_w) g_blit_w = 1024u;
         if (!g_blit_h) g_blit_h = 512u;
         g_blit_left = g_blit_w * g_blit_h;
+        { extern void xl_gpu_cam(int kind, unsigned a, unsigned b, unsigned c, unsigned d); xl_gpu_cam(1, g_blit_x, g_blit_y, g_blit_w, g_blit_h); } /* R1688 */
         g_gp0_state = g_blit_left ? GP0_STATE_A0_DATA : GP0_STATE_IDLE;
         return;
     case GP0_STATE_A0_DATA:
@@ -839,11 +840,13 @@ void gpu_gp1_write(uint32_t v)
         g_disp_x = param & 0x3FFu;
         g_disp_y = (param >> 10) & 0x1FFu;
         { extern void xl_display_flip(unsigned x, unsigned y, unsigned w, unsigned h); xl_display_flip(g_disp_x, g_disp_y, g_disp_w, g_disp_h); } /* R1630 */
+        { extern void xl_gpu_cam(int kind, unsigned a, unsigned b, unsigned c, unsigned d); xl_gpu_cam(2, g_disp_x, g_disp_y, g_disp_w, g_disp_h); } /* R1688 */
         break;
     case 0x08: {
         static const uint16_t hres[4] = {256, 320, 512, 640};
         g_disp_w = (param & 0x40u) ? 368u : hres[param & 3u]; /* R1573: bits 0-1 (+6), not 4-5 */
         g_disp_h = ((param & 0x24u) == 0x24u) ? 480u : 240u;
+        { extern void xl_gpu_cam(int kind, unsigned a, unsigned b, unsigned c, unsigned d); xl_gpu_cam(3, param, g_disp_w, g_disp_h, (param >> 4) & 1u); } /* R1688 */
         break;
     }
     default:

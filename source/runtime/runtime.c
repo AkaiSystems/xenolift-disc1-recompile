@@ -1006,14 +1006,24 @@ static volatile int g_r1622_menu; static int g_r1625_done; /* R1625d */ static i
 static struct timespec g_r1622_t0;
 /* R1630: XENOLIFT_MOVIE_DUMP=<dir> writes every displayed frame in state 6 (the movie) as raw 24-bit RGB rows
  * (frame_NNNN_<w>x<h>.rgb) so the recompiled build's movie output can be turned into a video. Tooling only. */
+#include <sys/stat.h> /* R1683: mkdir */
+void xl_gpu_cam(int kind, unsigned a, unsigned b, unsigned c, unsigned d)
+{ /* R1688 camera: field-movie image loads (1), display start (2) and display mode (3) - where the prologue's slices go vs what is shown */
+    static unsigned n[4];
+    if (g_r1575_state != 1u || !g_r1649_fmv || kind < 1 || kind > 3 || n[kind]++ >= (kind == 1 ? 48u : 16u)) return;
+    if (kind == 3) xenolift_receipt("[r1688] GP1(08) mode=%06X w=%u h=%u depth24=%u\n", a, b, c, d);
+    else xenolift_receipt("[r1688] %s x=%u y=%u w=%u h=%u\n", kind == 1 ? "A0 load" : "GP1(05) disp", a, b, c, d);
+}
+
 void xl_display_flip(unsigned x, unsigned y, unsigned w, unsigned h)
 {
     static const char *dir; static int init; static unsigned n;
     char path[512]; FILE *f; unsigned row;
     if (!init) { init = 1; dir = getenv("XENOLIFT_MOVIE_DUMP"); }
-    if (!dir || g_r1575_state != 6u || w > 640u || h > 480u) return;
+    if (!dir || (g_r1575_state != 6u && !g_r1649_fmv) || w > 640u || h > 480u) return; /* R1683: field movies too */
     if (h > 240u) h = 240u;
-    snprintf(path, sizeof path, "%s/frame_%04u_%ux%u.rgb", dir, n++, w, h);
+    snprintf(path, sizeof path, "%s/s%u/frame_%04u_%ux%u.rgb", dir, (unsigned)g_r1575_state, n++, w, h); /* R1683: per-state subfolder (6 = attract, 1 = field movie) */
+    { char sd[512]; snprintf(sd, sizeof sd, "%s/s%u", dir, (unsigned)g_r1575_state); mkdir(sd, 0755); }
     f = fopen(path, "wb"); if (!f) return;
     for (row = 0; row < h; row++) {
         const uint8_t *src = (const uint8_t *)gpu_vram + (((y + row) & 511u) * 1024u + (x & 1023u)) * 2u;
@@ -1089,6 +1099,14 @@ static inline int r1574_movie_store(void)
 {
     return g_r1517_inloop && ((xenolift_cur_fn >= 0x801D3000u && xenolift_cur_fn < 0x801F4000u)
                               || (r[31] >= 0x801D3000u && r[31] < 0x801F4000u));
+}
+/* R1690: in state 1 the map-4 field code byte-copies the movie module (file 0xA9) into 0x801D3000..0x801FBFEC, memory the
+ * title menu overlay (file 17) used before. R518 dropped every 0x03 byte at a +3 slot of that copy, so the stale menu byte
+ * stayed: code words like jr ra (03E00008) and the player's VLC table entries (0x03F5 -> 0x00F5, all negative long-code
+ * levels) were corrupted and every prologue frame decoded to noise. The module image is data, not pointer chains: exempt it. */
+static inline int r1690_module_dst(uint32_t a)
+{
+    return g_r1575_state == 1u && a >= 0x801D3000u && a < 0x801FBFECu;
 }
 /* MGC [mgcensus]: UNCAPPED drop census for the value-keyed mangleguards (R517 w32, R518 w16,
  * R518 w8). Their own receipts stop at 24 lines, so how often each drops - and from which
@@ -3353,7 +3371,7 @@ static void cd_sched_poll_release(void)
   if ((cd_seek_lba >= 239300u && cd_seek_lba <= 240000u) || (cd_seek_lba >= 250000u && cd_seek_lba <= 252000u /* R1419N (c955): the band-edge widen - the member-12 request loop receipts LBA 251190 (size 67740, ends 251523) outside every deep-band gate; covers the archive directory family, the R1331 band-edge precedent */)
       && fe04R == cd_seek_lba
       && fdf8R != 0u && fdf8R < 400000u
-      && cd_data_n >= 2048u && zrfD2R_fires < 24u) {
+      && cd_data_n >= 2048u && zrfD2R_fires < 24u && g_r1575_state != 1u /* R1679: R1419D off in state 1 (forced sectors past the INGS read) */) {
       zrfD2R_fires++;
       cd_pending = 1, g_pend_line = __LINE__;
       cd_force_deliver_int1("zrfD2R");
@@ -6542,6 +6560,9 @@ static int io_special_write(uint32_t p, uint32_t v)
             } else if (ch == 2) {
                 if (v & 1u) { /* RAM -> GPU (VRAM write image data) */
                     uint32_t i;
+                    if (g_r1575_state == 1u && g_r1649_fmv) { static unsigned r1687_m2; if (r1687_m2++ < 24u) /* R1687 camera: slice RAM -> VRAM */
+                        xenolift_receipt("[r1687] DMA2 ram->vram #%u addr=%08X words=%u first=%08X %08X mid=%08X bcr=%08X fn=%08X\n", r1687_m2, addr, words,
+                            xenolift_mem_read32(addr), xenolift_mem_read32(addr + 4u), xenolift_mem_read32(addr + 4u * (words / 2u)), bcr, (unsigned)xenolift_cur_fn); }
                     for (i = 0; i < words; i++) {
                         uint32_t w = xenolift_mem_read32(addr + 4u * i);
                         gpu_gp0(w); gpu_gp0_write(w); xl_gpu_writes++;
@@ -6558,6 +6579,11 @@ static int io_special_write(uint32_t p, uint32_t v)
                 { static uint32_t m0; if (m0++ < 6u || (m0 & 1023u) == 0u)
                     xenolift_receipt("[mdecdma] R1547 DMA0 in #%u madr=%08X bcr=%08X words=%u first=%08X %08X cur_fn=%08X\n", m0, addr, bcr, words,
                         xenolift_mem_read32(addr), xenolift_mem_read32(addr + 4u), (unsigned)xenolift_cur_fn); }
+                if (g_r1575_state == 1u && g_r1649_fmv && words > 64u) { /* R1686 camera: field-movie MDEC input (RLE) for offline comparison with the disc bitstream */
+                    static unsigned r1686_n; const char *dd = getenv("XENOLIFT_MDEC_DUMP");
+                    if (dd && r1686_n < 4u) { char pth[600]; FILE *fp; snprintf(pth, sizeof pth, "%s/mdec_in_%u.bin", dd, r1686_n++);
+                        if ((fp = fopen(pth, "wb")) != NULL) { uint32_t i; for (i = 0; i < words; i++) { uint32_t w = xenolift_mem_read32(addr + 4u * i); fwrite(&w, 4, 1, fp); } fclose(fp); } }
+                }
                 hle_mdec_dma0_in(addr, bcr);
                 done_words = words;
                 if (dma_logs < 40)
@@ -6566,6 +6592,9 @@ static int io_special_write(uint32_t p, uint32_t v)
                 { static uint32_t m1; if (m1++ < 6u || (m1 & 1023u) == 0u)
                     xenolift_receipt("[mdecdma] R1547 DMA1 out #%u madr=%08X bcr=%08X words=%u cur_fn=%08X\n", m1, addr, bcr, words, (unsigned)xenolift_cur_fn); }
                 hle_mdec_dma1_out(addr, bcr);
+                if (g_r1575_state == 1u && g_r1649_fmv) { static unsigned r1687_m1; if (r1687_m1++ < 24u) /* R1687 camera: field-movie MDEC slices out -> RAM */
+                    xenolift_receipt("[r1687] DMA1 out #%u madr=%08X words=%u first=%08X %08X %08X chcr=%08X fn=%08X\n", r1687_m1, addr, words,
+                        xenolift_mem_read32(addr), xenolift_mem_read32(addr + 4u), xenolift_mem_read32(addr + 4u * (words / 2u)), v, (unsigned)xenolift_cur_fn); }
                 done_words = words;
                 if (dma_logs < 40)
                     r861_out("[dma] MDEC-OUT DMA1 %u words -> @%08X from hle_mdec\n", words, addr);
@@ -6796,7 +6825,13 @@ static int io_special_write(uint32_t p, uint32_t v)
                      * cycle since c198) - the protected record is dead. Pass-through is now
                      * UNCONDITIONAL; the R437 W32 camera stays to name any future writer, and
                      * the c370 firstfault receipts showed no record-page follow-on fault. */
-                    if (lo < rec_lo && hi > rec_lo) {
+                    if (g_r1622_menu && g_r1575_state == 1u && (dst & 0x1FFFFFu) < 0x1EA908u && ((dst & 0x1FFFFFu) + n) > 0x1C5000u) {
+                        /* R1680: while the file-17 menu runs, no CD DMA may land in its code (0x801C5000..0x801EA908). Old read-extending
+                         * heals (R1270/R1419D/R1464J) pushed New Game's 9,048-byte INGS read past its file into 0x801C54A0+ and the
+                         * menu executed the overwritten code (the post-New-Game loop). */
+                        static uint32_t r1680_n; if (r1680_n++ < 8u) xenolift_receipt("[r1680] CD DMA %08X+%u (LBA %u) into the running menu overlay dropped\n", madr, n, cd_seek_lba);
+                        cd_data_pos += n;
+                    } else if (lo < rec_lo && hi > rec_lo) {
                         static int r1180_n;
                         if (r1180_n < 8) { r1180_n++;
                             xenolift_receipt("[dmashield] R1190 pass-through #%d: LBA %u fill %08X..%08X crosses record base %08X - game DMA written unmodified (%u bytes)\n",
@@ -6857,6 +6892,9 @@ static int io_special_write(uint32_t p, uint32_t v)
                         v, n, bytes, madr, cd_seek_lba, cd_data_pos, cd_data_n,
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
+                    if (g_r1649_fmv && g_r1575_state == 1u) { static uint32_t fd; if (fd++ < 12u) { /* R1684 [fmvdma]: what the field movie's CD DMA carried (after the copy) */
+                        const uint8_t *q = xenolift_mem + (madr & 0x1FFFFFu); xenolift_receipt("[fmvdma] R1684 dst=%08X n=%u lba=%u pos_after=%u/%u mode=%02X first=%02X%02X%02X%02X %02X%02X%02X%02X %02X%02X%02X%02X\n",
+                            madr, n, cd_seek_lba, cd_data_pos, cd_data_n, (unsigned)g_r1565_mode, q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7],q[8],q[9],q[10],q[11]); } }
                     r1552_dma_check("CD", madr, n); /* R1552 */
                     if (g_r1517_inloop && g_r1566_dma_cb[3] >= 0x80010000u && (cd_last_cmd == 0x1Bu || (g_r1575_state != 6u && g_r1566_dma_cb[3] == 0x8002BB50u))) {
                         /* R1602: outside the movie, only the archive ring callback. The queued-read callback 0x8002BA40 (FDFC = FE00)
@@ -11584,7 +11622,7 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
     if (v >= 0x03000000u && v < 0x04000000u
         && (v & 0x00FFFFFFu) >= 0x00010000u && (v & 0x00FFFFFFu) < 0x00080000u
         && a >= 0x80010000u && a < 0x80200000u
-        && g_r1197_t_active && !r1574_movie_store()) {
+        && g_r1197_t_active && !r1574_movie_store() && !r1690_module_dst(a)) {
         static uint32_t mg_last; static int mg_n; static uint32_t mg_tot;
         { uint32_t old; memcpy(&old, xenolift_mem + (a & 0x1FFFFFu), 4); mgc_count(0, a, v, old); } /* MGC */
         if (!(g_mgg_retire & 1u)) { /* MGG: retired = the store lands */
@@ -12415,7 +12453,7 @@ static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
      * The full value is never a usable pointer in this address space. Drop +
      * receipt + continue (R487/R488 bus-error semantics). */
     if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 2u
-        && v >= 0x0300u && v < 0x0400u && !r1574_movie_store()) {
+        && v >= 0x0300u && v < 0x0400u && !r1574_movie_store() && !r1690_module_dst(a)) {
         static uint32_t mg16_last; static int mg16_n; static uint32_t mg16_tot;
         { uint16_t old; memcpy(&old, xenolift_mem + (a & 0x1FFFFFu), 2); mgc_count(1, a, v, old); } /* MGC */
         if (!(g_mgg_retire & 2u)) { /* MGG: retired = the store lands */
@@ -12673,7 +12711,7 @@ static void xenolift_mem_write8_inner(uint32_t a, uint32_t v)
     /* R518 mangleguard (8-bit path): byte 0x03 written into the MSB slot
      * ((a&3)==3) of a pointer word — byte-granular variant of the family. */
     { if (g_r606_in_hle && v == 0x03u && (a & 3u) == 3u && a >= 0x80010000u && a < 0x80200000u) { static uint32_t r606_n; if (r606_n < 32u) { r606_n++; r861_out("[mglexempt] R606 HLE 03-MSB store exempted from R518 ea=%08X @t=%lds\n", (unsigned)a, (long)(xl_wall() - g_boot_wall_t0)); } } }
-    if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 3u && v == 0x03u && !g_r606_in_hle && !r1574_movie_store()) { /* R606 (c607): the c605p conviction - this drop is the 03->00 store-time transform; HLE-decode installs now exempt */
+    if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 3u && v == 0x03u && !g_r606_in_hle && !r1574_movie_store() && !r1690_module_dst(a)) { /* R606 (c607): the c605p conviction - this drop is the 03->00 store-time transform; HLE-decode installs now exempt */
         static uint32_t mg8_last; static int mg8_n; static uint32_t mg8_tot;
         mgc_count(2, a, v, xenolift_mem[a & 0x1FFFFFu]); /* MGC */
         if (!(g_mgg_retire & 4u)) { /* MGG: retired = the store lands */
@@ -13934,7 +13972,7 @@ static void on_alarm_ctx(int sig, siginfo_t *si, void *uc)
             static uint32_t r967_fn; static uint32_t r967_streak; static uint32_t r967_prints;
             if (xenolift_cur_fn == r967_fn) r967_streak++; else { r967_fn = xenolift_cur_fn; r967_streak = 1; }
             g_r1194_wedge_streak = r967_streak;
-            if (r967_streak >= 5u && (r967_streak % 5u) == 0u && r967_prints < 8u) {
+            if ((r967_streak == 2u /* R1677: first report at ~4 s so runs stop quickly on a stall */ || (r967_streak >= 5u && (r967_streak % 5u) == 0u)) && r967_prints < 8u) {
                 r967_prints++;
                 g_r1195_host_read++; /* R1196: this print's own read32s are HOST reads */
                 r861_out("[wedge] R967 STUCK %us in fn 0x%08X (print %u): cells c0=%02X c1=%02X c2=%02X c3=%02X c4=%02X c5=%02X c6=%02X c7=%02X c8=%02X | CD FE1C=%02X FE04=%08X FDF8=%08X FDFC=%08X A22C=%08X flag578A6=%02X | DRV act=%d loaded=%d pos=%u/%u sched=%d pend=%u cmd=%02X\n",
@@ -17497,14 +17535,14 @@ static void r1644_cd_service(int service) /* R1644b: service=0 -> flags only (no
                     else if (cd_read_active && (cd_last_cmd == 0x06u || cd_last_cmd == 0x1Bu /* R1642b: ReadS too (post-New-Game read at LBA 120615 stuck) */) && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
                         cd_pending = 1, g_pend_line = __LINE__;
                         { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
-                        if (rn++ < 8u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u)\n", cd_seek_lba, f8);
+                        if (rn++ < 40u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u) cmd=%02X pos=%u/%u fe1c=%u flag578A6=%u h4=%08X @t=%lds\n", cd_seek_lba, f8, (unsigned)cd_last_cmd, cd_data_pos, cd_data_n, *(uint32_t *)(xenolift_mem + 0x4FE1Cu), *(uint16_t *)(xenolift_mem + 0x578A6u), *(uint32_t *)(xenolift_mem + 0x564ACu), (long)(xl_wall() - g_boot_wall_t0));
                         lt = now;
                     }
                 }
                 { /* R1643: time-based lost-Pause INT2 (R1535 counts calls and other heals' pendings keep resetting it - New Game's
                    * INGS read sat in FE1C=6 after a Pause for 20 s). 300 ms in FE1C=6 with nothing pending -> deliver INT2. */
                     static uint64_t p6; static uint32_t pn; uint32_t fe1c = *(uint32_t *)(xenolift_mem + 0x4FE1Cu);
-                    if (fe1c != 6u || cd_last_cmd != 0x09u || cd_pending != 0u || cd_scheduled) p6 = 0;
+                    if (fe1c != 6u || cd_pending != 0u) p6 = 0; /* R1643b: any last command (GetStat polls interleave) and scheduled state */
                     else if (!p6) p6 = now;
                     else if (now - p6 > 300000000ull) {
                         cd_resp[0] = 0x02u; cd_resp_n = 1; cd_resp_pos = 0;
@@ -17720,6 +17758,7 @@ void xenolift_trace(uint32_t a)
                 tb, last6c, v6c, a, r[31], g_r1590_ipc, (int)g_r1575_state, cd_seek_lba, (unsigned)cd_last_cmd, (long)(xl_wall() - g_boot_wall_t0)); last6c = v6c; }
         }
     }
+    if (a == 0x8001B970u && g_r1575_state == 1u) { static uint32_t ke; if (ke++ < 12u) xenolift_receipt("[ngcall] R1676 entry 8001B970 r31=%08X sp=%08X ipc=%08X gd=%d\n", r[31], r[29], g_r1590_ipc, (int)g_guest_depth); }
     if (a == 0x80033B34u && g_r1575_state == 1u) { /* R1632 [txtcv]: system-text converter inputs (title-menu hang) */
         static uint32_t tc; uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u), t6c = (tb >= 0x80000000u && tb < 0x80200000u) ? *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) : 0xDEADu;
         if (tc++ < 48u) xenolift_receipt("[txtcv] R1632 src=%08X dst=%08X n=%08X tbl[59360]=%08X +6C=%08X r31=%08X s0=%08X s1=%08X sp=%08X @t=%lds\n",
@@ -17872,6 +17911,11 @@ void xenolift_trace(uint32_t a)
     }
     if (a == 0x801D41ACu && g_r1517_inloop) { /* R1576 [strrst]: movie stream (re)start - which caller, and the frame/end/timeout cells */
         if (g_r1575_state == 1u && !g_r1649_fmv) { g_r1649_fmv = 1; xenolift_receipt("[r1649] field movie started in state 1 (movie a0=%X) - real-time VSync pacing + CD service on\n", r[4]); }
+        { /* R1689 camera: the player's module image (code + its VLC tables at 0x801E802C/0x801F802C) at each state's first stream start */
+            static unsigned r1689_done; const char *dd = getenv("XENOLIFT_MDEC_DUMP"); unsigned bit = g_r1575_state == 1u ? 2u : 1u;
+            if (dd && !(r1689_done & bit)) { char pth[600]; FILE *fp; r1689_done |= bit; snprintf(pth, sizeof pth, "%s/mod_s%u.bin", dd, (unsigned)g_r1575_state);
+                if ((fp = fopen(pth, "wb")) != NULL) { fwrite(xenolift_mem + 0x1D3000u, 1, 0x29000u, fp); fclose(fp); } }
+        }
         static uint32_t rs_n;
         if (rs_n++ < 40u) {
             uint32_t c64 = xenolift_mem[0x1E8964u], cur = *(uint32_t *)(xenolift_mem + 0x1E8988u), thr = *(uint32_t *)(xenolift_mem + 0x1E8984u);
@@ -28340,7 +28384,8 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
             static int zrfS_armed; static int zrfS_fires;
             uint32_t fe1cS = xenolift_mem_read32(0x8004FE1Cu);
             uint32_t fdf8S = xenolift_mem_read32(0x8004FDF8u);
-            if (!cd_read_active && !cd_pending && cd_last_cmd == 0x09u
+            if (!cd_read_active && !cd_pending && cd_last_cmd == 0x09u && g_r1575_state != 1u /* R1679: not in state 1 - it re-armed FDF8=2048 after New Game's
+                                                                                               * 9,048-byte INGS read completed and the extra sectors overwrote the menu code */
                 && cd_seek_lba >= 239317u && cd_seek_lba <= 239600u
                 && fdf8S == 0u && zrfS_fires < 40u
                 && (fe1cS == 0u || fe1cS == 6u || fe1cS == 7u || fe1cS == 10u || fe1cS == 11u)) {
@@ -33295,6 +33340,8 @@ static int r1394_interp(uint32_t entry)
     if (ent_n <= 32u || (ent_n % 4096u) == 0u)
         r861_out("[ovlint] R1394 interp entry #%u fn=%08X r31=%08X sp=%08X\n", ent_n, entry, (unsigned)r[31], (unsigned)r[29]);
     uint32_t r1561_ra = r[31]; /* R1561: the caller's return address at interpreter entry */
+    if (g_r1622_menu && g_r1625_done) { static uint32_t ie; if (ie++ < 30u) /* R1675 [interent]: interpreter instances started after New Game */
+        xenolift_receipt("[interent] R1675 entry=%08X r31=%08X sp=%08X cur_fn=%08X gd=%d\n", entry, (unsigned)r[31], (unsigned)r[29], (unsigned)xenolift_cur_fn, (int)g_guest_depth); }
     if (entry == 0x80077E88u) { /* R1559: dump the field module at FieldMain's first entry for an offline diff against the disc image (not an emit input) */
         static int fd_done;
         if (!fd_done) { fd_done = 1;
@@ -33397,6 +33444,8 @@ static int r1394_interp(uint32_t entry)
                   if (g_r1558_co_n < 3000u) { g_r1558_co_n++; /* R1540: cap 300 -> 3000; R1558: per dispatcher era */ /* R1523b: every call-out in order - the last one before silence never returned */
                     xenolift_receipt("[callout] R1523 #%u -> %08X from %08X a0=%08X a1=%08X a2=%08X a3=%08X sp=%08X entry=%08X t=%ld.%03lds\n",
                         g_r1558_co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
+                if (pc == 0x8001B970u) { static uint32_t nb; if (nb++ < 12u) /* R1676 [ngcall]: every call-out to New Game init */
+                    xenolift_receipt("[ngcall] R1676 #%u from %08X act_ret=%08X entry=%08X sp=%08X gd=%d menu=%d done=%d\n", nb, act_ret - 8u, act_ret, entry, r[29], (int)g_guest_depth, g_r1622_menu, g_r1625_done); }
                 if (g_r1622_menu && g_r1625_done) { static uint32_t pg; if (pg++ < 60u) /* R1665 [postng]: call-outs after New Game ran */
                     xenolift_receipt("[postng] R1665 %08X -> %08X a0=%08X a1=%08X sp=%08X\n", act_ret - 8u, pc, r[4], r[5], r[29]); }
                 if (g_r1622_menu && act_ret - 8u >= 0x801D9000u && act_ret - 8u < 0x801DB000u) { static uint32_t ng; if (ng++ < 40u) /* R1624: New Game handler call-outs */
@@ -33422,6 +33471,8 @@ static int r1394_interp(uint32_t entry)
                 if (lastnpc && pc != lastnpc) { rf[ri % 48u] = lastnpc - 4u; rt[ri % 48u] = pc; rra[ri % 48u] = r[31]; rsp[ri % 48u] = r[29]; ri++; }
                 lastnpc = npc;
                 if (pc == 0x801C5448u && ++v3 == 3u && !dumped) { uint32_t k; dumped = 1;
+                    { FILE *df = fopen("/Users/joshuaghoreishi/Desktop/xenolift-session/trials/r1678_menu_code.bin", "wb"); /* R1678: menu code as it is in RAM at the loop */
+                      if (df) { fwrite(xenolift_mem + 0x1C5000u, 1, 0x26000u, df); fclose(df); } }
                     for (k = (ri > 48u ? ri - 48u : 0u); k < ri; k++) xenolift_receipt("[ngring] R1670 %08X -> %08X ra=%08X sp=%08X\n", rf[k % 48u], rt[k % 48u], rra[k % 48u], rsp[k % 48u]); }
             }
         }
