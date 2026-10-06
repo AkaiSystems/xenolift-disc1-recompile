@@ -17327,7 +17327,10 @@ void xenolift_trace(uint32_t a)
         uint32_t fdfc, fdf8, fe34, fe40;
         memcpy(&fdfc, xenolift_mem + 0x4FDFCu, 4); memcpy(&fdf8, xenolift_mem + 0x4FDF8u, 4);
         memcpy(&fe34, xenolift_mem + 0x4FE34u, 4); memcpy(&fe40, xenolift_mem + 0x4FE40u, 4);
-        if (fdfc == 0u && fe34 == 0u && fe40 == 0u && fdf8 > 0u && fdf8 < 0x400000u && cd_read_active) {
+        uint32_t fe04; memcpy(&fe04, xenolift_mem + 0x4FE04u, 4);
+        /* R1600b: also mid-retry (Pause/Setloc/ReadN with the drive briefly stopped) - R1604q unpacked the field module
+         * with 59768 bytes owed after FDFC was cleared during a retry. A truly stalled read is finished by R473. */
+        if (fdfc == 0u && fe34 == 0u && fe40 == 0u && fdf8 > 0u && fdf8 < 0x400000u && fe04 != 0u) {
             uint32_t one = 1u; memcpy(xenolift_mem + 0x4FDFCu, &one, 4); g_r1599_seen = 1u;
             { static uint32_t n; if (n++ < 12u) xenolift_receipt("[r1600] archive poll while %u bytes owed and FDFC=0 - status restored to busy (seek %u)\n", fdf8, cd_seek_lba); }
         }
@@ -19907,6 +19910,26 @@ void xenolift_trace(uint32_t a)
                        && r472_fires < 5u
                        && (cd_seek_lba >= 108754u && cd_seek_lba <= 109400u || (cd_seek_lba >= 239300u && cd_seek_lba <= 239400u) /* R825M c825: THE MOVIE-BAND WIDEN - the c822-c824 receipts: the movie stream file 3 at 239317 size 9048 drained 3 sectors then the payload fetch at 239320 with dest 0x1801 the raw walker offset entered and never drained - FDF8 stuck 2904 then re-armed 9048; every clear serve declines on one term each; THE R473 RESCUE is the receipted-working composite for exactly this posture - frozen FDF8 + staged sector + read_active - built at the boot band; the band term is THE only failing term; the d2door precedent already receipts the 239300-239400 movie band form */)) {
                 uint32_t r472_n = 0u;
+                { /* R1605: clamp the rescue to the file that holds the current sector. A stale FDF8 (file 3's remainder while
+                   * file 4 loaded after the title's soft reset) made it stuff 73 sectors for a 12-sector file, via the R476 wrap
+                   * into 0x8006FAF8 - the heap head during a re-bootstrap - and the next HeapAlloc walked garbage. */
+                  uint32_t m;
+                  for (m = 1u; m <= 40u; m++) {
+                      const uint8_t *fe = xenolift_mem + 0x000100A5u + 7u * (m - 1u);
+                      uint32_t mlba = fe[0] | (fe[1] << 8) | (fe[2] << 16);
+                      uint32_t msize = fe[3] | (fe[4] << 8) | (fe[5] << 16) | ((uint32_t)fe[6] << 24);
+                      uint32_t msec = (msize + 2047u) / 2048u;
+                      if (msize > 0u && msize <= 0x100000u && mlba <= cd_seek_lba && cd_seek_lba < mlba + msec) {
+                          uint32_t cap = (mlba + msec - cd_seek_lba) * 2048u;
+                          if (fdf8 > cap) {
+                              static uint32_t cl_n;
+                              if (cl_n++ < 12u) xenolift_receipt("[r1605] R473 rescue clamped: FDF8=%u > file %u remainder %u (seek %u)\n", fdf8, m, cap, cd_seek_lba);
+                              fdf8 = cap;
+                          }
+                          break;
+                      }
+                  }
+                }
                 while (fdf8 > 0u && r472_n < 200u) {
                     uint32_t slot = xenolift_mem_read32(0x8004FE08u);
                     /* R476: RING WRAP. c40: skip gate OPENED (4 rescues,
@@ -19919,8 +19942,10 @@ void xenolift_trace(uint32_t a)
                      * base 0x8006FAF8, last seen slot 0x8007EAF8. Wrap
                      * there: later sectors reuse slots (decoder consumes
                      * as they fill - and we skip the movie anyway). */
-                    if (slot < 0x8006FAF8u || slot > 0x8007EAF8u)
-                        slot = 0x8006FAF8u;
+                    if ((slot < 0x8006FAF8u || slot > 0x8007EAF8u) && !(slot >= 0x80010000u && slot <= 0x801FF800u))
+                        slot = 0x8006FAF8u; /* R1606: wrap only a garbage FE08 - a real destination outside the old field ring (file 3 at
+                                             * 0x8007EBF0 after the title's soft reset) was redirected over 0x8006FAF8 = file 2's module
+                                             * and the heap's first block, and the next HeapAlloc faulted on the broken chain */
                     uint32_t idx = slot - 0x80000000u;
                     if (idx < 0x10000u || idx + 2048u > 0x200000u) {
                         r861_out("[defib6] R473 rescue ABORT: ring slot 0x%08X out of RAM\n", slot);
@@ -23921,7 +23946,11 @@ r861_out("[unpackw] R1001 UnpackCompressedBuffer a0=%08X a1=%08X a2=%08X a3=%08X
                    * Stamp the full handoff AT BOOT ENTRY (entries #2+, fresh
                    * boot posture 92C0==0), so the walker's first stub pass
                    * sees the proceed posture. Capped 6/run, idempotent. */
-                  if (a == 0x80019524u && r710n >= 2 && xenolift_mem_read32(0x800592C0u) == 0u) {
+                  /* R1604: not when the game itself re-enters GameBootstrap from field code (the title's soft reset after
+                   * START): R821's stamp sets the heap head 0x80059320 to the BSS stub 0x800592B8, the next HeapAlloc returned 1,
+                   * file 6 was read to address 1 and the archive linker shifted the jump tables (R807 at 0x80041A6C). */
+                  if (a == 0x80019524u && r710n >= 2 && xenolift_mem_read32(0x800592C0u) == 0u
+                      && !(r[31] >= 0x8006F000u && r[31] < 0x800B0000u)) {
                       static int r821n;
                       if (r821n < 6) {
                           r821n++;
