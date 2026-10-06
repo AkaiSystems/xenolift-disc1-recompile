@@ -989,6 +989,7 @@ static uint8_t g_r1565_mode; /* R1565: last Setmode byte */
 static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
+static int g_r1649_fmv; /* R1649: a field-triggered movie (map 4 calls the player at 0x801D3538 in state 1) started a stream */
 static uint32_t g_r1590_ipc; /* R1590: R1394 interpreter PC of the instruction being executed */
 static uint32_t g_r1599_seen; /* R1599: last FDFC value written through the hook */
 static void r1610_preload_f17(void); /* R1610 */
@@ -1001,7 +1002,7 @@ static time_t g_r1624_t6; /* R1624: last state-6 (movie) entry */
 /* R1637: the system text (0x800335F4 loads it, [0x80059360] = data+4, locked via 0x800320A4) - our top-down movie and title
  * buffers overwrite it before the title menu; the console keeps it intact in the menu-overlay buffer's tail (0x801F34B4) */
 static uint8_t g_r1637_snap[0x10000]; static uint32_t g_r1637_base, g_r1637_size;
-static volatile int g_r1622_menu;
+static volatile int g_r1622_menu; static int g_r1625_done; /* R1625d */
 static struct timespec g_r1622_t0;
 /* R1630: XENOLIFT_MOVIE_DUMP=<dir> writes every displayed frame in state 6 (the movie) as raw 24-bit RGB rows
  * (frame_NNNN_<w>x<h>.rgb) so the recompiled build's movie output can be turned into a video. Tooling only. */
@@ -1043,6 +1044,10 @@ static int r1597_held(void)
             uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u);
             int ready = tb >= 0x80000000u && tb < 0x80200000u && *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) != 0u;
             int c = (cur != 2 || !ready) ? 7 : 3; /* R1625b: item 2 (0x8001B970, returns 0 -> result 0) is New Game; item 0 is a 3-way settings dialog */
+            /* R1625d: one confirm per menu session - later taps drove the follow-on 7-item menu (0x801C55A0, same cursor byte) and
+             * re-picked its item 2 forever (R1651) */
+            if (g_r1625_done) return 0;
+            if (c == 3) g_r1625_done = 1;
             static int mt; if (mt++ < 4) r861_out("[padvp2] R1625 menu tap %s (cursor=%d ms=%ld)\n", c == 7 ? "UP" : "CROSS", cur, ms);
             return c;
         }
@@ -4220,7 +4225,7 @@ static uint32_t cd_read_impl(uint32_t p)
                 r1458_tseek = (uint32_t)cd_seek_lba; r1458_tcmd = cd_last_cmd; r1458_trn = cd_resp_n; r1458_tpos = cd_resp_pos; r1458_tf8 = r1458_f8; r1458_te1c = r1458_e1c;
                 r1458_polls = 0;
             }
-            if (r1458_fires < 64u && cd_resp_n > 0u && cd_resp_pos == 0u) {
+            if (r1458_fires < 64u && cd_resp_n > 0u && cd_resp_pos == 0u && g_r1575_state != 1u /* R1650: not in state 1 - it ping-ponged with the FIFO re-prime and the field movie's CdControl(0x0D) never got its ack */) {
                 r1458_polls++;
                 if (r1458_polls > 131072u) {
                     r1458_fires++; r1458_polls = 0;
@@ -4652,7 +4657,10 @@ static uint32_t cd_read_impl(uint32_t p)
             }
         }
         if (cd_resp_pos >= cd_resp_n && !cd_read_active
-                                         && (cd_pending || cd_last_cmd)) {
+                                         && (cd_pending || cd_last_cmd)
+                                         && !(g_r1575_state == 1u && cd_last_cmd == 0x0Du) /* R1651: an empty FIFO stays empty after the field
+                                                                                             * movie's CdControl(0x0D) ack - replaying it kept the
+                                                                                             * guest's drain loop (0x80042AA8) busy forever */) {
             static int reprimed_budget = 100000;
             if (reprimed_budget > 0) {
                 reprimed_budget--;
@@ -12168,6 +12176,15 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if (a == 0x800564ACu && v == 0u && r[31] == 0x8002A8E8u && g_r1575_state == 1u && *(uint32_t *)(xenolift_mem + 0x564ACu) == 0x8002B5D0u
+        && g_r1566_dma_cb[3] == 0x8002BB50u && *(uint32_t *)(xenolift_mem + 0x4FDF8u) != 0u) {
+        /* R1645: a late Pause completion (FE1C=6 case, CdReadyCallback([0x80059F08]=0) at 0x8002A8E0) arrived after the ring setup
+         * installed 0x8002B5D0 and wiped it - map 4's 507,904-byte ring read then never consumed its first sector. On hardware the
+         * Pause completes within ms, before the setup. Keep the ring's handler. */
+        static uint32_t kn; if (kn++ < 6u) xenolift_receipt("[r1645] late Pause completion kept the ring ready callback 0x8002B5D0 (FE04=%u FDF8=%u)\n",
+            *(uint32_t *)(xenolift_mem + 0x4FE04u), *(uint32_t *)(xenolift_mem + 0x4FDF8u));
+        return;
+    }
     if (xenolift_sw_active && xenolift_sw_line >= 152440u && xenolift_sw_line <= 152490u && ((a & 0x1FFFFFu) < 0x56D30u || (a & 0x1FFFFFu) >= 0x56FB0u)) { /* R1614 [pushbad] */
         static uint32_t pb; if (pb++ < 6u) xenolift_receipt("[pushbad] R1614 line=%u a=%08X t6=%08X t7=%08X r1=%08X r31=%08X sp=%08X cur_fn=%08X ipc=%08X gd=%d @t=%lds\n",
             xenolift_sw_line, a, r[14], r[15], r[1], r[31], r[29], (unsigned)xenolift_cur_fn, g_r1590_ipc, (int)g_guest_depth, (long)(xl_wall() - g_boot_wall_t0));
@@ -17440,6 +17457,47 @@ static void r1591_after_cd_irq(void)
         memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; g_r1566_busy = 0;
     }
 }
+static void r1644_cd_service(int service) /* R1644b: service=0 -> flags only (no guest code runs) */
+{
+            { /* R1629: state-1 CD reads (title member/file-17 loads, map 4's 507,904-byte ring read) ran at ~14 sectors/s - CD
+               * events reach the guest only at libcd collector entries. Service pending ReadN events here once per frame at
+               * the 2x drive rate (150 sectors/s token bucket, the R1581 rule from state 6). */
+                static uint64_t tb_last; static double tb_tok; static uint32_t sv_n; struct timespec ts; uint64_t now; int k;
+                clock_gettime(CLOCK_MONOTONIC, &ts); now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+                if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
+                tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
+                if (tb_tok > 4.0) tb_tok = 4.0;
+                { /* R1642: a loaded ReadN sector that was never announced (pend=0, ld=1) held map 4's ring read forever (FDF8 stuck at
+                   * 200704). After 200 ms without FDF8 progress, re-raise its INT1 - re-announce, nothing dropped. */
+                    static uint32_t lf, rn; static uint64_t lt;
+                    uint32_t f8 = *(uint32_t *)(xenolift_mem + 0x4FDF8u);
+                    if (f8 != lf || !cd_read_active) { lf = f8; lt = now; }
+                    else if (cd_read_active && cd_last_cmd == 0x06u && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
+                        cd_pending = 1, g_pend_line = __LINE__;
+                        { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
+                        if (rn++ < 8u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u)\n", cd_seek_lba, f8);
+                        lt = now;
+                    }
+                }
+                { /* R1643: time-based lost-Pause INT2 (R1535 counts calls and other heals' pendings keep resetting it - New Game's
+                   * INGS read sat in FE1C=6 after a Pause for 20 s). 300 ms in FE1C=6 with nothing pending -> deliver INT2. */
+                    static uint64_t p6; static uint32_t pn; uint32_t fe1c = *(uint32_t *)(xenolift_mem + 0x4FE1Cu);
+                    if (fe1c != 6u || cd_last_cmd != 0x09u || cd_pending != 0u || cd_scheduled) p6 = 0;
+                    else if (!p6) p6 = now;
+                    else if (now - p6 > 300000000ull) {
+                        cd_resp[0] = 0x02u; cd_resp_n = 1; cd_resp_pos = 0;
+                        cd_pending = 2, g_pend_line = __LINE__;
+                        if (pn++ < 8u) xenolift_receipt("[cdpause] R1643 Pause completion (INT2) delivered after 300 ms in FE1C=6 (seek=%u FDF8=%u)\n", cd_seek_lba, *(uint32_t *)(xenolift_mem + 0x4FDF8u));
+                        p6 = 0;
+                    }
+                }
+                for (k = 0; service && /* R1629e: back on - the 0x80033B34 hang was the overwritten system text (fixed by R1637), not this */ k < 4 && tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x06u; k++) {
+                    tb_tok -= 1.0;
+                    if (sv_n++ < 4u) xenolift_receipt("[cdirq] R1629 state-1 CD event serviced at the frame wait (pend=%u LBA %u)\n", (unsigned)cd_pending, cd_seek_lba);
+                    xenolift_trace(0x800415B4u);
+                }
+            }
+}
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
@@ -17645,6 +17703,16 @@ void xenolift_trace(uint32_t a)
         if ((d < 0 || d > 640) ? mbad++ < 12u : (mn++ < 6u)) xenolift_receipt("[mstk] R1613 %s depth=%08X r31=%08X ipc=%08X @t=%lds\n",
             a == 0x8004960Cu ? "push" : "pop", (uint32_t)d, r[31], g_r1590_ipc, (long)(xl_wall() - g_boot_wall_t0));
     }
+    if (a == 0x800286CCu && g_r1517_inloop && g_r1575_state == 1u) { /* R1644: map 4's loader polls here without VSync - run the CD service too */
+        static int busy44; static uint64_t last44; struct timespec ts; uint64_t now;
+        clock_gettime(CLOCK_MONOTONIC, &ts); now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+        if (!busy44 && now - last44 >= 2000000ull) {
+            uint32_t sr[32], shi = hi, slo = lo, sfn = xenolift_cur_fn;
+            busy44 = 1; last44 = now; memcpy(sr, r, sizeof sr);
+            r1644_cd_service(0); /* R1644b: flags only - R1644 ran guest callbacks here and sp drifted (R1640: 80028A60 -0x18, DrawSync +0xB0) */
+            memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy44 = 0;
+        }
+    }
     if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 1u && r[31] == 0x8004B608u) {
         /* R1608: run the pad state machine once per frame in state 1. 0x800358BC turns the BIOS pad buffers into the
          * system pad word 0x80059570 that the field's input routine reads; the runtime only ran it from its heartbeat,
@@ -17659,38 +17727,13 @@ void xenolift_trace(uint32_t a)
              * machine, and the pad event enqueue 0x80035C0C that the field's input loop dequeues (queue count 0x8005937C
              * stayed 0 here; 16 on a console) - the handler never ran in this runtime. */
             g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
-            { /* R1629: state-1 CD reads (title member/file-17 loads, map 4's 507,904-byte ring read) ran at ~14 sectors/s - CD
-               * events reach the guest only at libcd collector entries. Service pending ReadN events here once per frame at
-               * the 2x drive rate (150 sectors/s token bucket, the R1581 rule from state 6). */
-                static uint64_t tb_last; static double tb_tok; static uint32_t sv_n; struct timespec ts; uint64_t now; int k;
-                clock_gettime(CLOCK_MONOTONIC, &ts); now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
-                if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
-                tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
-                if (tb_tok > 4.0) tb_tok = 4.0;
-                { /* R1642: a loaded ReadN sector that was never announced (pend=0, ld=1) held map 4's ring read forever (FDF8 stuck at
-                   * 200704). After 200 ms without FDF8 progress, re-raise its INT1 - re-announce, nothing dropped. */
-                    static uint32_t lf, rn; static uint64_t lt;
-                    uint32_t f8 = *(uint32_t *)(xenolift_mem + 0x4FDF8u);
-                    if (f8 != lf || !cd_read_active) { lf = f8; lt = now; }
-                    else if (cd_read_active && cd_last_cmd == 0x06u && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
-                        cd_pending = 1, g_pend_line = __LINE__;
-                        { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
-                        if (rn++ < 8u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u)\n", cd_seek_lba, f8);
-                        lt = now;
-                    }
-                }
-                for (k = 0; /* R1629e: back on - the 0x80033B34 hang was the overwritten system text (fixed by R1637), not this */ k < 4 && tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x06u; k++) {
-                    tb_tok -= 1.0;
-                    if (sv_n++ < 4u) xenolift_receipt("[cdirq] R1629 state-1 CD event serviced at the frame wait (pend=%u LBA %u)\n", (unsigned)cd_pending, cd_seek_lba);
-                    xenolift_trace(0x800415B4u);
-                }
-            }
+            r1644_cd_service(1); /* R1644: the R1629/R1642/R1643 state-1 CD service (flags-only from the 0x800286CC poll) */
             memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy = 0;
             { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1611 VSync handler run (slot4=%08X, pad queue %u, sys pad %04X)\n",
                   *(uint32_t *)(xenolift_mem + 0x58950u), *(uint32_t *)(xenolift_mem + 0x5937Cu), *(uint16_t *)(xenolift_mem + 0x59570u)); }
         }
     }
-    if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 6u && r[31] == 0x8004B608u) {
+    if (a == 0x8004B694u && g_r1517_inloop && (g_r1575_state == 6u || g_r1649_fmv) && r[31] == 0x8004B608u) { /* R1649: also a field movie in state 1 */
         /* R1579/R1579c: real-time VSync in the movie state. VSync(0) ends with v_wait(Vcount+1, 1)
          * (called from 0x8004B604); Vcount is 0x80058960 (lui 0x8006 + -0x76A0 sign-extends), and
          * the runtime adds a tick on every read of it, so that wait ended after one poll. The movie
@@ -17793,6 +17836,7 @@ void xenolift_trace(uint32_t a)
         }
     }
     if (a == 0x801D41ACu && g_r1517_inloop) { /* R1576 [strrst]: movie stream (re)start - which caller, and the frame/end/timeout cells */
+        if (g_r1575_state == 1u && !g_r1649_fmv) { g_r1649_fmv = 1; xenolift_receipt("[r1649] field movie started in state 1 (movie a0=%X) - real-time VSync pacing + CD service on\n", r[4]); }
         static uint32_t rs_n;
         if (rs_n++ < 40u) {
             uint32_t c64 = xenolift_mem[0x1E8964u], cur = *(uint32_t *)(xenolift_mem + 0x1E8988u), thr = *(uint32_t *)(xenolift_mem + 0x1E8984u);
@@ -29658,6 +29702,10 @@ void xenolift_unknown(uint32_t word)
         if (r1058_n < 16) {
             r1058_n++;
             xenolift_receipt("[skiphook] R1058 #%d invalid dispatch target %08X skipped (cur_fn %08X r31 %08X) - garbage callback, caller continues (R1037 c191 contract generalized) ", r1058_n, word, (unsigned)xenolift_cur_fn, (unsigned)r[31]);
+            if (g_r1575_state == 1u && r[31] >= 0x801D3000u && r[31] < 0x801FC000u) { /* R1647: dump the field-movie module region once */
+                static int dmp; if (!dmp) { FILE *df = fopen("/Users/joshuaghoreishi/Desktop/xenolift-session/trials/r1647_801D3000.bin", "wb");
+                    if (df) { fwrite(xenolift_mem + 0x1D3000u, 1, 0x29000u, df); fclose(df); dmp = 1; xenolift_receipt("[r1647] dumped 801D3000..801FC000 at the bad dispatch (r31=%08X)\n", (unsigned)r[31]); } }
+            }
         }
         return;
     }
@@ -33052,7 +33100,9 @@ static int r1610_f17_resident(void)
 static int r1610_inwin(uint32_t x, uint32_t end)
 {
     if (x >= 0x8006F000u && x < end) return 1;
-    return x >= 0x801C5000u && x < 0x801EA908u && r1610_f17_resident();
+    /* R1648: past 0x801D3000 only while the file-17 menu runs - afterwards that region is the field-movie module (map 4 copies
+     * it to 0x801D3000 and calls 0x801D3538), whose compiled code must run; interpreting it dispatched 0x10 (R1647) */
+    return x >= 0x801C5000u && x < 0x801EA908u && r1610_f17_resident() && (x < 0x801D3000u || g_r1622_menu);
 }
 static void r1610_preload_f17(void) /* diagnostic: XENOLIFT_PRELOAD_F17=1 */
 {
@@ -33081,12 +33131,12 @@ int r1394_dispatch_guard(unsigned int t)
     unsigned char lw[16];
     int rc;
     uint32_t r1533_end = r1533_wend();
-    if (t >= 0x801C5000u && t < 0x801EA908u && r1610_f17_resident()) { /* R1610: file-17 code, interpreted */
+    if (t >= 0x801C5000u && t < 0x801EA908u && r1610_f17_resident() && (t < 0x801D3000u || g_r1622_menu)) { /* R1610: file-17 code, interpreted (R1648: not the movie module region after the menu) */
         static unsigned int fn_ = 0;
         xenolift_cur_fn = t;
         if (fn_++ < 16u) r861_out("[f17int] R1610 interpreting file-17 fn %08X (r31=%08X)\n", t, (unsigned)r[31]);
         uint32_t r1641_sp = r[29], r1641_ra = r[31]; /* R1641b */
-        if (t == 0x801C62A8u) { g_r1622_menu = 1; clock_gettime(CLOCK_MONOTONIC, &g_r1622_t0); /* R1622 */
+        if (t == 0x801C62A8u) { g_r1622_menu = 1; g_r1625_done = 0; clock_gettime(CLOCK_MONOTONIC, &g_r1622_t0); /* R1622 */
             /* R1626: the New Game handler (0x801D9808) takes its answer from the memory-card status word 0x8005957C & 0x700
              * (0x80038824). The console title has 0xB901 there (bit 0x100); with no status bits New Game was declined. */
             uint16_t cs = *(uint16_t *)(xenolift_mem + 0x5957Cu);
@@ -33265,7 +33315,7 @@ static int r1394_interp(uint32_t entry)
                     }
                     if (hc_n++ < 40u) xenolift_receipt("[heapchain] R1532 HeapAlloc(%08X,%u) from %08X entry=%08X head59320=%08X chain:%s\n",
                         r[4], r[5], act_ret - 8u, entry, xenolift_mem_read32(0x80059320u), b);
-                    if (r[4] == 0x36FECu && r[5] == 1u && g_r1575_state == 1u) {
+                    if ((r[4] == 0x36FECu || r[4] == 0x28FECu /* R1646: the movie module, called at fixed 0x801D3538 by map 4 */) && r[5] == 1u && g_r1575_state == 1u) {
                         /* R1619: merge adjacent free blocks (flags 0x84000000) before the menu-overlay allocation. File 17
                          * is linked at 0x801C5000 and the kernel's menu switch (0x8001C4F0) jumps to fixed entries there; on a
                          * console this top-down HeapAlloc(0x36FEC,1) ends at the title's 4-byte block (0x801FBFEC) and so
@@ -33281,14 +33331,14 @@ static int r1394_interp(uint32_t entry)
                             }
                             c3 = nx;
                         }
-                        xenolift_receipt("[heapmerge] R1619 merged %u free blocks before HeapAlloc(0x36FEC,1)\n", merged);
-                        if (g_r1637_size && g_r1637_base >= 0x801EA908u && g_r1637_base + g_r1637_size <= 0x801FC000u) { /* R1637: restore the system text in the overlay tail */
+                        xenolift_receipt("[heapmerge] R1619 merged %u free blocks before HeapAlloc(%X,1)\n", merged, r[4]);
+                        if (r[4] == 0x36FECu && g_r1637_size && g_r1637_base >= 0x801EA908u && g_r1637_base + g_r1637_size <= 0x801FC000u) { /* R1637: restore the system text in the overlay tail */
                             { uint32_t n = g_r1637_size; if (g_r1637_base + n > 0x801FBFE8u) n = 0x801FBFE8u - g_r1637_base; /* R1637b: keep the title's 4-byte block header (0x801FBFEC) */
                               memcpy(xenolift_mem + (g_r1637_base & 0x1FFFFFu), g_r1637_snap, n); }
                             *(uint32_t *)(xenolift_mem + 0x59360u) = g_r1637_base + 4u;
                             xenolift_receipt("[txtsnap] R1637 system text restored at %08X (+%u) before the menu overlay\n", g_r1637_base, g_r1637_size); }
                     }
-                    if (r[4] == 0x36FECu) { /* R1618 [heaptop]: the menu-overlay buffer must land at 0x801C5000 (console) - dump the chain's top */
+                    if (r[4] == 0x36FECu || r[4] == 0x28FECu) { /* R1618 [heaptop]: the menu-overlay buffer must land at 0x801C5000 (console) - dump the chain's top */
                         uint32_t c2 = xenolift_mem_read32(0x80059320u), k2; char b2[900]; int o2 = 0;
                         for (k2 = 0; k2 < 600u && c2 >= 0x80010000u && c2 < 0x80200000u && o2 < (int)sizeof b2 - 40; k2++) {
                             uint32_t nx = xenolift_mem_read32(c2 - 8u), fl = xenolift_mem_read32(c2 - 4u);
