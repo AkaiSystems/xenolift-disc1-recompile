@@ -1002,11 +1002,17 @@ static int r1597_held(void)
     d = time(NULL) - g_r1597_t1;
     if (d >= 8 && d < 9) { static int once_n; if (once_n++ < 2) r861_out("[padvp2] R1597 START held on the title (d=%lds)\n", (long)d); return 1; }
     /* R1597d: the title's menu loop (script 0x6E..0x9A) starts ~5 s after START and polls Circle (pressed mask 0x20) */
-    if (d >= 16 && d < 22) { /* R1597e: tap Circle every 100 ms - the menu's check sees new presses (edges) once per loop pass */
-        struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
-        return ((ts.tv_nsec / 100000000L) & 1L) ? 0 : 2;
+    { /* R1597g: tap while the title controller's script is inside its menu loop (pc 0x6E..0x9A), cycling
+       * Cross/Triangle/Square/Circle in 100 ms taps (300 ms per button) - wall-clock windows drifted run to run */
+        uint32_t act; uint16_t spc;
+        memcpy(&act, xenolift_mem + 0xB0078u, 4);
+        if (act >= 0x80000000u && act < 0x80200000u) {
+            memcpy(&spc, xenolift_mem + ((act + 0xCCu) & 0x1FFFFFu), 2);
+            if (spc >= 0x6Eu && spc <= 0x9Au) {
+                return 3; /* R1597h: hold Cross (system pad bit 0x20 by elimination: Square=0x10, Circle=0x40) */
+            }
+        }
     }
-    if (d >= 24 && d < 25) return 3; /* Cross */
     return 0;
 } /* R1575: game state requested at the last R670 dispatcher entry */
 /* R1574: stores made by the stage-2 movie player (in the main loop) are exempt from the R517/R518
@@ -12101,6 +12107,10 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if ((a & 0x1FFFFFFFu) >= 0x000ABD80u && (a & 0x1FFFFFFFu) < 0x000ABDA0u) { /* R1609 [codew]: field-code overwrite watch */
+        static uint32_t cw_n; if (cw_n++ < 16u) xenolift_receipt("[codew] R1609 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
     if ((a & 0x1FFFFFFCu) == 0x0006F94Cu) { static uint32_t m32; if (m32++ < 20u) xenolift_receipt("[mapsrc] R1601 w32 F94C <- %08X cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n", v, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); }
     if (a == 0x8004FDFCu) { /* R1599 [fdfcw]: archive request status writer */
         static uint32_t fw_n; uint32_t old = *(uint32_t *)(xenolift_mem + 0x4FDFCu);
@@ -12195,6 +12205,7 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
 
 static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
 {
+    if ((a & 0x1FFFFFFFu) >= 0x000ABD80u && (a & 0x1FFFFFFFu) < 0x000ABDA0u) { static uint32_t c16; if (c16++ < 8u) xenolift_receipt("[codew] R1609 w16 %08X <- %04X cur_fn=%08X r31=%08X ipc=%08X\n", a, v & 0xFFFFu, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc); }
     if ((a & 0x1FFFFFFEu) == 0x0006F94Eu) { /* R1601 [mapsrc]: who sets the next field map (0x8006F94E) */
         static uint32_t ms_n; if (ms_n++ < 20u) xenolift_receipt("[mapsrc] R1601 w16 F94E %u -> %u cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
             (unsigned)*(uint16_t *)(xenolift_mem + 0x6F94Eu), v & 0xFFFFu, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
@@ -17355,10 +17366,10 @@ void xenolift_trace(uint32_t a)
         static int was;
         int h = r1597_held();
         uint8_t lo = (h == 1) ? 0xF7u : 0xFFu;                                  /* START = low byte bit 3 */
-        uint8_t hi = (h == 2) ? 0xDFu : (h == 3) ? 0xBFu : 0xFFu;               /* R1597c: Circle = high bit 5, Cross = high bit 6 */
+        uint8_t hi = (h == 2 || h == 6) ? 0xDFu : (h == 3) ? 0xBFu : (h == 4) ? 0xEFu : (h == 5) ? 0x7Fu : 0xFFu; /* R1597f: Circle/Cross/Triangle/Square */
         if (h != was) {
             xenolift_mem[0x625FCu] = 0x00u; xenolift_mem[0x625FCu + 1u] = 0x41u;
-            { static uint32_t pv_n; if (pv_n++ < 30u) xenolift_receipt("[padvp2] R1597c pad %s @t=%lds\n", h == 1 ? "START" : h == 2 ? "CIRCLE" : h == 3 ? "CROSS" : "released", (long)(xl_wall() - g_boot_wall_t0)); }
+            { static uint32_t pv_n; if (pv_n++ < 30u) xenolift_receipt("[padvp2] R1597c pad %s @t=%lds\n", h == 1 ? "START" : h == 2 || h == 6 ? "CIRCLE" : h == 3 ? "CROSS" : h == 4 ? "TRIANGLE" : h == 5 ? "SQUARE" : "released", (long)(xl_wall() - g_boot_wall_t0)); }
             was = h;
         }
         if (h || xenolift_mem[0x625FCu + 2u] != 0xFFu || xenolift_mem[0x625FCu + 3u] != 0xFFu) {
