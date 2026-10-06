@@ -990,7 +990,18 @@ static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
 static uint32_t g_r1590_ipc; /* R1590: R1394 interpreter PC of the instruction being executed */
-static uint32_t g_r1575_state = 0xFFFFFFFFu; /* R1575: game state requested at the last R670 dispatcher entry */
+static uint32_t g_r1575_state = 0xFFFFFFFFu;
+static time_t g_r1597_t1; /* R1597: wall time of the last state-1 (title) dispatcher entry */
+static int r1597_held(void)
+{
+    /* R1597: the title screen (map 490) reads the pad through the SIO stream, which the R1326 virtual player
+     * (keyed to ReadControllerButtons) never reaches. Hold START for ~1 s, 8 s after each title entry. */
+    time_t d;
+    if (g_r1575_state != 1u || !g_r1597_t1) return 0;
+    d = time(NULL) - g_r1597_t1;
+    if (d >= 8 && d < 9) { static int once_n; if (once_n++ < 2) r861_out("[padvp2] R1597 START held on the title (d=%lds)\n", (long)d); return 1; }
+    return 0;
+} /* R1575: game state requested at the last R670 dispatcher entry */
 /* R1574: stores made by the stage-2 movie player (in the main loop) are exempt from the R517/R518
  * value-keyed mangle drops. The player's VLC decoder writes run-length codes whose run-0 negative
  * levels are exactly 0x03xx halfwords at +2 slots, and its ring copy writes raw bitstream words;
@@ -5952,7 +5963,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
         uint8_t b;
         if (idx < 3u) b = joy_resp_hdr[idx];
         else if (idx == 3u) b = 0xFFu; /* buttons MSB (all-active-low) */
-        else if (idx == 4u) b = pad809_held() ? 0xF7u : 0xFFu; /* LSB: START bit3 */
+        else if (idx == 4u) b = (pad809_held() || r1597_held()) ? 0xF7u : 0xFFu; /* LSB: START bit3 (R1597: title press) */
         else b = 0x00u;
         g_joy_rx_idx = (idx < 6u) ? idx + 1u : 6u;
         {
@@ -17292,6 +17303,18 @@ void xenolift_trace(uint32_t a)
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
     r1564_check(a); /* R1564/R1564c */
+    if (g_r1575_state == 1u && g_r1517_inloop) { /* R1597b: the title reads the BIOS auto-poll buffers - press START there */
+        static int was;
+        int h = r1597_held();
+        if (h != was) {
+            uint8_t v = h ? 0xF7u : 0xFFu; /* byte 2 = buttons low, active-low; bit 3 = START */
+            xenolift_mem[0x625FCu + 2u] = v; xenolift_mem[0x6261Eu + 2u] = v;
+            xenolift_mem[0x625FCu + 3u] = 0xFFu; xenolift_mem[0x6261Eu + 3u] = 0xFFu;
+            xenolift_mem[0x625FCu] = 0x00u; xenolift_mem[0x625FCu + 1u] = 0x41u;
+            xenolift_receipt("[padvp2] R1597b START %s in the pad buffers @t=%lds\n", h ? "pressed" : "released", (long)(xl_wall() - g_boot_wall_t0));
+            was = h;
+        } else if (h) { xenolift_mem[0x625FCu + 2u] = 0xF7u; xenolift_mem[0x6261Eu + 2u] = 0xF7u; }
+    }
     if (a == 0x800415B4u || a == 0x800409E4u) r1591_after_cd_irq(); /* R1591d: the previous CD IRQ has been handled - its DMA callbacks run before the next one */
     /* R1580c: release the deferred INT1 once the CD tick that ran the guest's INT handler has ended
      * (the handler acks before OR after its body DMA, so the ack is not a usable release point). */
@@ -26629,6 +26652,7 @@ if (pad809_presses < 300 &&
         }
         g_r1558_co_n = 0u; /* R1558 */
         g_r1575_state = xenolift_mem_read32(0x80018088u); /* R1575: state this dispatch runs */
+        if (g_r1575_state == 1u) g_r1597_t1 = time(NULL); /* R1597 */
         if (r670d < 8u) {
             r670d++;
             r861_out("[phase] R670 DISPATCHER entry #%u @t=%lds: req=%08X idx(FAEC)=%08X cur=%08X F0C=%u FDF8=%08X latch(9330)=%08X r31=%08X\n",
