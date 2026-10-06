@@ -39,6 +39,7 @@ void gpu_display_area(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *h);
 /* Status & Inspection API */
 uint32_t gpu_get_status(void);
 uint32_t gpu_get_read_latch(void);
+int gpu_read_pending(void); /* R1593: a GP0(C0h) VRAM->CPU read is in progress */
 uint16_t gpu_vram_peek(uint32_t x, uint32_t y);
 void gpu_vram_poke(uint32_t x, uint32_t y, uint16_t val);
 

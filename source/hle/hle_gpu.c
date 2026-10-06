@@ -53,6 +53,7 @@ static void hle_out(const char *fmt, ...)
 uint16_t g_vram[GPU_VRAM_HEIGHT][GPU_VRAM_WIDTH]; /* R694: exposed - runtime screen sampler + live viewer alias this (single canvas) */
 static uint32_t g_gpu_stat = 0x14802000u;
 static uint32_t g_read_latch = 0;
+static uint32_t g_rd_x, g_rd_y, g_rd_w, g_rd_h, g_rd_done, g_rd_left; /* R1593: pending VRAM->CPU rectangle */
 
 static uint16_t g_disp_x = 0, g_disp_y = 0;
 static uint16_t g_disp_w = 320, g_disp_h = 240;
@@ -610,6 +611,15 @@ static void exec_cmd_buf(void)
 {
     uint32_t cmd = (g_cmd_buf[0] >> 24) & 0xFFu;
 
+    if (cmd == 0xC0u) { /* R1593: copy rectangle VRAM -> CPU (StoreImage); served through GPUREAD / DMA2 reads */
+        g_rd_x = g_cmd_buf[1] & 0x3FFu; g_rd_y = (g_cmd_buf[1] >> 16) & 0x1FFu;
+        g_rd_w = g_cmd_buf[2] & 0x3FFu; g_rd_h = (g_cmd_buf[2] >> 16) & 0x1FFu;
+        if (!g_rd_w) g_rd_w = 1024u;
+        if (!g_rd_h) g_rd_h = 512u;
+        g_rd_done = 0; g_rd_left = g_rd_w * g_rd_h;
+        return;
+    }
+
     /* R1486 [r1486] FIRST non-fill GP0 — camera only, once. */
     if (!g_r1486_fired && cmd != 0x02u) {
         const char *cls;
@@ -844,13 +854,24 @@ void gpu_display_area(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *h)
     if (h) *h = g_disp_h;
 }
 
+int gpu_read_pending(void) { return g_rd_left != 0u; } /* R1593 */
+
 uint32_t gpu_get_status(void)
 {
+    if (g_rd_left) return g_gpu_stat | (1u << 27); /* R1593: ready to send VRAM to CPU */
     return g_gpu_stat;
 }
 
 uint32_t gpu_get_read_latch(void)
 {
+    if (g_rd_left) { /* R1593: two pixels per GPUREAD word, row-major in the C0h rectangle */
+        uint32_t w = 0, half;
+        for (half = 0; half < 2 && g_rd_left; half++, g_rd_left--, g_rd_done++) {
+            uint32_t x = (g_rd_x + g_rd_done % g_rd_w) & 0x3FFu, y = (g_rd_y + g_rd_done / g_rd_w) & 0x1FFu;
+            w |= (uint32_t)g_vram[y][x] << (16u * half);
+        }
+        return w;
+    }
     return g_read_latch;
 }
 

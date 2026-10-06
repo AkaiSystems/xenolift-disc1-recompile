@@ -459,6 +459,7 @@ static int g_r1197_t_active;
 static uint32_t gpu_dma2_starts;  /* R694: how many GPU DMA sends the game issued */
 static uint32_t gpu_blit_x, gpu_blit_y, gpu_blit_w, gpu_blit_h, gpu_blit_left;
 static uint16_t gpu_disp_x, gpu_disp_y;         /* GP1(0x05) display area */
+static uint32_t g_r1575_state; /* R1592: tentative (defined with R1575 below) */
 static uint16_t gpu_disp_w = 320, gpu_disp_h = 240; /* GP1(0x08) mode */ static uint32_t gpu_disp_24; /* R1573: GP1(0x08) bit 4, 24-bit display */
 static uint32_t gpu_draw_ofx, gpu_draw_ofy; /* R1230 (c69, Jos correction): GP0 0xE5
  * drawing offset, SIGNED 11-bit X/Y. 0xE3=draw-area top-left, 0xE4=bottom-
@@ -482,6 +483,8 @@ static void gpu_gp0(uint32_t v)
         if (gpu_blit_log_budget-- > 0)
             r861_out("[gpu] blit %ux%u @(%u,%u)\n",
                     gpu_blit_w, gpu_blit_h, gpu_blit_x, gpu_blit_y);
+        { static uint32_t b1; if (g_r1575_state == 1u && b1++ < 400u) /* R1592: state-1 VRAM uploads (title strips) */
+            r861_out("[blit1] R1592 blit %ux%u @(%u,%u) cur_fn=%08X\n", gpu_blit_w, gpu_blit_h, gpu_blit_x, gpu_blit_y, (unsigned)xenolift_cur_fn); }
         gpu_gp0_state = gpu_blit_left ? 3 : 0;
         return;
     }
@@ -5911,7 +5914,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
         memcpy(out, xenolift_mem + xenolift_phys(0x1F801074u), 4);
         return 1;
     case 0x1F801810:
-        *out = gpu_read_latch; /* GPUREAD: last GetGPUInfo response */
+        *out = gpu_read_pending() ? gpu_get_read_latch() : gpu_read_latch; /* GPUREAD: R1593 VRAM->CPU pixels, else the GetGPUInfo response */
         return 1;
     case 0x1F801814: {
         g_poll_gpu++;
@@ -5922,7 +5925,7 @@ static int io_special_read(uint32_t p, uint32_t *out)
          * 64 reads. */
         static uint32_t gpu_reads;
         gpu_reads++;
-        *out = gpu_stat ^ (((gpu_reads >> 6) & 1u) << 31);
+        *out = (gpu_stat ^ (((gpu_reads >> 6) & 1u) << 31)) | (gpu_read_pending() ? (1u << 27) : 0u); /* R1593: bit 27 = VRAM->CPU ready */
         gpu_snapshot(); /* R126: live framebuffer feed */
         return 1;
     }
