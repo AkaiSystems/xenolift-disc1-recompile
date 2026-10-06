@@ -990,6 +990,7 @@ static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
 static uint32_t g_r1590_ipc; /* R1590: R1394 interpreter PC of the instruction being executed */
+static uint32_t g_r1599_seen; /* R1599: last FDFC value written through the hook */
 static uint32_t g_r1575_state = 0xFFFFFFFFu;
 static time_t g_r1597_t1; /* R1597: wall time of the last state-1 (title) dispatcher entry */
 static int r1597_held(void)
@@ -12091,6 +12092,13 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if (a == 0x8004FDFCu) { /* R1599 [fdfcw]: archive request status writer */
+        static uint32_t fw_n; uint32_t old = *(uint32_t *)(xenolift_mem + 0x4FDFCu);
+        g_r1599_seen = v;
+        if (old != v && fw_n++ < 60u) xenolift_receipt("[fdfcw] R1599 FDFC %u -> %u %s cur_fn=%08X r31=%08X sw_line=%u FDF8=%d FE1C=%u state=%d @t=%lds\n",
+            old, v, xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], xenolift_sw_line,
+            (int)*(uint32_t *)(xenolift_mem + 0x4FDF8u), *(uint32_t *)(xenolift_mem + 0x4FE1Cu), (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
     if ((a & 0x1FFFFFFFu) == 0x0004F34Cu) { /* R1586 [mapid]: field map/scene ID writer */
         static uint32_t mi_n;
         if (mi_n++ < 24u) xenolift_receipt("[mapid] R1586 #%u F34C %d -> %d cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n", mi_n,
@@ -17303,6 +17311,21 @@ void xenolift_trace(uint32_t a)
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
     r1564_check(a); /* R1564/R1564c */
+    if (a == 0x800286CCu && g_r1517_inloop && g_r1575_state == 1u) {
+        /* R1600: the archive status poll must not report idle while a normal read still owes bytes. R1598q unpacked
+         * the field module with FDF8=4472 outstanding (FDFC already 0), so its last 7.5 KB (incl. the script opcode
+         * table) decompressed to garbage and the title script dispatched to 0x48120112. Restore the in-progress flag;
+         * the game's own completion path clears it. Ring streams (FE40>0) and stop requests (FE34>0) are left alone. */
+        uint32_t fdfc, fdf8, fe34, fe40;
+        memcpy(&fdfc, xenolift_mem + 0x4FDFCu, 4); memcpy(&fdf8, xenolift_mem + 0x4FDF8u, 4);
+        memcpy(&fe34, xenolift_mem + 0x4FE34u, 4); memcpy(&fe40, xenolift_mem + 0x4FE40u, 4);
+        if (fdfc == 0u && fe34 == 0u && fe40 == 0u && fdf8 > 0u && fdf8 < 0x400000u && cd_read_active) {
+            uint32_t one = 1u; memcpy(xenolift_mem + 0x4FDFCu, &one, 4); g_r1599_seen = 1u;
+            { static uint32_t n; if (n++ < 12u) xenolift_receipt("[r1600] archive poll while %u bytes owed and FDFC=0 - status restored to busy (seek %u)\n", fdf8, cd_seek_lba); }
+        }
+    }
+    { uint32_t f; memcpy(&f, xenolift_mem + 0x4FDFCu, 4); /* R1599: FDFC changed outside the write hook (direct runtime write) */
+      if (f != g_r1599_seen) { static uint32_t dn; if (dn++ < 30u) xenolift_receipt("[fdfcw] R1599 FDFC %u -> %u DIRECT (not via hook) at fn %08X FDF8=%d state=%d\n", g_r1599_seen, f, a, (int)*(uint32_t *)(xenolift_mem + 0x4FDF8u), (int)g_r1575_state); g_r1599_seen = f; } }
     if (g_r1575_state == 1u && g_r1517_inloop) { /* R1597b: the title reads the BIOS auto-poll buffers - press START there */
         static int was;
         int h = r1597_held();
@@ -32955,6 +32978,13 @@ static int r1394_interp(uint32_t entry)
             }
             else if (fn_ == 0x09u) { /* jalr */
                 uint32_t tv = r[rs];
+                if (pc == 0x800A1F70u) { /* R1598 [scrop]: field script opcode handlers dispatched (distinct, in order) */
+                    static uint32_t seen[96]; static unsigned ns;
+                    unsigned k; for (k = 0; k < ns && seen[k] != tv; k++) {}
+                    if (k == ns && ns < 96u) { seen[ns++] = tv;
+                        xenolift_receipt("[scrop] R1598 #%u handler %08X (op idx %u) state=%d @t=%lds\n", ns, tv,
+                            (tv && 1) ? 0u : 0u, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); }
+                }
                 r[rd] = npc + 4;
                 if (tv < 0x8006F000u || tv >= r1533_end) { act = 2; act_ret = r[rd]; }
                 else { act = 0; }
