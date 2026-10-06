@@ -11870,7 +11870,11 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
     /* R192 lzss-guard: block writes past the RAM ceiling while the
      * decompressor is armed — the final-partial-group overrun dies
      * here instead of halting the machine. */
-    if (lzss_armed && lzss_exit_target && r[15] != lzss_exit_target) {
+    /* R1615: scope the R198 heal to the LZSS core itself. lzss_armed is never retired, so after any
+     * decompression every 32-bit guest store rewrote r15 - PushMatrix's t7 became the last exit target
+     * (0x801086AE) mid-function and its matrix stores smashed the heap header at 0x801086BC, so the
+     * file-17 HeapAlloc after Cross on the title returned 1. */
+    if (lzss_armed && lzss_exit_target && r[15] != lzss_exit_target && xenolift_cur_fn == 0x80032EB4u) {
         /* R198: SELF-HEALING EXIT TARGET. Cycle-31 proof: the LZSS entry
          * computed the correct exit (dst+word0, e.g. 0x801F34A9) and two
          * streams exited EXACTLY there — but the third stream's r15 was
@@ -12108,6 +12112,20 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if (xenolift_sw_active && xenolift_sw_line >= 152440u && xenolift_sw_line <= 152490u && ((a & 0x1FFFFFu) < 0x56D30u || (a & 0x1FFFFFu) >= 0x56FB0u)) { /* R1614 [pushbad] */
+        static uint32_t pb; if (pb++ < 6u) xenolift_receipt("[pushbad] R1614 line=%u a=%08X t6=%08X t7=%08X r1=%08X r31=%08X sp=%08X cur_fn=%08X ipc=%08X gd=%d @t=%lds\n",
+            xenolift_sw_line, a, r[14], r[15], r[1], r[31], r[29], (unsigned)xenolift_cur_fn, g_r1590_ipc, (int)g_guest_depth, (long)(xl_wall() - g_boot_wall_t0));
+    }
+    if ((a & 0x1FFFFFFCu) == 0x00056D2Cu && (int32_t)v != 0 && ((int32_t)v < 0 || (int32_t)v > 640 || ((int32_t)v & 31))) { /* R1613 [mstk] bad depth write */
+        static uint32_t mw; if (mw++ < 12u) xenolift_receipt("[mstk] R1613 w32 depth <- %08X (was %08X) cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
+            v, *(uint32_t *)(xenolift_mem + 0x56D2Cu), (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
+    if ((a & 0x1FFFFFFFu) >= 0x001086BCu && (a & 0x1FFFFFFFu) < 0x001086C8u) { /* R1612 [hdrw]: heap header at 0x801086C4 */
+        static uint32_t hw_n; if (*(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)) != v && (xl_wall() - g_boot_wall_t0) >= 26 && hw_n++ < 200u) xenolift_receipt("[hdrw] R1612 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+        { static uint32_t hx; if ((xl_wall() - g_boot_wall_t0) >= 26 && (a & 3u) && hx++ < 4u) xenolift_receipt("[hdrw] R1612b sw_line=%u v=%08X t6=%08X t7=%08X t0=%08X t1=%08X sp=%08X a0=%08X s1=%08X gd=%d depth=%08X\n",
+            xenolift_sw_line, v, r[14], r[15], r[8], r[9], r[29], r[4], r[17], (int)g_guest_depth, *(uint32_t *)(xenolift_mem + 0x56D2Cu)); }
+    }
     if ((a & 0x1FFFFFFFu) >= 0x000ABD80u && (a & 0x1FFFFFFFu) < 0x000ABDA0u) { /* R1609 [codew]: field-code overwrite watch */
         static uint32_t cw_n; if (cw_n++ < 16u) xenolift_receipt("[codew] R1609 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
             a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
@@ -12207,6 +12225,7 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
 
 static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
 {
+    if ((a & 0x1FFFFFFFu) >= 0x001086BCu && (a & 0x1FFFFFFFu) < 0x001086C8u) { static uint32_t h16; if ((xl_wall() - g_boot_wall_t0) >= 26 && h16++ < 200u) xenolift_receipt("[hdrw] R1612 w16 %08X <- %04X cur_fn=%08X r31=%08X ipc=%08X state=%d\n", a, v & 0xFFFFu, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state); }
     if ((a & 0x1FFFFFFFu) >= 0x000ABD80u && (a & 0x1FFFFFFFu) < 0x000ABDA0u) { static uint32_t c16; if (c16++ < 8u) xenolift_receipt("[codew] R1609 w16 %08X <- %04X cur_fn=%08X r31=%08X ipc=%08X\n", a, v & 0xFFFFu, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc); }
     if ((a & 0x1FFFFFFEu) == 0x0006F94Eu) { /* R1601 [mapsrc]: who sets the next field map (0x8006F94E) */
         static uint32_t ms_n; if (ms_n++ < 20u) xenolift_receipt("[mapsrc] R1601 w16 F94E %u -> %u cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
@@ -17487,6 +17506,11 @@ void xenolift_trace(uint32_t a)
         /* R1572: no blanket clear here. A callback that starts the next DMA (DecDCTout chaining the next
          * 16-px slice) sets its channel bit again, and clearing it lost every slice after the first. */
         g_r1566_busy = 0;
+    }
+    if ((a == 0x8004960Cu || a == 0x800496ACu) && g_r1575_state == 1u) { /* R1613 [mstk]: libgte Push/PopMatrix depth 0x80056D2C */
+        int32_t d = *(int32_t *)(xenolift_mem + 0x56D2Cu); static uint32_t mn, mbad;
+        if ((d < 0 || d > 640) ? mbad++ < 12u : (mn++ < 6u)) xenolift_receipt("[mstk] R1613 %s depth=%08X r31=%08X ipc=%08X @t=%lds\n",
+            a == 0x8004960Cu ? "push" : "pop", (uint32_t)d, r[31], g_r1590_ipc, (long)(xl_wall() - g_boot_wall_t0));
     }
     if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 1u && r[31] == 0x8004B608u) {
         /* R1608: run the pad state machine once per frame in state 1. 0x800358BC turns the BIOS pad buffers into the
