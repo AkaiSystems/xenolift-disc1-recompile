@@ -6768,7 +6768,10 @@ static int io_special_write(uint32_t p, uint32_t v)
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                     r1552_dma_check("CD", madr, n); /* R1552 */
-                    if (g_r1517_inloop && g_r1566_dma_cb[3] >= 0x80010000u && (cd_last_cmd == 0x1Bu || g_r1575_state != 6u)) {
+                    if (g_r1517_inloop && g_r1566_dma_cb[3] >= 0x80010000u && (cd_last_cmd == 0x1Bu || (g_r1575_state != 6u && g_r1566_dma_cb[3] == 0x8002BB50u))) {
+                        /* R1602: outside the movie, only the archive ring callback. The queued-read callback 0x8002BA40 (FDFC = FE00)
+                         * stays registered after its read in our runs; delivered during a later normal read it cleared FDFC, the sync
+                         * returned early and the field module was unpacked from a partial read (R1598q/R1601q). */
                         /* R1587b: in state 6 only the player's ReadS (its callback also fired for the movie
                          * state's ReadN loads and sent the stream to LBA 3). R1587: any CD DMA, not only ReadS. The field's archive ring stream (ReadN) frees its
                          * slots from this callback (0x8002BB50, installed by the ring setup 0x8002A1DC); scoped to
@@ -12092,6 +12095,7 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if ((a & 0x1FFFFFFCu) == 0x0006F94Cu) { static uint32_t m32; if (m32++ < 20u) xenolift_receipt("[mapsrc] R1601 w32 F94C <- %08X cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n", v, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); }
     if (a == 0x8004FDFCu) { /* R1599 [fdfcw]: archive request status writer */
         static uint32_t fw_n; uint32_t old = *(uint32_t *)(xenolift_mem + 0x4FDFCu);
         g_r1599_seen = v;
@@ -12185,6 +12189,10 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
 
 static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
 {
+    if ((a & 0x1FFFFFFEu) == 0x0006F94Eu) { /* R1601 [mapsrc]: who sets the next field map (0x8006F94E) */
+        static uint32_t ms_n; if (ms_n++ < 20u) xenolift_receipt("[mapsrc] R1601 w16 F94E %u -> %u cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
+            (unsigned)*(uint16_t *)(xenolift_mem + 0x6F94Eu), v & 0xFFFFu, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
     /* R1218 (c44): NARROW-BLAST CAMERA - the bypass-width district writes.
      * c44 receipts: coordinator slot zeroed mid-era (coordw old EBE10222 ->
      * 00000000 543DAE66...; coordw is a POLLING camera - the fn name is the
