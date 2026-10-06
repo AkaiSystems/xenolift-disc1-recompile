@@ -998,6 +998,9 @@ static time_t g_r1597_t1; /* R1597: wall time of the last state-1 (title) dispat
  * after 600 frames with result 1 (back to the title idle loop) - ~1 s here, since state 1 runs unpaced. Tap Cross
  * while it is open so it confirms its default item (result 0 = New Game -> scene setup sets map 4). */
 static time_t g_r1624_t6; /* R1624: last state-6 (movie) entry */
+/* R1637: the system text (0x800335F4 loads it, [0x80059360] = data+4, locked via 0x800320A4) - our top-down movie and title
+ * buffers overwrite it before the title menu; the console keeps it intact in the menu-overlay buffer's tail (0x801F34B4) */
+static uint8_t g_r1637_snap[0x10000]; static uint32_t g_r1637_base, g_r1637_size;
 static volatile int g_r1622_menu;
 static struct timespec g_r1622_t0;
 /* R1630: XENOLIFT_MOVIE_DUMP=<dir> writes every displayed frame in state 6 (the movie) as raw 24-bit RGB rows
@@ -1034,7 +1037,12 @@ static int r1597_held(void)
         if (ms >= 300 && ((ms / 100) & 1)) { /* R1625: the cursor (ctx+0x336, ctx=[0x800625A0]) starts on CONTINUE (1); tap Up
                                                * until it reads 0 = NEW GAME, then Cross (Circle is cancel, action 5) */
             uint32_t ctx = *(uint32_t *)(xenolift_mem + 0x625A0u); int cur = (ctx >= 0x80000000u && ctx < 0x80200000u) ? xenolift_mem[(ctx + 0x336u) & 0x1FFFFFu] : 0;
-            int c = (cur != 2) ? 7 : 3; /* R1625b: item 2 (0x8001B970, returns 0 -> result 0) is New Game; item 0 is a 3-way settings dialog */
+            /* R1625c: confirm only once the system-text table is ready ([[0x80059360]+0x6C] != 0) - New Game (0x8001B970) converts
+             * strings through it and hung in 0x80033B34 when Cross came 0.3 s after the menu opened; Up taps meanwhile also reset the
+             * menu's 600-frame idle timeout (cursor moves clear ctx+0x2D8) */
+            uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u);
+            int ready = tb >= 0x80000000u && tb < 0x80200000u && *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) != 0u;
+            int c = (cur != 2 || !ready) ? 7 : 3; /* R1625b: item 2 (0x8001B970, returns 0 -> result 0) is New Game; item 0 is a 3-way settings dialog */
             static int mt; if (mt++ < 4) r861_out("[padvp2] R1625 menu tap %s (cursor=%d ms=%ld)\n", c == 7 ? "UP" : "CROSS", cur, ms);
             return c;
         }
@@ -12168,6 +12176,26 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
         static uint32_t mw_n; if (mw_n++ < 12u) xenolift_receipt("[menures] R1621 w32 594D0 <- %08X cur_fn=%08X r31=%08X ipc=%08X syspad=%04X state=%d @t=%lds\n",
             v, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, *(uint16_t *)(xenolift_mem + 0x59570u), (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
     }
+    if ((a & 0x1FFFFFFCu) == 0x00059360u) { /* R1637: snapshot the relocated system-text block when the loader (0x800335F4) finishes ([59360] = data+4) */
+        uint32_t old = *(uint32_t *)(xenolift_mem + 0x59360u);
+        if (v == old + 4u && old >= 0x80100000u && old < 0x801FC000u) {
+            uint32_t nx = *(uint32_t *)(xenolift_mem + ((old - 8u) & 0x1FFFFCu)), sz = (nx > old && nx <= 0x80200000u) ? nx - old : 0u;
+            if (sz && sz <= sizeof g_r1637_snap) { memcpy(g_r1637_snap, xenolift_mem + (old & 0x1FFFFFu), sz); g_r1637_base = old; g_r1637_size = sz;
+                xenolift_receipt("[txtsnap] R1637 system text block %08X (+%u bytes) saved\n", old, sz); }
+        }
+    }
+    if ((v == 0x801FBFF4u || v == 0x801FC000u) && (a & 0x1FFFFFu) >= 0x100000u && (a & 0x1FFFFFu) < 0x1F4E78u && g_r1575_state != 1u) { /* R1636 [toplink]: who links a block past the locked text block */
+        static uint32_t tl; if (tl++ < 24u) xenolift_receipt("[toplink] R1636 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X line=%u state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], xenolift_sw_line, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
+    if ((a & 0x1FFFFFF8u) == 0x001F4E78u) { /* R1635 [txtblk]: the system-text block header (data 0x801F4E80): who unlocks/frees it */
+        static uint32_t bn; if (bn++ < 20u) xenolift_receipt("[txtblk] R1635 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X line=%u state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], xenolift_sw_line, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
+    { uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u); /* R1633 [txtw]: the system-text table's +6C pointer, and 0x80059360 itself */
+      if (((a & 0x1FFFFFFCu) == 0x00059360u) || (tb >= 0x80000000u && tb < 0x80200000u && (a & 0x1FFFFFFCu) == ((tb + 0x6Cu) & 0x1FFFFCu))) {
+        static uint32_t tw; if (tw++ < 16u) xenolift_receipt("[txtw] R1633 w32 %08X <- %08X (was %08X) tbl=%08X cur_fn=%08X r31=%08X ipc=%08X line=%u state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), tb, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, xenolift_sw_line, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); } }
     if ((a & 0x1FFFFFFCu) == 0x00056D2Cu && (int32_t)v != 0 && ((int32_t)v < 0 || (int32_t)v > 640 || ((int32_t)v & 31))) { /* R1613 [mstk] bad depth write */
         static uint32_t mw; if (mw++ < 12u) xenolift_receipt("[mstk] R1613 w32 depth <- %08X (was %08X) cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
             v, *(uint32_t *)(xenolift_mem + 0x56D2Cu), (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
@@ -17589,6 +17617,29 @@ void xenolift_trace(uint32_t a)
             a == 0x80044BD0u ? "DrawOTag" : "DrawOTagEnv", r[4], r[5], r[31], g_r1590_ipc, r[29], r[16], r[17],
             (int)*(int32_t *)(xenolift_mem + 0x4F34Cu), (long)(xl_wall() - g_boot_wall_t0));
     }
+    if (g_r1622_menu) { /* R1639 [raslot2]: the menu overlay's saved ra (0x801FFE94, sp 0x801FFE80) - who zeroes it */
+        static uint32_t lastm, mn; uint32_t v = *(uint32_t *)(xenolift_mem + 0x1FFE94u);
+        if (v != lastm) { if (mn++ < 16u) xenolift_receipt("[raslot2] R1639 801FFE94 %08X -> %08X at fn %08X r31=%08X ipc=%08X line=%u sp=%08X @t=%lds\n",
+            lastm, v, a, r[31], g_r1590_ipc, xenolift_sw_line_last, r[29], (long)(xl_wall() - g_boot_wall_t0)); lastm = v; }
+    }
+    if (g_r1575_state == 1u && *(int32_t *)(xenolift_mem + 0x4F34Cu) == 4) { /* R1638 [raslot]: FieldMain's saved ra (0x801FFF50) on map 4 */
+        static uint32_t lastra, rn; uint32_t v = *(uint32_t *)(xenolift_mem + 0x1FFF50u);
+        if (v != lastra) { if (rn++ < 16u) xenolift_receipt("[raslot] R1638 801FFF50 %08X -> %08X at fn %08X r31=%08X ipc=%08X line=%u cd_seek=%u @t=%lds\n",
+            lastra, v, a, r[31], g_r1590_ipc, xenolift_sw_line_last, cd_seek_lba, (long)(xl_wall() - g_boot_wall_t0)); lastra = v; }
+    }
+    { /* R1634 [txtz]: detect the moment the system-text table's +6C entry (data+0x70) is zeroed - by any path (DMA, memcpy, heal) */
+        static uint32_t last6c, zn; uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u);
+        if (tb >= 0x80000000u && tb < 0x80200000u) {
+            uint32_t v6c = *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu));
+            if (v6c != last6c) { if (zn++ < 12u) xenolift_receipt("[txtz] R1634 tbl=%08X +6C %08X -> %08X at fn %08X r31=%08X ipc=%08X state=%d cd_seek=%u last_cmd=%02X @t=%lds\n",
+                tb, last6c, v6c, a, r[31], g_r1590_ipc, (int)g_r1575_state, cd_seek_lba, (unsigned)cd_last_cmd, (long)(xl_wall() - g_boot_wall_t0)); last6c = v6c; }
+        }
+    }
+    if (a == 0x80033B34u && g_r1575_state == 1u) { /* R1632 [txtcv]: system-text converter inputs (title-menu hang) */
+        static uint32_t tc; uint32_t tb = *(uint32_t *)(xenolift_mem + 0x59360u), t6c = (tb >= 0x80000000u && tb < 0x80200000u) ? *(uint32_t *)(xenolift_mem + ((tb + 0x6Cu) & 0x1FFFFCu)) : 0xDEADu;
+        if (tc++ < 16u) xenolift_receipt("[txtcv] R1632 src=%08X dst=%08X n=%08X tbl[59360]=%08X +6C=%08X r31=%08X ipc=%08X @t=%lds\n",
+            r[4], r[5], r[6], tb, t6c, r[31], g_r1590_ipc, (long)(xl_wall() - g_boot_wall_t0));
+    }
     if ((a == 0x8004960Cu || a == 0x800496ACu) && g_r1575_state == 1u) { /* R1613 [mstk]: libgte Push/PopMatrix depth 0x80056D2C */
         int32_t d = *(int32_t *)(xenolift_mem + 0x56D2Cu); static uint32_t mn, mbad;
         if ((d < 0 || d > 640) ? mbad++ < 12u : (mn++ < 6u)) xenolift_receipt("[mstk] R1613 %s depth=%08X r31=%08X ipc=%08X @t=%lds\n",
@@ -17608,7 +17659,7 @@ void xenolift_trace(uint32_t a)
              * machine, and the pad event enqueue 0x80035C0C that the field's input loop dequeues (queue count 0x8005937C
              * stayed 0 here; 16 on a console) - the handler never ran in this runtime. */
             g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
-            { /* R1629 DISABLED (R1629b: stalled the title ring read with one sector left). R1629: state-1 CD reads (title member/file-17 loads, map 4's 507,904-byte ring read) ran at ~14 sectors/s - CD
+            { /* R1629: state-1 CD reads (title member/file-17 loads, map 4's 507,904-byte ring read) ran at ~14 sectors/s - CD
                * events reach the guest only at libcd collector entries. Service pending ReadN events here once per frame at
                * the 2x drive rate (150 sectors/s token bucket, the R1581 rule from state 6). */
                 static uint64_t tb_last; static double tb_tok; static uint32_t sv_n; struct timespec ts; uint64_t now; int k;
@@ -17616,7 +17667,19 @@ void xenolift_trace(uint32_t a)
                 if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
                 tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
                 if (tb_tok > 4.0) tb_tok = 4.0;
-                for (k = 0; g_r1566_dma_cb[3] != 0x8002BB50u /* R1629c: not the archive ring (R1629b stalled it) */ && k < 4 && tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x06u; k++) {
+                { /* R1642: a loaded ReadN sector that was never announced (pend=0, ld=1) held map 4's ring read forever (FDF8 stuck at
+                   * 200704). After 200 ms without FDF8 progress, re-raise its INT1 - re-announce, nothing dropped. */
+                    static uint32_t lf, rn; static uint64_t lt;
+                    uint32_t f8 = *(uint32_t *)(xenolift_mem + 0x4FDF8u);
+                    if (f8 != lf || !cd_read_active) { lf = f8; lt = now; }
+                    else if (cd_read_active && cd_last_cmd == 0x06u && cd_pending == 0u && !g_r1580_defer && cd_data_loaded && f8 != 0u && now - lt > 200000000ull) {
+                        cd_pending = 1, g_pend_line = __LINE__;
+                        { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
+                        if (rn++ < 8u) xenolift_receipt("[cdrean] R1642 re-announced stalled sector LBA %u (FDF8=%u)\n", cd_seek_lba, f8);
+                        lt = now;
+                    }
+                }
+                for (k = 0; /* R1629e: back on - the 0x80033B34 hang was the overwritten system text (fixed by R1637), not this */ k < 4 && tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x06u; k++) {
                     tb_tok -= 1.0;
                     if (sv_n++ < 4u) xenolift_receipt("[cdirq] R1629 state-1 CD event serviced at the frame wait (pend=%u LBA %u)\n", (unsigned)cd_pending, cd_seek_lba);
                     xenolift_trace(0x800415B4u);
@@ -19273,6 +19336,7 @@ void xenolift_trace(uint32_t a)
     static time_t r1466b_alast; static int r1466b_budget = 2048; /* R1466B v6 (c1158): the budget raise - c1157 exhausted 256/256 at the file band (all fires consumed, the bulk drain receipted); the file band needs ~200/pass x2-3 passes + the field walk ~56-100 + the deep band; 2048 = 4x headroom, the 1s backup makes a no-consume terminal self-limiting */ static uint32_t r1466b_lastfired = 0xFFFFFFFFu; /* R1466B v5 (c1157): the per-seek one-shot - a NEW seek fires instantly, the 1s window is only the same-LBA re-request backup; FDF8!=0 post-fire is the real one-shot */
     static uint32_t r1466b_seen = 0;
     if (r1466b_budget > 0
+        && g_r1575_state != 1u /* R1631: not in state 1 - it injected FDF8=2048 into the title ring's Pause/retry and the poll waited forever (R1629b) */
         && cd_seek_lba >= 100000u && cd_seek_lba < 300000u
         && (xenolift_mem_read32(0x8004FE04u) == (uint32_t)cd_seek_lba
             || (xenolift_mem_read32(0x8004FE04u) >= 100000u && xenolift_mem_read32(0x8004FE04u) < (uint32_t)cd_seek_lba && (uint32_t)cd_seek_lba - xenolift_mem_read32(0x8004FE04u) <= 64u)) /* R1466B v7 (c1187): the stale-stamp widen - the c1185 freeze held FE04=108813 vs seek=108832, the walk own prior LBA 19 behind */
@@ -33021,6 +33085,7 @@ int r1394_dispatch_guard(unsigned int t)
         static unsigned int fn_ = 0;
         xenolift_cur_fn = t;
         if (fn_++ < 16u) r861_out("[f17int] R1610 interpreting file-17 fn %08X (r31=%08X)\n", t, (unsigned)r[31]);
+        uint32_t r1641_sp = r[29], r1641_ra = r[31]; /* R1641b */
         if (t == 0x801C62A8u) { g_r1622_menu = 1; clock_gettime(CLOCK_MONOTONIC, &g_r1622_t0); /* R1622 */
             /* R1626: the New Game handler (0x801D9808) takes its answer from the memory-card status word 0x8005957C & 0x700
              * (0x80038824). The console title has 0xB901 there (bit 0x100); with no status bits New Game was declined. */
@@ -33029,7 +33094,10 @@ int r1394_dispatch_guard(unsigned int t)
             (void)cs; /* R1626 write reverted: the status is already B921 (console B901) */
         }
         rc = r1394_interp(t);
-        if (t == 0x801C62A8u) g_r1622_menu = 0; /* R1622 */
+        if (t == 0x801C62A8u) { g_r1622_menu = 0; /* R1622 */
+            if (r[29] != r1641_sp) { static uint32_t sd; if (sd++ < 4u) r861_out("[r1641] menu overlay returned with sp %08X (entry %08X) - restored\n", (unsigned)r[29], (unsigned)r1641_sp); }
+            r[29] = r1641_sp; r[31] = r1641_ra; /* R1641b: the compiled kernel frames around the menu must unwind from the entry sp */
+        }
         if (rc != 0) { static unsigned int ff_ = 0; if (ff_++ < 8u) r861_out("[f17int] R1610 interpreter FAIL class=%d fn=%08X\n", rc, t); }
         return 1;
     }
@@ -33168,6 +33236,11 @@ static int r1394_interp(uint32_t entry)
         int32_t imm;
         if (!r1610_inwin(pc, r1533_end)) {
             /* control has left the module window */
+            if (act == 1 && pc == 0u && entry == 0x801C62A8u && r1561_ra != 0u) { /* R1641a: the file-17 menu's exit through a zeroed ra slot -
+                                                                       * a plain return to its compiled caller, never dispatch(0) */
+                static uint32_t z0; if (z0++ < 4u) xenolift_receipt("[r1641] menu overlay returned via ra=0 - plain return to %08X (sp=%08X)\n", r1561_ra, r[29]);
+                return 0;
+            }
             if (act == 1 && pc == r1561_ra && r1561_ra != 0u) {
                 /* R1561: a plain return to the compiled code that called this interpreted function (e.g. an
                  * object callback via jalr at 0x80024DA0 returning to 0x80024DA8). The caller continues after
@@ -33209,6 +33282,11 @@ static int r1394_interp(uint32_t entry)
                             c3 = nx;
                         }
                         xenolift_receipt("[heapmerge] R1619 merged %u free blocks before HeapAlloc(0x36FEC,1)\n", merged);
+                        if (g_r1637_size && g_r1637_base >= 0x801EA908u && g_r1637_base + g_r1637_size <= 0x801FC000u) { /* R1637: restore the system text in the overlay tail */
+                            { uint32_t n = g_r1637_size; if (g_r1637_base + n > 0x801FBFE8u) n = 0x801FBFE8u - g_r1637_base; /* R1637b: keep the title's 4-byte block header (0x801FBFEC) */
+                              memcpy(xenolift_mem + (g_r1637_base & 0x1FFFFFu), g_r1637_snap, n); }
+                            *(uint32_t *)(xenolift_mem + 0x59360u) = g_r1637_base + 4u;
+                            xenolift_receipt("[txtsnap] R1637 system text restored at %08X (+%u) before the menu overlay\n", g_r1637_base, g_r1637_size); }
                     }
                     if (r[4] == 0x36FECu) { /* R1618 [heaptop]: the menu-overlay buffer must land at 0x801C5000 (console) - dump the chain's top */
                         uint32_t c2 = xenolift_mem_read32(0x80059320u), k2; char b2[900]; int o2 = 0;
@@ -33234,7 +33312,10 @@ static int r1394_interp(uint32_t entry)
                         g_r1558_co_n, pc, act_ret - 8u, r[4], r[5], r[6], r[7], r[29], entry, (long)ts.tv_sec % 100000L, (long)(ts.tv_nsec / 1000000L)); } }
                 if (g_r1622_menu && act_ret - 8u >= 0x801D9000u && act_ret - 8u < 0x801DB000u) { static uint32_t ng; if (ng++ < 40u) /* R1624: New Game handler call-outs */
                     xenolift_receipt("[ngcall] R1624 %08X -> %08X a0=%08X a1=%08X a2=%08X\n", act_ret - 8u, pc, r[4], r[5], r[6]); }
+                { uint32_t sp0 = r[29]; /* R1640 [spdrift]: a call-out that returns with a different sp */
                 xenolift_cur_fn = pc; g_guest_depth++; xenolift_dispatch(pc); g_guest_depth--;
+                if (r[29] != sp0) { static uint32_t sd; if (sd++ < 20u) xenolift_receipt("[spdrift] R1640 call-out %08X from %08X changed sp %08X -> %08X (entry=%08X state=%d @t=%lds)\n",
+                    pc, act_ret - 8u, sp0, r[29], entry, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); } }
                 pc = act_ret; npc = act_ret + 4; act = 0;
                 continue;
             }
