@@ -32986,6 +32986,20 @@ static int r1394_interp(uint32_t entry)
             }
             else if (fn_ == 0x09u) { /* jalr */
                 uint32_t tv = r[rs];
+                if (pc == 0x800A1F70u && g_r1575_state == 1u) { /* R1603 [scrpc]: script position + bytes of each primary opcode (first 120) */
+                    static unsigned sp_n;
+                    if (sp_n < 120u) {
+                        uint32_t act, base_; uint16_t spc; uint8_t bb[8]; unsigned k;
+                        memcpy(&act, xenolift_mem + 0xB0078u, 4); memcpy(&base_, xenolift_mem + 0xADC00u, 4);
+                        if (act >= 0x80000000u && act < 0x80200000u) {
+                            memcpy(&spc, xenolift_mem + ((act + 0xCCu) & 0x1FFFFFu), 2);
+                            for (k = 0; k < 8u; k++) bb[k] = xenolift_mem[(base_ + spc + k) & 0x1FFFFFu];
+                            sp_n++;
+                            xenolift_receipt("[scrpc] R1603 actor=%08X pc=%04X op=%02X %02X %02X %02X %02X %02X %02X %02X -> %08X @t=%lds\n",
+                                act, spc, bb[0], bb[1], bb[2], bb[3], bb[4], bb[5], bb[6], bb[7], tv, (long)(xl_wall() - g_boot_wall_t0));
+                        }
+                    }
+                }
                 if (pc == 0x800A1F70u || pc == 0x80086A04u) { /* R1598 [scrop]: field script opcode handlers dispatched (distinct, in order); 0x80086A04 = extended (0xFE xx) */
                     static uint32_t seen[96]; static unsigned ns;
                     unsigned k; for (k = 0; k < ns && seen[k] != tv; k++) {}
