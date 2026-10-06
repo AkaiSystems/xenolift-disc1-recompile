@@ -6446,6 +6446,10 @@ static int io_special_write(uint32_t p, uint32_t v)
                     if (hdr & 0x00800000u) break;
                     cur = 0x80000000u | (hdr & 0x1FFFFCu);
                 }
+                if ((nodes >= 0x10000u || done_words > 300000u) && g_r1517_inloop) { /* R1616 [bigot]: runaway OT walk */
+                    static uint32_t bo_n; if (bo_n++ < 6u) xenolift_receipt("[bigot] R1616 DMA2 list from %08X: %u nodes %u words last=%08X hdr=%08X cur_fn=%08X r31=%08X state=%d @t=%lds\n",
+                        addr, nodes, done_words, cur, xenolift_mem_read32(cur), (unsigned)xenolift_cur_fn, r[31], (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+                }
                 io_raw_write32(base, 0x00FFFFFFu); /* MADR = end marker */
                     gpu_dma2_starts++;
                 if (dma_logs < 40)
@@ -17506,6 +17510,26 @@ void xenolift_trace(uint32_t a)
         /* R1572: no blanket clear here. A callback that starts the next DMA (DecDCTout chaining the next
          * 16-px slice) sets its channel bit again, and clearing it lost every slice after the first. */
         g_r1566_busy = 0;
+    }
+    if (a == 0x800465ECu && g_r1575_state == 1u && ((r[4] & 0x1FFFFFu) < 0x10000u)) { /* R1617c [otnull]: the kick itself */
+        static uint32_t kk; uint32_t sp = r[29] & 0x1FFFFCu;
+        if (kk++ < 6u && sp + 64u <= 0x200000u) xenolift_receipt("[otnull] R1617c kick a0=%08X a1=%08X s0=%08X s1=%08X s2=%08X s3=%08X r31=%08X sp=%08X [sp+10]=%08X [sp+20]=%08X [sp+3C]=%08X q=%08X/%08X gd=%d cur_fn=%08X ipc=%08X @t=%lds\n",
+            r[4], r[5], r[16], r[17], r[18], r[19], r[31], r[29], *(uint32_t *)(xenolift_mem + sp + 0x10u), *(uint32_t *)(xenolift_mem + sp + 0x20u),
+            *(uint32_t *)(xenolift_mem + sp + 0x3Cu), *(uint32_t *)(xenolift_mem + 0x569D4u), *(uint32_t *)(xenolift_mem + 0x569D8u),
+            (int)g_guest_depth, (unsigned)xenolift_cur_fn, g_r1590_ipc, (long)(xl_wall() - g_boot_wall_t0));
+    }
+    if (a == 0x8004668Cu && r[4] == 0x800465ECu && g_r1575_state == 1u && ((r[5] & 0x1FFFFFu) < 0x10000u)) { /* R1617b [otnull]: _addque2(kick, bad OT) */
+        static uint32_t aq_n; uint32_t sp = r[29] & 0x1FFFFCu;
+        if (aq_n++ < 8u && sp + 64u <= 0x200000u) xenolift_receipt("[otnull] R1617b addque2 OT=%08X r31=%08X ipc=%08X sp=%08X [sp+14]=%08X [sp+1C]=%08X [sp+34]=%08X [sp+3C]=%08X a2=%08X a3=%08X map=%d @t=%lds\n",
+            r[5], r[31], g_r1590_ipc, r[29], *(uint32_t *)(xenolift_mem + sp + 0x14u), *(uint32_t *)(xenolift_mem + sp + 0x1Cu),
+            *(uint32_t *)(xenolift_mem + sp + 0x34u), *(uint32_t *)(xenolift_mem + sp + 0x3Cu), r[6], r[7],
+            (int)*(int32_t *)(xenolift_mem + 0x4F34Cu), (long)(xl_wall() - g_boot_wall_t0));
+    }
+    if ((a == 0x80044BD0u || a == 0x80044D48u) && g_r1575_state == 1u) { /* R1617 [otnull]: DrawOTag / DrawOTagEnv argument */
+        static uint32_t on_n, ok_n; int bad = (r[4] & 0x1FFFFFu) < 0x10000u || (r[4] & 0x1FFFFFu) >= 0x200000u;
+        if (bad ? on_n++ < 10u : ok_n++ < 4u) xenolift_receipt("[otnull] R1617 %s a0=%08X a1=%08X r31=%08X ipc=%08X sp=%08X s0=%08X s1=%08X map=%d @t=%lds\n",
+            a == 0x80044BD0u ? "DrawOTag" : "DrawOTagEnv", r[4], r[5], r[31], g_r1590_ipc, r[29], r[16], r[17],
+            (int)*(int32_t *)(xenolift_mem + 0x4F34Cu), (long)(xl_wall() - g_boot_wall_t0));
     }
     if ((a == 0x8004960Cu || a == 0x800496ACu) && g_r1575_state == 1u) { /* R1613 [mstk]: libgte Push/PopMatrix depth 0x80056D2C */
         int32_t d = *(int32_t *)(xenolift_mem + 0x56D2Cu); static uint32_t mn, mbad;
@@ -33079,6 +33103,34 @@ static int r1394_interp(uint32_t entry)
                     }
                     if (hc_n++ < 40u) xenolift_receipt("[heapchain] R1532 HeapAlloc(%08X,%u) from %08X entry=%08X head59320=%08X chain:%s\n",
                         r[4], r[5], act_ret - 8u, entry, xenolift_mem_read32(0x80059320u), b);
+                    if (r[4] == 0x36FECu && r[5] == 1u && g_r1575_state == 1u) {
+                        /* R1619: merge adjacent free blocks (flags 0x84000000) before the menu-overlay allocation. File 17
+                         * is linked at 0x801C5000 and the kernel's menu switch (0x8001C4F0) jumps to fixed entries there; on a
+                         * console this top-down HeapAlloc(0x36FEC,1) ends at the title's 4-byte block (0x801FBFEC) and so
+                         * returns 0x801C5000. Here six free fragments 0x801EBC30..0x801F3FEC sat unmerged above the big free
+                         * block, the carve came from 0x80122684's top (0x801B4C3C), and the kernel ran zeroed RAM at 0x801C62A8. */
+                        uint32_t c3 = xenolift_mem_read32(0x80059320u), k3, merged = 0;
+                        for (k3 = 0; k3 < 600u && c3 >= 0x80010000u && c3 < 0x80200000u; k3++) {
+                            uint32_t nx = xenolift_mem_read32(c3 - 8u), fl = xenolift_mem_read32(c3 - 4u);
+                            if ((fl & 0x01E00000u) == 0x00200000u || nx == c3 || nx <= c3) break;
+                            if (fl == 0x84000000u && nx >= 0x80010000u && nx < 0x80200000u) {
+                                uint32_t nn = xenolift_mem_read32(nx - 8u), nf = xenolift_mem_read32(nx - 4u);
+                                if (nf == 0x84000000u && nn > nx) { xenolift_mem_write32(c3 - 8u, nn); merged++; continue; } /* absorb nx, retry c3 */
+                            }
+                            c3 = nx;
+                        }
+                        xenolift_receipt("[heapmerge] R1619 merged %u free blocks before HeapAlloc(0x36FEC,1)\n", merged);
+                    }
+                    if (r[4] == 0x36FECu) { /* R1618 [heaptop]: the menu-overlay buffer must land at 0x801C5000 (console) - dump the chain's top */
+                        uint32_t c2 = xenolift_mem_read32(0x80059320u), k2; char b2[900]; int o2 = 0;
+                        for (k2 = 0; k2 < 600u && c2 >= 0x80010000u && c2 < 0x80200000u && o2 < (int)sizeof b2 - 40; k2++) {
+                            uint32_t nx = xenolift_mem_read32(c2 - 8u), fl = xenolift_mem_read32(c2 - 4u);
+                            if (c2 >= 0x80150000u) o2 += snprintf(b2 + o2, sizeof b2 - o2, " %08X{n=%08X f=%08X}", c2, nx, fl);
+                            if ((fl & 0x01E00000u) == 0x00200000u || nx == c2) break;
+                            c2 = nx;
+                        }
+                        xenolift_receipt("[heaptop] R1618 nodes=%u top:%s\n", k2, b2);
+                    }
                 }
                 if (pc == 0x80029AFCu) { /* R1558: decode every queued-read request (field scene setup loads its module this way) */
                     static uint32_t qr_n; uint32_t qw[8], qa = r[4] & 0x1FFFFCu;
