@@ -32978,7 +32978,7 @@ static int r1394_interp(uint32_t entry)
             }
             else if (fn_ == 0x09u) { /* jalr */
                 uint32_t tv = r[rs];
-                if (pc == 0x800A1F70u) { /* R1598 [scrop]: field script opcode handlers dispatched (distinct, in order) */
+                if (pc == 0x800A1F70u || pc == 0x80086A04u) { /* R1598 [scrop]: field script opcode handlers dispatched (distinct, in order); 0x80086A04 = extended (0xFE xx) */
                     static uint32_t seen[96]; static unsigned ns;
                     unsigned k; for (k = 0; k < ns && seen[k] != tv; k++) {}
                     if (k == ns && ns < 96u) { seen[ns++] = tv;
