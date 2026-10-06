@@ -1001,6 +1001,12 @@ static int r1597_held(void)
     if (g_r1575_state != 1u || !g_r1597_t1) return 0;
     d = time(NULL) - g_r1597_t1;
     if (d >= 8 && d < 9) { static int once_n; if (once_n++ < 2) r861_out("[padvp2] R1597 START held on the title (d=%lds)\n", (long)d); return 1; }
+    /* R1597d: the title's menu loop (script 0x6E..0x9A) starts ~5 s after START and polls Circle (pressed mask 0x20) */
+    if (d >= 16 && d < 22) { /* R1597e: tap Circle every 100 ms - the menu's check sees new presses (edges) once per loop pass */
+        struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+        return ((ts.tv_nsec / 100000000L) & 1L) ? 0 : 2;
+    }
+    if (d >= 24 && d < 25) return 3; /* Cross */
     return 0;
 } /* R1575: game state requested at the last R670 dispatcher entry */
 /* R1574: stores made by the stage-2 movie player (in the main loop) are exempt from the R517/R518
@@ -17319,6 +17325,14 @@ void xenolift_trace(uint32_t a)
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
     r1564_check(a); /* R1564/R1564c */
+    if (a == 0x80035CDCu && g_r1575_state == 1u) { /* R1607 [padsys]: pad buffer vs the system pad word the field reads */
+        static uint32_t ps_n; static uint16_t last;
+        uint16_t w; memcpy(&w, xenolift_mem + 0x59570u, 2);
+        if ((w != last || r1597_held()) && ps_n++ < 40u)
+            xenolift_receipt("[padsys] R1607 buf=%02X %02X %02X %02X | sys(59570)=%04X | held=%d r31=%08X @t=%lds\n",
+                xenolift_mem[0x625FCu], xenolift_mem[0x625FDu], xenolift_mem[0x625FEu], xenolift_mem[0x625FFu], w, r1597_held(), r[31], (long)(xl_wall() - g_boot_wall_t0));
+        last = w;
+    }
     if (a == 0x800286CCu && g_r1517_inloop && g_r1575_state == 1u) {
         /* R1600: the archive status poll must not report idle while a normal read still owes bytes. R1598q unpacked
          * the field module with FDF8=4472 outstanding (FDFC already 0), so its last 7.5 KB (incl. the script opcode
@@ -17340,14 +17354,17 @@ void xenolift_trace(uint32_t a)
     if (g_r1575_state == 1u && g_r1517_inloop) { /* R1597b: the title reads the BIOS auto-poll buffers - press START there */
         static int was;
         int h = r1597_held();
+        uint8_t lo = (h == 1) ? 0xF7u : 0xFFu;                                  /* START = low byte bit 3 */
+        uint8_t hi = (h == 2) ? 0xDFu : (h == 3) ? 0xBFu : 0xFFu;               /* R1597c: Circle = high bit 5, Cross = high bit 6 */
         if (h != was) {
-            uint8_t v = h ? 0xF7u : 0xFFu; /* byte 2 = buttons low, active-low; bit 3 = START */
-            xenolift_mem[0x625FCu + 2u] = v; xenolift_mem[0x6261Eu + 2u] = v;
-            xenolift_mem[0x625FCu + 3u] = 0xFFu; xenolift_mem[0x6261Eu + 3u] = 0xFFu;
             xenolift_mem[0x625FCu] = 0x00u; xenolift_mem[0x625FCu + 1u] = 0x41u;
-            xenolift_receipt("[padvp2] R1597b START %s in the pad buffers @t=%lds\n", h ? "pressed" : "released", (long)(xl_wall() - g_boot_wall_t0));
+            { static uint32_t pv_n; if (pv_n++ < 30u) xenolift_receipt("[padvp2] R1597c pad %s @t=%lds\n", h == 1 ? "START" : h == 2 ? "CIRCLE" : h == 3 ? "CROSS" : "released", (long)(xl_wall() - g_boot_wall_t0)); }
             was = h;
-        } else if (h) { xenolift_mem[0x625FCu + 2u] = 0xF7u; xenolift_mem[0x6261Eu + 2u] = 0xF7u; }
+        }
+        if (h || xenolift_mem[0x625FCu + 2u] != 0xFFu || xenolift_mem[0x625FCu + 3u] != 0xFFu) {
+            xenolift_mem[0x625FCu + 2u] = lo; xenolift_mem[0x6261Eu + 2u] = lo;
+            xenolift_mem[0x625FCu + 3u] = hi; xenolift_mem[0x6261Eu + 3u] = hi;
+        }
     }
     if (a == 0x800415B4u || a == 0x800409E4u) r1591_after_cd_irq(); /* R1591d: the previous CD IRQ has been handled - its DMA callbacks run before the next one */
     /* R1580c: release the deferred INT1 once the CD tick that ran the guest's INT handler has ended
@@ -17456,6 +17473,20 @@ void xenolift_trace(uint32_t a)
         /* R1572: no blanket clear here. A callback that starts the next DMA (DecDCTout chaining the next
          * 16-px slice) sets its channel bit again, and clearing it lost every slice after the first. */
         g_r1566_busy = 0;
+    }
+    if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 1u && r[31] == 0x8004B608u) {
+        /* R1608: run the pad state machine once per frame in state 1. 0x800358BC turns the BIOS pad buffers into the
+         * system pad word 0x80059570 that the field's input routine reads; the runtime only ran it from its heartbeat,
+         * so the title's menu loop never saw a button (buffer held Circle, 0x80059570 stayed 0000). */
+        static int busy;
+        if (!busy) {
+            uint32_t sr[32], shi = hi, slo = lo, sfn = xenolift_cur_fn;
+            busy = 1; memcpy(sr, r, sizeof sr);
+            r[4] = 0; r[5] = 0;
+            g_guest_depth++, xenolift_dispatch(0x800358BCu), g_guest_depth--;
+            memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy = 0;
+            { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1608 pad state machine run at VSync (sys pad word %04X)\n", *(uint16_t *)(xenolift_mem + 0x59570u)); }
+        }
     }
     if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 6u && r[31] == 0x8004B608u) {
         /* R1579/R1579c: real-time VSync in the movie state. VSync(0) ends with v_wait(Vcount+1, 1)
@@ -33015,19 +33046,22 @@ static int r1394_interp(uint32_t entry)
             }
             else if (fn_ == 0x09u) { /* jalr */
                 uint32_t tv = r[rs];
-                if (pc == 0x800A1F70u && g_r1575_state == 1u) { /* R1603 [scrpc]: script position + bytes of each primary opcode (first 120) */
-                    static unsigned sp_n;
-                    if (sp_n < 120u) {
+                if ((pc == 0x800A1F70u || pc == 0x80086A04u) && g_r1575_state == 1u) { /* R1603/R1603b [scrpc]: script position + bytes, deduped, primary + extended */
+                    static unsigned sp_n; static uint32_t last_key;
+                    if (sp_n < 300u) {
                         uint32_t act, base_; uint16_t spc; uint8_t bb[8]; unsigned k;
                         memcpy(&act, xenolift_mem + 0xB0078u, 4); memcpy(&base_, xenolift_mem + 0xADC00u, 4);
                         if (act >= 0x80000000u && act < 0x80200000u) {
                             memcpy(&spc, xenolift_mem + ((act + 0xCCu) & 0x1FFFFFu), 2);
+                            if (((act << 16) ^ spc ^ (pc << 4)) == last_key) goto r1603_skip;
+                            last_key = (act << 16) ^ spc ^ (pc << 4);
                             for (k = 0; k < 8u; k++) bb[k] = xenolift_mem[(base_ + spc + k) & 0x1FFFFFu];
                             sp_n++;
                             xenolift_receipt("[scrpc] R1603 actor=%08X pc=%04X op=%02X %02X %02X %02X %02X %02X %02X %02X -> %08X @t=%lds\n",
                                 act, spc, bb[0], bb[1], bb[2], bb[3], bb[4], bb[5], bb[6], bb[7], tv, (long)(xl_wall() - g_boot_wall_t0));
                         }
                     }
+                    r1603_skip: ;
                 }
                 if (pc == 0x800A1F70u || pc == 0x80086A04u) { /* R1598 [scrop]: field script opcode handlers dispatched (distinct, in order); 0x80086A04 = extended (0xFE xx) */
                     static uint32_t seen[96]; static unsigned ns;
