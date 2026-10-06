@@ -459,7 +459,7 @@ static int g_r1197_t_active;
 static uint32_t gpu_dma2_starts;  /* R694: how many GPU DMA sends the game issued */
 static uint32_t gpu_blit_x, gpu_blit_y, gpu_blit_w, gpu_blit_h, gpu_blit_left;
 static uint16_t gpu_disp_x, gpu_disp_y;         /* GP1(0x05) display area */
-static uint16_t gpu_disp_w = 320, gpu_disp_h = 240; /* GP1(0x08) mode */
+static uint16_t gpu_disp_w = 320, gpu_disp_h = 240; /* GP1(0x08) mode */ static uint32_t gpu_disp_24; /* R1573: GP1(0x08) bit 4, 24-bit display */
 static uint32_t gpu_draw_ofx, gpu_draw_ofy; /* R1230 (c69, Jos correction): GP0 0xE5
  * drawing offset, SIGNED 11-bit X/Y. 0xE3=draw-area top-left, 0xE4=bottom-
  * right - NOT offsets. e5_seen: zero-init is NOT evidence of a guest command;
@@ -763,9 +763,12 @@ static void gpu_gp1(uint32_t v)
         }
         break;
     case 0x08: { /* R125: display mode — crop size for screen.png */
+        /* R1573: horizontal resolution is bits 0-1 (bit 6 = 368); bits 4/5 are 24-bit colour and
+         * interlace, which the old (param >> 4) read as the width. 480 lines needs interlace too. */
         static const uint16_t hres[4] = {256, 320, 512, 640};
-        gpu_disp_w = hres[(param >> 4) & 3u];
-        gpu_disp_h = (param & 0x04u) ? 480u : 240u;
+        gpu_disp_w = (param & 0x40u) ? 368u : hres[param & 3u];
+        gpu_disp_h = ((param & 0x24u) == 0x24u) ? 480u : 240u;
+        gpu_disp_24 = (param >> 4) & 1u;
         break;
     }
     default:
@@ -982,6 +985,68 @@ static void cd_data_load(void);
 static uint8_t g_r1565_mode; /* R1565: last Setmode byte */
 static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
+static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
+static uint32_t g_r1575_state = 0xFFFFFFFFu; /* R1575: game state requested at the last R670 dispatcher entry */
+/* R1574: stores made by the stage-2 movie player (in the main loop) are exempt from the R517/R518
+ * value-keyed mangle drops. The player's VLC decoder writes run-length codes whose run-0 negative
+ * levels are exactly 0x03xx halfwords at +2 slots, and its ring copy writes raw bitstream words;
+ * R518 deleted those codes from every frame before the MDEC saw them. */
+static inline int r1574_movie_store(void)
+{
+    return g_r1517_inloop && ((xenolift_cur_fn >= 0x801D3000u && xenolift_cur_fn < 0x801F4000u)
+                              || (r[31] >= 0x801D3000u && r[31] < 0x801F4000u));
+}
+/* MGC [mgcensus]: UNCAPPED drop census for the value-keyed mangleguards (R517 w32, R518 w16,
+ * R518 w8). Their own receipts stop at 24 lines, so how often each drops - and from which
+ * writers - was unknown. Every drop is counted per (guard, writer r31, disc1.c store line; line 0
+ * = runtime/non-macro store); xenolift_trace prints the table every ~10s. Camera only. */
+/* MGG: env XENOLIFT_MG_RETIRE bitmask (1=R517 w32, 2=R518 w16, 4=R518 w8) lets a retired guard's
+ * store land; the census keeps counting what it WOULD have dropped. Default 0 = guards unchanged. */
+static unsigned g_mgg_retire;
+#define MGC_ROWS 48
+struct mgc_row { uint32_t ra, fn, line, n, n_loop, n_rt, a_lo, a_hi, last_a, last_v, last_old; long t0, t1; };
+static struct mgc_row g_mgc[3][MGC_ROWS];
+static uint32_t g_mgc_tot[3], g_mgc_spill[3];
+static void mgc_count(int g, uint32_t a, uint32_t v, uint32_t old)
+{
+    struct mgc_row *row = g_mgc[g];
+    uint32_t ra = r[31], line = g_r1197_t_active ? g_r1197_t_line : 0u;
+    long t = (long)(xl_wall() - g_boot_wall_t0);
+    int k;
+    g_mgc_tot[g]++;
+    for (k = 0; k < MGC_ROWS; k++) {
+        if (row[k].n == 0u) {
+            row[k].ra = ra; row[k].fn = xenolift_cur_fn; row[k].line = line;
+            row[k].a_lo = row[k].a_hi = a; row[k].t0 = t;
+            break;
+        }
+        if (row[k].ra == ra && row[k].line == line) break;
+    }
+    if (k == MGC_ROWS) { g_mgc_spill[g]++; return; }
+    row[k].n++;
+    if (g_r1517_inloop) row[k].n_loop++;
+    if (!g_r1197_t_active) row[k].n_rt++;
+    if (a < row[k].a_lo) row[k].a_lo = a;
+    if (a > row[k].a_hi) row[k].a_hi = a;
+    row[k].last_a = a; row[k].last_v = v; row[k].last_old = old; row[k].t1 = t;
+}
+static void mgc_summary(void)
+{
+    static const char *const nm[3] = { "R517w32", "R518w16", "R518w8" };
+    long t = (long)(xl_wall() - g_boot_wall_t0);
+    int g, k;
+    for (g = 0; g < 3; g++) {
+        xenolift_receipt("[mgcensus] MGC @t=%lds %s total=%u spill=%u inloop=%d %s\n",
+                         t, nm[g], g_mgc_tot[g], g_mgc_spill[g], g_r1517_inloop,
+                         (g_mgg_retire & (1u << g)) ? "RETIRED(would-drop)" : "ACTIVE(dropped)");
+        for (k = 0; k < MGC_ROWS && g_mgc[g][k].n; k++) {
+            const struct mgc_row *w = &g_mgc[g][k];
+            xenolift_receipt("[mgcensus] MGC   %s r31=%08X fn=%08X line=%u n=%u loop=%u rt=%u a=[%08X..%08X] last a=%08X v=%08X old=%08X t=%ld..%ld\n",
+                             nm[g], w->ra, w->fn, w->line, w->n, w->n_loop, w->n_rt,
+                             w->a_lo, w->a_hi, w->last_a, w->last_v, w->last_old, w->t0, w->t1);
+        }
+    }
+}
 static uint8_t cd_last_cmd; /* true decl later (line ~675) keeps init order */
 static uint8_t cd_arm_int1_pending; /* R1205 fwd (tentative - merges with the CD-core definition below): the watcher's arm gate reads it */
 static int xenolift_coord_text_poisoned(void); /* R1206 fwd: the watcher's late-capture poison check */
@@ -6401,6 +6466,11 @@ static int io_special_write(uint32_t p, uint32_t v)
             /* completion: clear start/busy (24) + force (28); DICR flag +
              * I_STAT bit 3 when the channel IRQ is enabled (b23 && b16+ch) */
             io_raw_write32(p, v & ~0x11000000u);
+            { /* R1566c: MDEC-out (ch1) completion -> the player's DecDCTout callback, when DICR enables ch1 */
+                uint32_t d1 = io_raw_read32(0x1F8010F4u);
+                if (ch == 1u && g_r1517_inloop && g_r1566_dma_cb[1] >= 0x80010000u && (d1 & 0x00800000u) && (d1 & (1u << 17)))
+                    g_r1566_pending |= 2;
+            }
             {
                 uint32_t dicr = io_raw_read32(0x1F8010F4u);
                 if ((dicr & 0x00800000u) && (dicr & (1u << (16 + ch)))) {
@@ -6680,7 +6750,15 @@ static int io_special_write(uint32_t p, uint32_t v)
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                     r1552_dma_check("CD", madr, n); /* R1552 */
-                    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && g_r1566_dma_cb[3] >= 0x80010000u) g_r1566_pending = 1; /* R1566 */
+                    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && g_r1566_dma_cb[3] >= 0x80010000u) {
+                        /* R1566b: the DMA-complete IRQ fires only for a channel enabled in DICR (bit 16+ch) with the
+                         * master enable (bit 23). Dispatching on every CD DMA ran the player's completion callback
+                         * after its 32-byte header read, marking the ring slot complete (R1569q: code 4 forever). */
+                        uint32_t dicr = io_raw_read32(0x1F8010F4u);
+                        static uint32_t dc_n;
+                        if (dc_n++ < 16u) xenolift_receipt("[r1566] CD DMA %u bytes done: DICR=%08X ch3-irq=%u master=%u\n", n, dicr, (dicr >> 19) & 1u, (dicr >> 23) & 1u);
+                        if ((dicr & (1u << 19)) && (dicr & (1u << 23))) g_r1566_pending |= 8; /* R1566c: channel mask */
+                    }
                     if ((madr & 0x1FFFFCu) < 0xADB80u && (madr & 0x1FFFFCu) + n > 0xADB00u) { /* R1560: CD DMA over the field selector cells */
                         static uint32_t sd_n;
                         if (sd_n++ < 16u) xenolift_receipt("[selw] R1560 CD DMA %08X+%u (LBA %u) covers 800ADB00..800ADB80\n", madr, n, cd_seek_lba);
@@ -6760,7 +6838,20 @@ static int io_special_write(uint32_t p, uint32_t v)
                         fldsec_prev_n = xenolift_ring_n;
                     }
                     cd_seek_lba++; /* next sector in the stream */
-                    if (cd_read_active) {
+                    if (cd_read_active && g_r1517_inloop && cd_last_cmd == 0x1Bu) { /* R1580b: always, see below */
+                        /* R1580: the movie player DMA'd this sector's body inside its INT1 handler, before
+                         * acknowledging that INT1. Raising the next INT1 now merged it into the unacked one
+                         * and the ack erased it: the drive sat on a loaded sector with nothing pending
+                         * (frame 3's first sector, every pass), and the player's stall timeout restarted
+                         * the movie. On hardware the next INT1 comes ~6.7 ms later; defer it until the
+                         * current one is acknowledged (raised from xenolift_trace). */
+                        /* R1580b: the handler always acks AFTER this DMA, and that ack erased the INT1 raised
+                         * here for every sector; another path re-raised most of them, but never once a frame
+                         * completed. Defer unconditionally; R1580c raises it once the CD tick
+                         * that ran the handler has ended. */
+                        g_r1580_defer = 1;
+                        { static uint32_t q_n; if (q_n++ < 8u) xenolift_receipt("[int1q] R1580b next-sector INT1 deferred until the ack (pend=%u, LBA %u next)\n", (unsigned)cd_pending, cd_seek_lba); }
+                    } else if (cd_read_active) {
                         cd_pending = 1, g_pend_line = __LINE__; /* INT1: next sector ready */
                         uint16_t one = 1;
                         memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
@@ -11376,8 +11467,10 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
     if (v >= 0x03000000u && v < 0x04000000u
         && (v & 0x00FFFFFFu) >= 0x00010000u && (v & 0x00FFFFFFu) < 0x00080000u
         && a >= 0x80010000u && a < 0x80200000u
-        && g_r1197_t_active) {
+        && g_r1197_t_active && !r1574_movie_store()) {
         static uint32_t mg_last; static int mg_n; static uint32_t mg_tot;
+        { uint32_t old; memcpy(&old, xenolift_mem + (a & 0x1FFFFFu), 4); mgc_count(0, a, v, old); } /* MGC */
+        if (!(g_mgg_retire & 1u)) { /* MGG: retired = the store lands */
         if ((a != mg_last || mg_n < 4) && mg_tot < 24u) {
             mg_tot++;
             r861_out("[mangleguard] R517 mangled-pointer store a=%08X val=%08X dropped (r31=%08X) — chain preserved\n",
@@ -11385,6 +11478,7 @@ static void xenolift_mem_write32_inner(uint32_t a, uint32_t v)
             mg_last = a; mg_n++;
         }
         return;
+        }
     }
     /* R435: THE CELL IS 0x80059394 — (int16_t)0x9394 is NEGATIVE (-0x6C6C); lui 0x8006 -> 0x80060000 + signext(0x9394) = 0x80059394. 0x80069394 was a PHANTOM cell for ~10 cycles (sign-extension misread). R430 CTXW hook, repointed: c187
      * verdict: journey provably executes the install store (straight-line,
@@ -11974,6 +12068,19 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if ((a & 0x1FFFFFFFu) == 0x001E89F4u && g_r1517_inloop) { /* R1577 [tmocam]: movie-player stall counter writer + rate */
+        static uint32_t tc_n, tc_sec_n; static time_t tc_sec;
+        time_t now = xl_wall();
+        tc_n++;
+        if (now != tc_sec) {
+            if (tc_sec && tc_sec_n) xenolift_receipt("[tmocam] R1577 89F4 writes in the last second: %u (total %u)\n", tc_sec_n, tc_n);
+            tc_sec = now; tc_sec_n = 0;
+        }
+        tc_sec_n++;
+        if (tc_n <= 12u || (tc_n & 4095u) == 0u)
+            xenolift_receipt("[tmocam] R1577 #%u 89F4 %u -> %u cur_fn=%08X r31=%08X @t=%lds\n", tc_n,
+                *(uint32_t *)(xenolift_mem + 0x1E89F4u), v, (unsigned)xenolift_cur_fn, r[31], (long)(now - g_boot_wall_t0));
+    }
     /* R1204 (c9 receipts) [cbcell] camera: the poll-dispatcher crash chain
      * (cur_fn 80041C64/80041BA8/80041C68, addr=0xFFFFFFFF r4=0xFFFFFFFF,
      * deref via [0x800564AC] behind a beq-zero guard that cannot catch -1)
@@ -12103,8 +12210,10 @@ static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
      * The full value is never a usable pointer in this address space. Drop +
      * receipt + continue (R487/R488 bus-error semantics). */
     if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 2u
-        && v >= 0x0300u && v < 0x0400u) {
+        && v >= 0x0300u && v < 0x0400u && !r1574_movie_store()) {
         static uint32_t mg16_last; static int mg16_n; static uint32_t mg16_tot;
+        { uint16_t old; memcpy(&old, xenolift_mem + (a & 0x1FFFFFu), 2); mgc_count(1, a, v, old); } /* MGC */
+        if (!(g_mgg_retire & 2u)) { /* MGG: retired = the store lands */
         if ((a != mg16_last || mg16_n < 4) && mg16_tot < 24u) {
             mg16_tot++;
             r861_out("[mangleguard] R518 hw mangle a=%08X val=%04X dropped (r31=%08X) — chain preserved\n",
@@ -12112,6 +12221,7 @@ static void xenolift_mem_write16_inner(uint32_t a, uint32_t v)
             mg16_last = a; mg16_n++;
         }
         return;
+        }
     }
 
     /* R488: garbage-family WRITE drop (16-bit path) — c54 proof: the SH
@@ -12358,8 +12468,10 @@ static void xenolift_mem_write8_inner(uint32_t a, uint32_t v)
     /* R518 mangleguard (8-bit path): byte 0x03 written into the MSB slot
      * ((a&3)==3) of a pointer word — byte-granular variant of the family. */
     { if (g_r606_in_hle && v == 0x03u && (a & 3u) == 3u && a >= 0x80010000u && a < 0x80200000u) { static uint32_t r606_n; if (r606_n < 32u) { r606_n++; r861_out("[mglexempt] R606 HLE 03-MSB store exempted from R518 ea=%08X @t=%lds\n", (unsigned)a, (long)(xl_wall() - g_boot_wall_t0)); } } }
-    if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 3u && v == 0x03u && !g_r606_in_hle) { /* R606 (c607): the c605p conviction - this drop is the 03->00 store-time transform; HLE-decode installs now exempt */
+    if (a >= 0x80010000u && a < 0x80200000u && (a & 3u) == 3u && v == 0x03u && !g_r606_in_hle && !r1574_movie_store()) { /* R606 (c607): the c605p conviction - this drop is the 03->00 store-time transform; HLE-decode installs now exempt */
         static uint32_t mg8_last; static int mg8_n; static uint32_t mg8_tot;
+        mgc_count(2, a, v, xenolift_mem[a & 0x1FFFFFu]); /* MGC */
+        if (!(g_mgg_retire & 4u)) { /* MGG: retired = the store lands */
         if ((a != mg8_last || mg8_n < 4) && mg8_tot < 24u) {
             mg8_tot++;
             r861_out("[mangleguard] R518 byte mangle a=%08X val=03 dropped (r31=%08X) — chain preserved\n",
@@ -12367,6 +12479,7 @@ static void xenolift_mem_write8_inner(uint32_t a, uint32_t v)
             mg8_last = a; mg8_n++;
         }
         return;
+        }
     }
 
     /* R488: garbage-family WRITE drop (8-bit path) — same predicate. */
@@ -17143,6 +17256,18 @@ void xenolift_trace(uint32_t a)
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
     r1564_check(a); /* R1564/R1564c */
+    /* R1580c: release the deferred INT1 once the CD tick that ran the guest's INT handler has ended
+     * (the handler acks before OR after its body DMA, so the ack is not a usable release point). */
+    if (g_r1580_defer && !cd_tick_busy && cd_pending != 0u) g_r1580_defer = 0; /* something else already raised one */
+    if (g_r1580_defer && !cd_tick_busy && cd_pending == 0u && g_guest_depth <= 2) { /* R1580/R1580c: deliver the deferred INT1 */
+        uint16_t one = 1;
+        g_r1580_defer = 0;
+        if (cd_read_active && cd_last_cmd == 0x1Bu) {
+            cd_pending = 1, g_pend_line = __LINE__;
+            memcpy(xenolift_mem + (0x800578A6u & 0x1FFFFFFFu), &one, 2);
+            { static uint32_t d_n; if (d_n++ < 8u) xenolift_receipt("[int1q] R1580 deferred INT1 raised (LBA %u) at fn %08X\n", cd_seek_lba, a); }
+        }
+    }
     { /* R1538 (JOSH-DIAG): VRAM snapshot every 4 s to /tmp/jtwatch/vram_tNNN.bin (+ display rect in the
        * file name), so field-era frames can be viewed - the end-of-run vram.bin only shows the last state. */
         static uint32_t tick; static time_t last;
@@ -17151,11 +17276,18 @@ void xenolift_trace(uint32_t a)
             if (now - last >= 4 && g_boot_wall_t0) {
                 char nm[128]; int fd;
                 last = now;
-                snprintf(nm, sizeof nm, "/tmp/jtwatch/vram_t%03ld_%ux%u_at%u_%u.bin", (long)(now - g_boot_wall_t0),
-                         gpu_disp_w, gpu_disp_h, gpu_disp_x, gpu_disp_y);
+                snprintf(nm, sizeof nm, "/tmp/jtwatch/vram_t%03ld_%ux%u_at%u_%u_d%u.bin", (long)(now - g_boot_wall_t0),
+                         gpu_disp_w, gpu_disp_h, gpu_disp_x, gpu_disp_y, gpu_disp_24 ? 24u : 15u); /* R1573: depth */
                 fd = open(nm, O_WRONLY | O_CREAT | O_TRUNC, 0644);
                 if (fd >= 0) { if (write(fd, gpu_vram, 2u * 1024u * 512u) < 0) {} close(fd); }
             }
+        }
+    }
+    { /* MGC [mgcensus]: mangleguard drop census every ~10s */
+        static uint32_t tick; static time_t last;
+        if ((++tick & 0xFFFFu) == 0u && g_boot_wall_t0) {
+            time_t now = xl_wall();
+            if (now - last >= 10) { last = now; mgc_summary(); }
         }
     }
     r1535_check(); /* R1535 */
@@ -17203,19 +17335,107 @@ void xenolift_trace(uint32_t a)
         g_r1566_dma_cb[r[4]] = r[5];
         if (dr_n++ < 16u) xenolift_receipt("[r1566] DMACallback(ch=%u, cb=%08X) registered (ra=%08X)\n", r[4], r[5], r[31]);
     }
-    if (g_r1566_pending && !g_r1566_busy && g_guest_depth <= 2 && r1562_cb_ok(g_r1566_dma_cb[3])) {
+    if (g_r1566_pending && !g_r1566_busy && g_guest_depth <= 2) {
         /* R1566: deliver the CD DMA-complete interrupt to its registered callback between guest chunks, with
          * full register save/restore. The movie player's streaming library reads each sector's 32-byte header
          * by DMA and continues (rest of the sector into its ring) only from this callback; our DMAs complete
          * synchronously and the callback never ran, so every sector was dropped after its header. */
         static uint32_t dd_n;
-        uint32_t sr[32], shi = hi, slo = lo, cb = g_r1566_dma_cb[3];
-        g_r1566_pending = 0; g_r1566_busy = 1;
-        memcpy(sr, r, sizeof sr);
-        if (dd_n++ < 24u) xenolift_receipt("[r1566] CD DMA-complete callback %08X dispatched (LBA %u fifo %u/%u)\n", cb, cd_seek_lba, cd_data_pos, cd_data_n);
-        g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
-        memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
+        uint32_t ch, sr[32], shi = hi, slo = lo;
+        g_r1566_busy = 1;
+        for (ch = 1u; ch <= 3u; ch += 2u) { /* ch1 MDEC out, ch3 CD-ROM */
+            uint32_t cb = g_r1566_dma_cb[ch];
+            if (!(g_r1566_pending & (1u << ch))) continue;
+            g_r1566_pending &= ~(1u << ch);
+            if (!r1562_cb_ok(cb)) continue;
+            memcpy(sr, r, sizeof sr);
+            if (dd_n++ < 24u) xenolift_receipt("[r1566] DMA ch%u complete -> callback %08X dispatched (LBA %u)\n", ch, cb, cd_seek_lba);
+            g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
+            memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
+        }
+        /* R1572: no blanket clear here. A callback that starts the next DMA (DecDCTout chaining the next
+         * 16-px slice) sets its channel bit again, and clearing it lost every slice after the first. */
         g_r1566_busy = 0;
+    }
+    if (a == 0x8004B694u && g_r1517_inloop && g_r1575_state == 6u && r[31] == 0x8004B608u) {
+        /* R1579/R1579c: real-time VSync in the movie state. VSync(0) ends with v_wait(Vcount+1, 1)
+         * (called from 0x8004B604); Vcount is 0x80058960 (lui 0x8006 + -0x76A0 sign-extends), and
+         * the runtime adds a tick on every read of it, so that wait ended after one poll. The movie
+         * player bumps its stall counter once per VSync and restarts the stream from frame 1 at 2161
+         * (36 s on a console); here that fired every ~0.1 s, so the movie looped its first two frames.
+         * Sleep to the next 60 Hz boundary; the guest's own poll then satisfies the wait. */
+        static uint64_t vs_next; static uint32_t ve_n;
+        struct timespec ts; uint64_t now;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+        if (vs_next == 0 || vs_next + 100000000ull < now) vs_next = now;
+        /* R1581: the CD IRQ fires during this wait on a console. Our CD interrupts reach the guest only
+         * when it enters the libcd collector (0x800415B4), which the paced movie loop now does a few
+         * times a second (~2 sectors/s vs 150). While waiting for the vblank, run the collector tick
+         * for pending CD events at the 2x drive rate: 150 sectors/s, token bucket capped at 4. */
+        {
+            static uint64_t tb_last; static double tb_tok; static uint32_t sv_n, ov_n, ann_lba; static uint64_t ann_ns;
+            uint32_t sv_fn = xenolift_cur_fn;
+            while (now < vs_next) {
+                if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
+                tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
+                if (tb_tok > 4.0) tb_tok = 4.0;
+                if (tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x1Bu) {
+                    tb_tok -= 1.0;
+                    if (sv_n++ < 6u) xenolift_receipt("[cdirq] R1581 CD event serviced inside the VSync wait (pend=%u defer=%d LBA %u)\n", (unsigned)cd_pending, g_r1580_defer, cd_seek_lba);
+                    xenolift_trace(0x800415B4u); /* the collector-tick seam: releases a deferred INT1, then services it */
+                    xenolift_cur_fn = sv_fn;
+                    ann_lba = cd_seek_lba; ann_ns = now; /* R1582: this sector has been announced */
+                } else if (tb_tok >= 1.0 && !cd_tick_busy && cd_pending == 0u && !g_r1580_defer && !(g_r1566_pending & 8)
+                           && cd_read_active && cd_last_cmd == 0x1Bu && cd_data_loaded && cd_seek_lba == ann_lba
+                           && now - ann_ns >= 6666667ull) {
+                    /* R1582: the drive keeps spinning. A sector whose INT1 was delivered but which the player
+                     * did not drain (ring slot busy) used to hold the drive forever - no new INT1, the
+                     * player's 12 s stall timeout, restart from frame 1. On hardware the next sector
+                     * overwrites it one sector period (6.7 ms at 2x) later and raises a new INT1. */
+                    tb_tok -= 1.0;
+                    cd_data_pos = cd_data_n;
+                    cd_data_loaded = 0;
+                    cd_seek_lba++;
+                    cd_pending = 1, g_pend_line = __LINE__;
+                    { uint16_t one = 1; memcpy(xenolift_mem + 0x578A6u, &one, 2); }
+                    if (ov_n++ < 12u) xenolift_receipt("[cdovr] R1582 undrained sector %u overrun - drive moves on to %u (#%u)\n", ann_lba, cd_seek_lba, ov_n);
+                } else {
+                    struct timespec sl; uint64_t d = vs_next - now;
+                    if (d > 1000000ull) d = 1000000ull;
+                    sl.tv_sec = 0; sl.tv_nsec = (long)d;
+                    nanosleep(&sl, NULL);
+                }
+                clock_gettime(CLOCK_MONOTONIC, &ts);
+                now = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+            }
+        }
+        vs_next += 16666667ull;
+        if (ve_n++ < 4u) {
+            uint32_t vc; memcpy(&vc, xenolift_mem + 0x58960u, 4);
+            xenolift_receipt("[vsrt] R1579c VSync(0) frame wait paced to 60 Hz #%u: Vcount(58960)=%u target=%u\n", ve_n, vc, r[4]);
+        }
+    }
+    if (a == 0x8004BF78u) { /* R1578 [vsirq]: libetc VSync IRQ handler (Vcount++) - call rate and caller */
+        static uint32_t vi_n, vi_sec_n, vi_pr; static time_t vi_sec;
+        time_t now = xl_wall();
+        vi_n++;
+        if (now != vi_sec) {
+            if (vi_sec && vi_pr < 40u) { vi_pr++; xenolift_receipt("[vsirq] R1578 VSync handler calls in the last second: %u (total %u) state=%d\n", vi_sec_n, vi_n, (int)g_r1575_state); }
+            vi_sec = now; vi_sec_n = 0;
+        }
+        vi_sec_n++;
+        if (vi_n <= 6u) xenolift_receipt("[vsirq] R1578 #%u r31=%08X cur_fn=%08X depth=%d\n", vi_n, r[31], (unsigned)xenolift_cur_fn, g_guest_depth);
+    }
+    if (a == 0x801D41ACu && g_r1517_inloop) { /* R1576 [strrst]: movie stream (re)start - which caller, and the frame/end/timeout cells */
+        static uint32_t rs_n;
+        if (rs_n++ < 40u) {
+            uint32_t c64 = xenolift_mem[0x1E8964u], cur = *(uint32_t *)(xenolift_mem + 0x1E8988u), thr = *(uint32_t *)(xenolift_mem + 0x1E8984u);
+            uint32_t endf = *(uint32_t *)(xenolift_mem + 0x1D68CCu), tmo = *(uint32_t *)(xenolift_mem + 0x1E89F4u), off = *(uint32_t *)(xenolift_mem + 0x1E896Cu);
+            uint32_t a5 = *(uint32_t *)(xenolift_mem + ((r[29] + 16u) & 0x1FFFFCu));
+            xenolift_receipt("[strrst] R1576 #%u stream start r31=%08X a0=%08X a1=%08X a2=%08X a3=%08X arg5=%08X | mode(8964)=%u cur(8988)=%d thr(8984)=%d end(D68CC)=%d tmo(89F4)=%u off(896C)=%u LBA=%u @t=%lds\n",
+                rs_n, r[31], r[4], r[5], r[6], r[7], a5, c64, (int)cur, (int)thr, (int)endf, tmo, off, cd_seek_lba, (long)(xl_wall() - g_boot_wall_t0));
+        }
     }
     if (a == 0x801D5D54u || a == 0x801D66F8u) { /* R1567 [strcam]: movie player per-sector routine + its DMA starts (camera only) */
         static uint32_t sc_n, dm_n;
@@ -18297,7 +18517,8 @@ void xenolift_trace(uint32_t a)
                 r1326_epoch = xenolift_boot_epoch; r1326_phase = 0;
             }
             if (r1326_phase == 0
-                && (xl_wall() - g_boot_wall_t0) > 5) {
+                && (xl_wall() - g_boot_wall_t0) > 5
+                && g_r1575_state != 6u) { /* R1575: START skips the movie (state 6); press only outside it */
                 r1326_phase = 1; r1326_t0 = xl_wall();
                 { uint32_t cur = xenolift_mem_read32(vbuf);
                   xenolift_mem_write32(vbuf, (cur & 0xFFFFu) | (0xFFF7u << 16));
@@ -26332,6 +26553,7 @@ if (pad809_presses < 300 &&
             }
         }
         g_r1558_co_n = 0u; /* R1558 */
+        g_r1575_state = xenolift_mem_read32(0x80018088u); /* R1575: state this dispatch runs */
         if (r670d < 8u) {
             r670d++;
             r861_out("[phase] R670 DISPATCHER entry #%u @t=%lds: req=%08X idx(FAEC)=%08X cur=%08X F0C=%u FDF8=%08X latch(9330)=%08X r31=%08X\n",
@@ -31380,6 +31602,9 @@ int main(int argc, char **argv)
 static int xenolift_real_main(int argc, char **argv)
 {
     g_firstfault_stop = (getenv("XENOLIFT_FIRSTFAULT_STOP") != NULL); /* R1172: before snapshot/anchor */
+    { const char *mg = getenv("XENOLIFT_MG_RETIRE"); /* MGG */
+      g_mgg_retire = mg ? (unsigned)strtoul(mg, NULL, 0) & 7u : 0u;
+      r861_out("[mgg] XENOLIFT_MG_RETIRE=%u (1=R517 w32, 2=R518 w16, 4=R518 w8 retired: stores land, census counts)\n", g_mgg_retire); }
     g_main_tid = pthread_self(); /* R880: record the anchor at entry */
     xenolift_ovl_snapshot(); /* R1141: save the emitter-mapped overlay window before start's BSS clear can touch it */
     { /* R323 CHURN ANCHOR: this frame lives for the whole guest run. Family-fn
@@ -31561,6 +31786,10 @@ static int xenolift_real_main(int argc, char **argv)
     gpu_init();         /* R135: GPU HLE interpreter */
     hle_spu_reset();    /* R134: SPU HLE module */
     hle_mdec_reset();   /* R134: MDEC HLE module */
+    { extern void hle_mdec_set_ram(uint8_t *shared_ram);
+      hle_mdec_set_ram(xenolift_mem); } /* R1570: the MDEC HLE's RAM pointer was never set - every DMA0 in / DMA1 out
+                                          * returned at "if (!g_mdec.ram)": quant/scale tables never loaded, no frame data
+                                          * ever reached the decoder, no output was ever written. */
     hle_memcard_reset();/* R134: memcard HLE (SIO routing deferred) */
     pad_fill(); /* R85: connected digital pad before boot */
     /* R87: state-machine latch (gp+448 = 0x80059330). The walker
