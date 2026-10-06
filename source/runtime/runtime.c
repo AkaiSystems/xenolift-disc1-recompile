@@ -986,6 +986,7 @@ static uint8_t g_r1565_mode; /* R1565: last Setmode byte */
 static int r1568_is_audio(uint32_t lba); /* R1568 */
 static int g_r1517_inloop; /* tentative (R1565 uses it in cd_data_load) */
 static int g_r1580_defer; /* R1580: next-sector INT1 waiting for the current INT's ack */
+static uint32_t g_r1590_ipc; /* R1590: R1394 interpreter PC of the instruction being executed */
 static uint32_t g_r1575_state = 0xFFFFFFFFu; /* R1575: game state requested at the last R670 dispatcher entry */
 /* R1574: stores made by the stage-2 movie player (in the main loop) are exempt from the R517/R518
  * value-keyed mangle drops. The player's VLC decoder writes run-length codes whose run-0 negative
@@ -1945,6 +1946,8 @@ static uint32_t g_r1557_issue_fe1c, g_r1557_issue_cmd = 0xFFu; /* R1557b: archiv
 static uint32_t g_r1557_guest_fe1c;
 static uint32_t g_r1558_co_n;
 static int g_r1557_who, g_r1557_issue_who;
+static uint32_t g_r1589_ch3_n; /* R1589: completed CD DMAs awaiting their ch3 callback */
+static void r1591_after_cd_irq(void); /* R1591 */
 static uint32_t g_r1566_dma_cb[8]; static int g_r1566_pending, g_r1566_busy; /* R1566: DMA-complete callbacks (DMACallback via 0x8004B7A0) */ /* R1557d: 1 = archive layer issued the command, 2 = another caller (movie player) */ /* R1558: [callout] budget, reset at every dispatcher entry (the movie loop used all 3000) */ /* R1557c: last FE1C value the GAME stored (runtime heals such as R113 zero the cell) */
 static void r1552_dma_check(const char *who, uint32_t madr, uint32_t n)
 {
@@ -5834,7 +5837,7 @@ r861_out("[frc] field 803-idx1 poll #%u: read_active=%u data_loaded=%u data=%u/%
                     uint32_t sa4 = r[4], sa5 = r[5];
                     r[4] = 0; r[5] = 0;
                     if (!r1179_forge_blocked("L2562")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                    if (!r1179_forge_blocked("L2563")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                    if (!r1179_forge_blocked("L2563")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
                     r[4] = sa4; r[5] = sa5;
                 }
             }
@@ -6750,14 +6753,20 @@ static int io_special_write(uint32_t p, uint32_t v)
                         xenolift_mem_read32(0x8004FDF8u));
                     r1520_ev("DMA", madr, n, cd_seek_lba | (xenolift_sw_line << 20), xenolift_sw_active ? "guest-CHCR" : "RUNTIME-CHCR"); /* R1520/R1525: who started it */
                     r1552_dma_check("CD", madr, n); /* R1552 */
-                    if (g_r1517_inloop && cd_last_cmd == 0x1Bu && g_r1566_dma_cb[3] >= 0x80010000u) {
+                    if (g_r1517_inloop && g_r1566_dma_cb[3] >= 0x80010000u && (cd_last_cmd == 0x1Bu || g_r1575_state != 6u)) {
+                        /* R1587b: in state 6 only the player's ReadS (its callback also fired for the movie
+                         * state's ReadN loads and sent the stream to LBA 3). R1587: any CD DMA, not only ReadS. The field's archive ring stream (ReadN) frees its
+                         * slots from this callback (0x8002BB50, installed by the ring setup 0x8002A1DC); scoped to
+                         * the movie's ReadS, it never ran, the ring filled after 4 sectors and map 490's loading
+                         * loop waited forever. DICR still gates it exactly as on hardware. */
                         /* R1566b: the DMA-complete IRQ fires only for a channel enabled in DICR (bit 16+ch) with the
                          * master enable (bit 23). Dispatching on every CD DMA ran the player's completion callback
                          * after its 32-byte header read, marking the ring slot complete (R1569q: code 4 forever). */
                         uint32_t dicr = io_raw_read32(0x1F8010F4u);
                         static uint32_t dc_n;
                         if (dc_n++ < 16u) xenolift_receipt("[r1566] CD DMA %u bytes done: DICR=%08X ch3-irq=%u master=%u\n", n, dicr, (dicr >> 19) & 1u, (dicr >> 23) & 1u);
-                        if ((dicr & (1u << 19)) && (dicr & (1u << 23))) g_r1566_pending |= 8; /* R1566c: channel mask */
+                        if ((dicr & (1u << 19)) && (dicr & (1u << 23))) { g_r1566_pending |= 8; if (g_r1575_state == 1u && g_r1589_ch3_n < 4u) g_r1589_ch3_n++; } /* R1566c: channel mask; R1589/R1591b: count (state 1, cap 4) */
+                        { static uint32_t f1_n; if (g_r1575_state == 1u && f1_n++ < 12u) xenolift_receipt("[r1588] state-1 CD DMA %u bytes (cmd %02X LBA %u) DICR=%08X ch3-irq=%u cb3=%08X\n", n, cd_last_cmd, cd_seek_lba, dicr, (dicr >> 19) & 1u, g_r1566_dma_cb[3]); }
                     }
                     if ((madr & 0x1FFFFCu) < 0xADB80u && (madr & 0x1FFFFCu) + n > 0xADB00u) { /* R1560: CD DMA over the field selector cells */
                         static uint32_t sd_n;
@@ -7673,7 +7682,7 @@ uint32_t xenolift_mem_read32(uint32_t a)
                         (unsigned)cd_pending);
             }
             if (!r1179_forge_blocked("L16246")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-            if (!r1179_forge_blocked("L16247")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+            if (!r1179_forge_blocked("L16247")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
             if (!r1179_forge_blocked("L16248")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
             memcpy(r, sr, sizeof r); hi = shi; lo = slo;
             r1209_budget--;
@@ -10124,7 +10133,7 @@ uint32_t xenolift_mem_read16(uint32_t a)
                cd_seek_lba, (unsigned)cd_last_cmd, xenolift_mem_read32(0x8004FE08u));
       r[4] = 0; r[5] = 0;
       if (!r1179_forge_blocked("L645MA")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-      if (!r1179_forge_blocked("L645MB")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+      if (!r1179_forge_blocked("L645MB")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
       if (!r1179_forge_blocked("L645MC")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
       r861_out("[mvserv] R645MV movie-seam conversion AFTER: pend=%u arm1=%u data=%u/%u FDF8=%u FE1C=%u\n",
                (unsigned)cd_pending, (unsigned)cd_arm_int1_pending,
@@ -10175,7 +10184,7 @@ uint32_t xenolift_mem_read16(uint32_t a)
 r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + collector\n",
                         cd_pending);
                 if (!r1179_forge_blocked("L5317")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                if (!r1179_forge_blocked("L5318")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                if (!r1179_forge_blocked("L5318")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
                 if (!r1179_forge_blocked("L5319")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
                 memcpy(r, sr, sizeof r); hi = shi; lo = slo;
                 spin_conv_busy = 0;
@@ -10510,7 +10519,7 @@ uint32_t xenolift_mem_read8(uint32_t a)
                cd_seek_lba, (unsigned)cd_last_cmd, xenolift_mem_read32(0x8004FE08u));
       r[4] = 0; r[5] = 0;
       if (!r1179_forge_blocked("L645MA")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-      if (!r1179_forge_blocked("L645MB")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+      if (!r1179_forge_blocked("L645MB")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
       if (!r1179_forge_blocked("L645MC")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
       r861_out("[mvserv] R645MV movie-seam conversion AFTER: pend=%u arm1=%u data=%u/%u FDF8=%u FE1C=%u\n",
                (unsigned)cd_pending, (unsigned)cd_arm_int1_pending,
@@ -10561,7 +10570,7 @@ uint32_t xenolift_mem_read8(uint32_t a)
 r861_out("[cd] spin-conv: converting stuck INT1 (pending=%u) via handler pair + collector\n",
                         cd_pending);
                 if (!r1179_forge_blocked("L5610")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                if (!r1179_forge_blocked("L5611")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                if (!r1179_forge_blocked("L5611")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
                 if (!r1179_forge_blocked("L5612")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
                 memcpy(r, sr, sizeof r); hi = shi; lo = slo;
                 spin_conv_busy = 0;
@@ -12068,6 +12077,11 @@ static void r1516_trip(uint32_t a, uint32_t v, unsigned w)
 void xenolift_mem_write32(uint32_t a, uint32_t v)
 {
     r1516_trip(a, v, 4u); /* R1516 */
+    if ((a & 0x1FFFFFFFu) == 0x0004F34Cu) { /* R1586 [mapid]: field map/scene ID writer */
+        static uint32_t mi_n;
+        if (mi_n++ < 24u) xenolift_receipt("[mapid] R1586 #%u F34C %d -> %d cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n", mi_n,
+            (int)*(uint32_t *)(xenolift_mem + 0x4F34Cu), (int)v, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
     if ((a & 0x1FFFFFFFu) == 0x001E89F4u && g_r1517_inloop) { /* R1577 [tmocam]: movie-player stall counter writer + rate */
         static uint32_t tc_n, tc_sec_n; static time_t tc_sec;
         time_t now = xl_wall();
@@ -17249,6 +17263,25 @@ static void r1527_check(void)
                              fires, cd_seek_lba, f8, (unsigned)xenolift_cur_fn);
     }
 }
+static void r1591_after_cd_irq(void)
+{
+    /* R1591: deliver the CD DMA-complete (ch3) callbacks as soon as the guest's CD interrupt handler has
+     * returned, one per completed DMA, before the next sector's INT1. The runtime's tick can drain several
+     * INT1s back to back (R471); holding the callbacks to the end of the tick let the field's 4-slot
+     * archive ring overflow, so map 490's stream kept retrying. State 1 only. */
+    uint32_t n;
+    if (g_r1575_state != 1u || !g_r1517_inloop || g_r1566_busy || !(g_r1566_pending & 8)) return;
+    for (n = 0; n < 4u && (g_r1566_pending & 8); n++) {
+        uint32_t cb = g_r1566_dma_cb[3], sr[32], shi = hi, slo = lo, sfn = xenolift_cur_fn;
+        g_r1566_pending &= ~8;
+        if (g_r1589_ch3_n > 1u) { g_r1589_ch3_n--; g_r1566_pending |= 8; } else g_r1589_ch3_n = 0u;
+        if (!r1562_cb_ok(cb)) continue;
+        g_r1566_busy = 1; memcpy(sr, r, sizeof sr);
+        { static uint32_t q; if (cb == 0x8002BB50u && q++ < 24u) xenolift_receipt("[r1591] ring callback 8002BB50 delivered after the CD handler (LBA %u, left %u)\n", cd_seek_lba, g_r1589_ch3_n); }
+        g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
+        memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; g_r1566_busy = 0;
+    }
+}
 void xenolift_trace(uint32_t a)
 {
     xenolift_cur_fn = a;
@@ -17256,6 +17289,7 @@ void xenolift_trace(uint32_t a)
     r1514_watch(a); /* R1514 [jtwatch] */
     r1527_check(); /* R1527 */
     r1564_check(a); /* R1564/R1564c */
+    if (a == 0x800415B4u || a == 0x800409E4u) r1591_after_cd_irq(); /* R1591d: the previous CD IRQ has been handled - its DMA callbacks run before the next one */
     /* R1580c: release the deferred INT1 once the CD tick that ran the guest's INT handler has ended
      * (the handler acks before OR after its body DMA, so the ack is not a usable release point). */
     if (g_r1580_defer && !cd_tick_busy && cd_pending != 0u) g_r1580_defer = 0; /* something else already raised one */
@@ -17333,9 +17367,12 @@ void xenolift_trace(uint32_t a)
     if (a == 0x8004B7A0u && r[4] < 8u) { /* R1566: DMACallback(channel, cb) registration */
         static uint32_t dr_n;
         g_r1566_dma_cb[r[4]] = r[5];
+        if (r[4] == 3u) { g_r1589_ch3_n = 0u; g_r1566_pending &= ~8; } /* R1591b: no stale completions across a callback change */
         if (dr_n++ < 16u) xenolift_receipt("[r1566] DMACallback(ch=%u, cb=%08X) registered (ra=%08X)\n", r[4], r[5], r[31]);
     }
-    if (g_r1566_pending && !g_r1566_busy && g_guest_depth <= 2) {
+    /* R1589: in state 1 deliver at any depth outside a CD tick (the field's loading code runs deeper than 2,
+     * which starved the archive ring's per-DMA callback), and deliver ch3 once per completed DMA. */
+    if (g_r1566_pending && !g_r1566_busy && (g_guest_depth <= 2 || (g_r1575_state == 1u && !cd_tick_busy))) {
         /* R1566: deliver the CD DMA-complete interrupt to its registered callback between guest chunks, with
          * full register save/restore. The movie player's streaming library reads each sector's 32-byte header
          * by DMA and continues (rest of the sector into its ring) only from this callback; our DMAs complete
@@ -17347,9 +17384,12 @@ void xenolift_trace(uint32_t a)
             uint32_t cb = g_r1566_dma_cb[ch];
             if (!(g_r1566_pending & (1u << ch))) continue;
             g_r1566_pending &= ~(1u << ch);
+            if (ch == 3u && g_r1589_ch3_n > 1u) { g_r1589_ch3_n--; g_r1566_pending |= 8; } /* R1589: one callback per DMA */
+            else if (ch == 3u) g_r1589_ch3_n = 0u;
             if (!r1562_cb_ok(cb)) continue;
             memcpy(sr, r, sizeof sr);
             if (dd_n++ < 24u) xenolift_receipt("[r1566] DMA ch%u complete -> callback %08X dispatched (LBA %u)\n", ch, cb, cd_seek_lba);
+            { static uint32_t s1_n; if (g_r1575_state == 1u && s1_n++ < 12u) xenolift_receipt("[r1588] state-1 DMA ch%u callback %08X dispatched (LBA %u)\n", ch, cb, cd_seek_lba); }
             g_guest_depth++, xenolift_dispatch(cb), g_guest_depth--;
             memcpy(r, sr, sizeof sr); hi = shi; lo = slo;
         }
@@ -17426,6 +17466,38 @@ void xenolift_trace(uint32_t a)
         }
         vi_sec_n++;
         if (vi_n <= 6u) xenolift_receipt("[vsirq] R1578 #%u r31=%08X cur_fn=%08X depth=%d\n", vi_n, r[31], (unsigned)xenolift_cur_fn, g_guest_depth);
+    }
+    if ((a == 0x8003FA38u || a == 0x80028B14u) && g_r1517_inloop && g_r1575_state == 1u) { /* R1584 [strsvc]: field stream service gate */
+        static uint32_t n38, n14; static time_t last;
+        uint32_t f308, f324; memcpy(&f308, xenolift_mem + 0x4F308u, 4); memcpy(&f324, xenolift_mem + 0x4F324u, 4);
+        if (a == 0x8003FA38u) n38++; else n14++;
+        if (xl_wall() != last && (n38 + n14) > 0u) {
+            static uint32_t pr; last = xl_wall();
+            if (pr++ < 30u) xenolift_receipt("[strsvc] R1584 t=%lds FA38 calls=%u ringget(28B14) calls=%u gate F308=%08X F324=%08X FE40=%d FDF8=%d FE1C=%u r31=%08X\n",
+                (long)(xl_wall() - g_boot_wall_t0), n38, n14, f308, f324, (int)*(uint32_t *)(xenolift_mem + 0x4FE40u),
+                (int)*(uint32_t *)(xenolift_mem + 0x4FDF8u), *(uint32_t *)(xenolift_mem + 0x4FE1Cu), r[31]);
+        }
+    }
+    { static uint32_t f308_last = 0xDEADBEEFu; uint32_t f308; memcpy(&f308, xenolift_mem + 0x4F308u, 4);
+      if (f308 != f308_last && g_r1517_inloop) { static uint32_t ch; if (ch++ < 24u) xenolift_receipt("[strsvc] R1584 gate F308 %08X -> %08X at fn %08X r31=%08X state=%d\n", f308_last, f308, a, r[31], (int)g_r1575_state); f308_last = f308; } }
+    if (a == 0x8002B5D0u || (a == 0x80041534u && r[31] == 0x8002B6F0u)) { /* R1583 [arccb]: archive data-ready callback - why it retries */
+        static uint32_t ac_n, hc_n;
+        uint32_t fe04, fe40, fdf8, fdec;
+        memcpy(&fe04, xenolift_mem + 0x4FE04u, 4); memcpy(&fe40, xenolift_mem + 0x4FE40u, 4);
+        memcpy(&fdf8, xenolift_mem + 0x4FDF8u, 4); memcpy(&fdec, xenolift_mem + 0x4FDECu, 4);
+        if (a == 0x8002B5D0u) {
+            if (ac_n++ < 40u) {
+                uint32_t t; uint16_t st[4] = {0, 0, 0, 0}, sq[4] = {0, 0, 0, 0}; uint16_t fe28; int k;
+                memcpy(&t, xenolift_mem + 0x4FE2Cu, 4); memcpy(&fe28, xenolift_mem + 0x4FE28u, 2);
+                if (t >= 0x80010000u && t < 0x80200000u) for (k = 0; k < 4; k++) { memcpy(&st[k], xenolift_mem + ((t + 8u * k) & 0x1FFFFFu), 2); memcpy(&sq[k], xenolift_mem + ((t + 8u * k + 2u) & 0x1FFFFFu), 2); }
+                xenolift_receipt("[arccb] R1583 #%u cb a0=%u FE04=%u FE40=%d FDF8=%d slots %u/%u %u/%u %u/%u %u/%u next(FE28)=%u @t=%lds\n",
+                    ac_n, r[4] & 0xFFu, fe04, (int)fe40, (int)fdf8, st[0], sq[0], st[1], sq[1], st[2], sq[2], st[3], sq[3], fe28, (long)(xl_wall() - g_boot_wall_t0));
+            }
+        } else if (hc_n++ < 24u) {
+            const uint8_t *h = xenolift_mem + 0x59EF8u;
+            xenolift_receipt("[arccb] R1583 hdr %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X want FE04=%u seek=%u\n",
+                h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8], h[9], h[10], h[11], fe04, cd_seek_lba);
+        }
     }
     if (a == 0x801D41ACu && g_r1517_inloop) { /* R1576 [strrst]: movie stream (re)start - which caller, and the frame/end/timeout cells */
         static uint32_t rs_n;
@@ -25073,7 +25145,7 @@ if (a == 0x8002A99Cu) { /* state 12 (table[12]) */
                                             cd_pending, mv_n, xenolift_mem_read32(0x8004FE1Cu));
                                 }
                                 if (!r1179_forge_blocked("L16246")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                                if (!r1179_forge_blocked("L16247")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                                if (!r1179_forge_blocked("L16247")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
                                 if (!r1179_forge_blocked("L16248")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
                                 memcpy(r, sr, sizeof r); hi = shi; lo = slo;
                                 mv_conv_busy = 0;
@@ -27488,13 +27560,13 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     uint32_t r1354_p2 = xenolift_mem_read32(0x8005641Cu); int r1354_ok = (r1354_p2 >= 0x80010000u && r1354_p2 < 0x80200000u); /* R1354 */
                     r861_out("[wpair] R1354 queue-telemetry pre-pair: bank=%u->1 pend=%u resp=%u/%u q1=%08X q2=%08X p2w0=%08X p2w4=%08X s2/s3=%02X/%02X\n", (unsigned)r1353_bank, (unsigned)cd_pending, (unsigned)cd_resp_pos, (unsigned)cd_resp_n, xenolift_mem_read32(0x80056418u), r1354_p2, (r1354_ok ? xenolift_mem_read32(r1354_p2) : 0u), (r1354_ok ? xenolift_mem_read32(r1354_p2 + 4u) : 0u), xenolift_mem[0x56788], xenolift_mem[0x56789]);
                 g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--;
-                g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--;
+                g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq();
                 r861_out("[wgen] R1351 genuine-answer BIOS-style pair dispatch (serve-armed INT3, bank=1) - the forge-block never meant to stop this\n");
                 r861_out("[wpair] R1353 post-pair: bank=%u pend=%u resp=%u/%u fe1c=%08X s2/s3=%02X/%02X\n", (unsigned)(cd_index & 3u), (unsigned)cd_pending, (unsigned)cd_resp_pos, (unsigned)cd_resp_n, xenolift_mem_read32(0x8004FE1Cu), xenolift_mem[0x56788], xenolift_mem[0x56789]);
                 cd_index = r1353_bank; /* R1353 restore */
             } else { /* R1351: the non-exemption path (firstfault off) - original forge-gated dispatches */
                 if (!r1179_forge_blocked("L18047")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                if (!r1179_forge_blocked("L18048")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                if (!r1179_forge_blocked("L18048")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
             } /* R1353 */
             memcpy(r, sr, sizeof r); hi = shi; lo = slo;
             { /* R471: STACKED-PENDING DRAIN. c34+c35 (both R470, identical
@@ -27517,7 +27589,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                     uint32_t dr[32]; uint32_t dhi, dlo;
                     memcpy(dr, r, sizeof dr); dhi = hi; dlo = lo;
                     if (!r1179_forge_blocked("L18069")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-                    if (!r1179_forge_blocked("L18070")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+                    if (!r1179_forge_blocked("L18070")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
                     memcpy(r, dr, sizeof r); hi = dhi; lo = dlo;
                 }
             }
@@ -28251,7 +28323,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
             uint32_t sr[32]; uint32_t shi, slo;
             memcpy(sr, r, sizeof r); shi = hi; slo = lo;
             if (!r1179_forge_blocked("L18519")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-            if (!r1179_forge_blocked("L18520")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+            if (!r1179_forge_blocked("L18520")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
             memcpy(r, sr, sizeof r); hi = shi; lo = slo;
         }
         cd_index = saved_bank; /* pump restores the bank after collecting */
@@ -31970,7 +32042,7 @@ static void cd_force_deliver_int1(const char *why)
                     n, why, cd_pending, cd_seek_lba, xenolift_mem_read32(0x8004FDF8u));
         r[4] = 0; r[5] = 0;
         if (!r1179_forge_blocked("L21546")) { g_guest_depth++, xenolift_dispatch(0x800409E4u), g_guest_depth--; }
-        if (!r1179_forge_blocked("L21547")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; }
+        if (!r1179_forge_blocked("L21547")) { g_guest_depth++, xenolift_dispatch(0x80040A4Cu), g_guest_depth--; r1591_after_cd_irq(); }
         if (!r1179_forge_blocked("L21548")) { g_guest_depth++, xenolift_dispatch(0x800415B4u), g_guest_depth--; }
         {
             /* R259: the collector RETURNS the slot bitmask in v0 — the kernel
@@ -32833,6 +32905,7 @@ static int r1394_interp(uint32_t entry)
         } else { r680j_seq++; }
         r680j_prev = npc; r680j_prev_pc = pc;
         r1523_tick(pc, entry); /* R1523 */
+        g_r1590_ipc = pc; /* R1590 */
         w = xenolift_mem_read32(pc);
         op = w >> 26; rs = (w >> 21) & 31; rt = (w >> 16) & 31;
         rd = (w >> 11) & 31; sa = (w >> 6) & 31; fn_ = w & 63;
