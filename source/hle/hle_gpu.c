@@ -99,6 +99,7 @@ static void exec_line(void);
 static void exec_env_cmd(uint32_t v);
 static int get_cmd_word_count(uint32_t w0);
 static void exec_cmd_buf(void);
+static unsigned g_r1596_after; /* R1596 */
 
 /*
  * SPEC-ASSUMPTION: PSX semi-transparency modes 0-3 (ABR):
@@ -484,6 +485,17 @@ static void exec_poly(void)
                            is_textured, is_gouraud, is_semi_trans, is_raw_tex,
                            abr_mode, clut, texpage);
     }
+    if (is_textured && is_quad && texpage == 0x013Bu) g_r1596_after = 12u; /* R1596: log what follows the title */
+    if (is_textured && is_quad && texpage == 0x013Bu) { /* R1595: title strip 5 drawn - what landed in the buffer */
+        static unsigned t_n;
+        if (t_n++ < 8u) {
+            unsigned nz = 0, y, x, y0 = (unsigned)(verts[0].y < 0 ? 0 : verts[0].y);
+            for (y = y0; y < y0 + 224u && y < 512u; y += 4) for (x = 0; x < 320u; x += 4) if (g_vram[y][x]) nz++;
+            hle_out("[title] R1595 strip5 v0=(%d,%d) ofs=(%d,%d) area=(%d,%d)-(%d,%d) abr=%d semi=%d raw=%d nonzero=%u/4480 src(704,300)=%04X\n",
+                    verts[0].x, verts[0].y, g_draw_offset_x, g_draw_offset_y, g_draw_x1, g_draw_y1, g_draw_x2, g_draw_y2,
+                    abr_mode, is_semi_trans, is_raw_tex, nz, g_vram[300][704 + 100]);
+        }
+    }
 }
 
 static void exec_line(void)
@@ -610,7 +622,16 @@ static uint8_t g_r1486_fired;
 static void exec_cmd_buf(void)
 {
     uint32_t cmd = (g_cmd_buf[0] >> 24) & 0xFFu;
+    if (g_r1596_after) { static unsigned frames; g_r1596_after--;
+        if (frames < 3u) hle_out("[after] R1596 cmd=%02X w0=%08X w1=%08X w2=%08X w3=%08X\n", (unsigned)cmd, g_cmd_buf[0], g_cmd_buf[1], g_cmd_buf[2], g_cmd_buf[3]);
+        if (!g_r1596_after) frames++; }
 
+    if (cmd >= 0x2Cu && cmd <= 0x2Fu) { /* R1594: dump the first textured quads (title screen) */
+        static unsigned q_n;
+        if (q_n++ < 12u)
+            hle_out("[texq] R1594 #%u cmd=%02X v0=%08X uv0clut=%08X v1=%08X uv1tp=%08X v2=%08X uv2=%08X v3=%08X uv3=%08X\n", q_n, (unsigned)cmd,
+                    g_cmd_buf[1], g_cmd_buf[2], g_cmd_buf[3], g_cmd_buf[4], g_cmd_buf[5], g_cmd_buf[6], g_cmd_buf[7], g_cmd_buf[8]);
+    }
     if (cmd == 0xC0u) { /* R1593: copy rectangle VRAM -> CPU (StoreImage); served through GPUREAD / DMA2 reads */
         g_rd_x = g_cmd_buf[1] & 0x3FFu; g_rd_y = (g_cmd_buf[1] >> 16) & 0x1FFu;
         g_rd_w = g_cmd_buf[2] & 0x3FFu; g_rd_h = (g_cmd_buf[2] >> 16) & 0x1FFu;
