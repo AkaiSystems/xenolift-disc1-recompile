@@ -1046,8 +1046,12 @@ static int r1597_held(void)
             int c = (cur != 2 || !ready) ? 7 : 3; /* R1625b: item 2 (0x8001B970, returns 0 -> result 0) is New Game; item 0 is a 3-way settings dialog */
             /* R1625d: one confirm per menu session - later taps drove the follow-on 7-item menu (0x801C55A0, same cursor byte) and
              * re-picked its item 2 forever (R1651) */
-            if (g_r1625_done) return 0;
-            if (c == 3) g_r1625_done = 1;
+            if (g_r1625_done) { /* R1625e/f: New Game ran (pc 0x801C5440); the follow-on 7-item menu (0x801C55A0, same cursor byte) exits
+                                    * on Cross at item 0 (0x801C531C(0) -> table[0] returns 0) - tap Up to item 0, then Cross */
+                int c2 = (cur != 0) ? 7 : 3;
+                static int m2; if (m2++ < 3) r861_out("[padvp2] R1625f follow-on menu tap %s (cursor=%d)\n", c2 == 7 ? "UP" : "CROSS", cur);
+                return c2;
+            }
             static int mt; if (mt++ < 4) r861_out("[padvp2] R1625 menu tap %s (cursor=%d ms=%ld)\n", c == 7 ? "UP" : "CROSS", cur, ms);
             return c;
         }
@@ -2629,6 +2633,13 @@ static void cd_cmd(uint8_t cmd)
         r861_out("[cd] Setmode 0x%02X (speed=%sx XA=%s realidx=%s ReportAF=%s)\n",
                 m, (m & 0x80u) ? "2x" : "1x", (m & 0x20u) ? "on" : "off",
                 (m & 0x08u) ? "raw" : "cooked", (m & 0x10u) ? "on" : "off");
+    } else if (cmd == 0x1Bu && g_r1575_state == 1u && g_r1517_inloop && g_r1649_fmv /* R1657b: only the field movie - the title menu's ReadS (XA music) served as data reset the game (R1657) */) {
+        /* R1657: ReadS (0x1B) in state 1 - the field movie player (prologue movie 0x0F at LBA 54133) streams with ReadS, but only
+         * 0x06/0x09 activated a read here, so the drive acked and never read (act=0) and the player restarted the stream. Activate it
+         * at the seeked LBA; no archive (FE04) re-anchor - the player tracks its own position. */
+        cd_read_active = 1;
+        cd_data_loaded = 0;
+        { static uint32_t r1657_n; if (r1657_n++ < 4u) r861_out("[cd] R1657 ReadS in state 1: streaming from LBA %u\n", cd_seek_lba); }
     } else if (cmd == 0x06u || cmd == 0x09u) { /* ReadN/ReadS: data will be
         served from seek LBA. R163: per psx-spx, 0x09 = CdlReadS (streams
         sectors like ReadN, variable speed) — the R124-era model wrongly
@@ -4225,7 +4236,7 @@ static uint32_t cd_read_impl(uint32_t p)
                 r1458_tseek = (uint32_t)cd_seek_lba; r1458_tcmd = cd_last_cmd; r1458_trn = cd_resp_n; r1458_tpos = cd_resp_pos; r1458_tf8 = r1458_f8; r1458_te1c = r1458_e1c;
                 r1458_polls = 0;
             }
-            if (r1458_fires < 64u && cd_resp_n > 0u && cd_resp_pos == 0u && g_r1575_state != 1u /* R1650: not in state 1 - it ping-ponged with the FIFO re-prime and the field movie's CdControl(0x0D) never got its ack */) {
+            if (r1458_fires < 64u && cd_resp_n > 0u && cd_resp_pos == 0u /* R1650 reverted (R1652b: 0x0D stall became systematic) */) {
                 r1458_polls++;
                 if (r1458_polls > 131072u) {
                     r1458_fires++; r1458_polls = 0;
@@ -4658,9 +4669,7 @@ static uint32_t cd_read_impl(uint32_t p)
         }
         if (cd_resp_pos >= cd_resp_n && !cd_read_active
                                          && (cd_pending || cd_last_cmd)
-                                         && !(g_r1575_state == 1u && cd_last_cmd == 0x0Du) /* R1651: an empty FIFO stays empty after the field
-                                                                                             * movie's CdControl(0x0D) ack - replaying it kept the
-                                                                                             * guest's drain loop (0x80042AA8) busy forever */) {
+) { /* R1651 reverted (with R1650) */
             static int reprimed_budget = 100000;
             if (reprimed_budget > 0) {
                 reprimed_budget--;
@@ -5271,7 +5280,7 @@ r861_out("[k659] R659A ready-signal dispatched a0=2: fe04=%u seek=%u FE1C=%u FDF
                              xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE08u),
                              cd_read_active ? 1u : 0u, (unsigned)cd_pending, cd_arm_int1_pending ? 1u : 0u, cd_scheduled ? 1u : 0u);
                 }
-                if ((cd_last_cmd == 0x06u || cd_last_cmd == 0x0Du)
+                if ((cd_last_cmd == 0x06u || (cd_last_cmd == 0x0Du && g_r1575_state != 1u /* R1655 */))
                     && xenolift_mem_read32(0x8004FE08u) >= 0x80000000u
                     && cd_pending == 0
                     && cd_arm_int1_pending == 0
@@ -12213,6 +12222,10 @@ void xenolift_mem_write32(uint32_t a, uint32_t v)
       if (((a & 0x1FFFFFFCu) == 0x00059360u) || (tb >= 0x80000000u && tb < 0x80200000u && (a & 0x1FFFFFFCu) == ((tb + 0x6Cu) & 0x1FFFFCu))) {
         static uint32_t tw; if (tw++ < 16u) xenolift_receipt("[txtw] R1633 w32 %08X <- %08X (was %08X) tbl=%08X cur_fn=%08X r31=%08X ipc=%08X line=%u state=%d @t=%lds\n",
             a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), tb, (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, xenolift_sw_line, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0)); } }
+    if ((a & 0x1FFFFFE0u) == 0x00058940u && v != 0u && (v < 0x80010000u || v >= 0x80200000u)) { /* R1652 [vscbw]: bad VSync callback slot write */
+        static uint32_t vb; if (vb++ < 12u) xenolift_receipt("[vscbw] R1652 w32 %08X <- %08X (was %08X) %s cur_fn=%08X r31=%08X ipc=%08X line=%u state=%d @t=%lds\n",
+            a, v, *(uint32_t *)(xenolift_mem + (a & 0x1FFFFCu)), xenolift_sw_active ? "guest" : "RUNTIME", (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, xenolift_sw_line, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
+    }
     if ((a & 0x1FFFFFFCu) == 0x00056D2Cu && (int32_t)v != 0 && ((int32_t)v < 0 || (int32_t)v > 640 || ((int32_t)v & 31))) { /* R1613 [mstk] bad depth write */
         static uint32_t mw; if (mw++ < 12u) xenolift_receipt("[mstk] R1613 w32 depth <- %08X (was %08X) cur_fn=%08X r31=%08X ipc=%08X state=%d @t=%lds\n",
             v, *(uint32_t *)(xenolift_mem + 0x56D2Cu), (unsigned)xenolift_cur_fn, r[31], g_r1590_ipc, (int)g_r1575_state, (long)(xl_wall() - g_boot_wall_t0));
@@ -17726,14 +17739,18 @@ void xenolift_trace(uint32_t a)
              * GameBootstrap registers the frame callback 0x8003634C in slot 4 (via 0x8004B7D0): frame counter, pad state
              * machine, and the pad event enqueue 0x80035C0C that the field's input loop dequeues (queue count 0x8005937C
              * stayed 0 here; 16 on a console) - the handler never ran in this runtime. */
-            g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
+            { uint32_t k2; for (k2 = 0; k2 < 8u; k2++) { /* R1652b: drop a non-code VSync callback slot before the handler dispatches it */
+                uint32_t *sl = (uint32_t *)(xenolift_mem + 0x58940u + 4u * k2);
+                if (*sl != 0u && (*sl < 0x80010000u || *sl >= 0x80200000u)) { static uint32_t cn; if (cn++ < 6u) xenolift_receipt("[vscbw] R1652b slot %u held %08X - cleared\n", k2, *sl); *sl = 0u; } } }
+            if (!(g_r1649_fmv && cd_last_cmd == 0x1Bu && cd_read_active)) /* R1658: not while the field movie streams - the attract movie (state 6) runs without the handler */
+                g_guest_depth++, xenolift_dispatch(0x8004BF78u), g_guest_depth--;
             r1644_cd_service(1); /* R1644: the R1629/R1642/R1643 state-1 CD service (flags-only from the 0x800286CC poll) */
             memcpy(r, sr, sizeof sr); hi = shi; lo = slo; xenolift_cur_fn = sfn; busy = 0;
             { static uint32_t pn; if (pn++ < 3u) xenolift_receipt("[padvb] R1611 VSync handler run (slot4=%08X, pad queue %u, sys pad %04X)\n",
                   *(uint32_t *)(xenolift_mem + 0x58950u), *(uint32_t *)(xenolift_mem + 0x5937Cu), *(uint16_t *)(xenolift_mem + 0x59570u)); }
         }
     }
-    if (a == 0x8004B694u && g_r1517_inloop && (g_r1575_state == 6u || g_r1649_fmv) && r[31] == 0x8004B608u) { /* R1649: also a field movie in state 1 */
+    if (a == 0x8004B694u && g_r1517_inloop && (g_r1575_state == 6u || g_r1575_state == 1u || g_r1649_fmv) && r[31] == 0x8004B608u) { /* R1649: field movie; R1653: all of state 1 - unpaced (~580 fps) the title's 960-frame idle timeout fired in <2 s and reset to the attract movie */
         /* R1579/R1579c: real-time VSync in the movie state. VSync(0) ends with v_wait(Vcount+1, 1)
          * (called from 0x8004B604); Vcount is 0x80058960 (lui 0x8006 + -0x76A0 sign-extends), and
          * the runtime adds a tick on every read of it, so that wait ended after one poll. The movie
@@ -17756,14 +17773,14 @@ void xenolift_trace(uint32_t a)
                 if (tb_last == 0 || now - tb_last > 100000000ull) tb_last = now;
                 tb_tok += (double)(now - tb_last) * 150.0 / 1e9; tb_last = now;
                 if (tb_tok > 4.0) tb_tok = 4.0;
-                if (tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x1Bu) {
+                if (tb_tok >= 1.0 && !cd_tick_busy && (cd_pending != 0u || g_r1580_defer) && cd_read_active && cd_last_cmd == 0x1Bu && (g_r1575_state == 6u || g_r1649_fmv) /* R1653b */) {
                     tb_tok -= 1.0;
                     if (sv_n++ < 6u) xenolift_receipt("[cdirq] R1581 CD event serviced inside the VSync wait (pend=%u defer=%d LBA %u)\n", (unsigned)cd_pending, g_r1580_defer, cd_seek_lba);
                     xenolift_trace(0x800415B4u); /* the collector-tick seam: releases a deferred INT1, then services it */
                     xenolift_cur_fn = sv_fn;
                     ann_lba = cd_seek_lba; ann_ns = now; /* R1582: this sector has been announced */
                 } else if (tb_tok >= 1.0 && !cd_tick_busy && cd_pending == 0u && !g_r1580_defer && !(g_r1566_pending & 8)
-                           && cd_read_active && cd_last_cmd == 0x1Bu && cd_data_loaded && cd_seek_lba == ann_lba
+                           && cd_read_active && cd_last_cmd == 0x1Bu && (g_r1575_state == 6u || g_r1649_fmv) /* R1653b */ && cd_data_loaded && cd_seek_lba == ann_lba
                            && now - ann_ns >= 6666667ull) {
                     /* R1582: the drive keeps spinning. A sector whose INT1 was delivered but which the player
                      * did not drain (ring slot busy) used to hold the drive forever - no new INT1, the
@@ -20500,7 +20517,9 @@ r491_carry_done: ;
                  * pass(77448)=F41D0231 (movie module initialized EARLY) and
                  * FDFC=1 (we bypassed the file layer's completion steps).
                  * Mirror those two completion writes; camera verifies. */
-                *(uint32_t *)(xenolift_mem + 0x4FDFCu) = 0u;
+                if (g_r1575_state != 1u || fdf8 == 0u) /* R1654: in state 1 only when the read is really complete - with FDF8=48440 still owed it
+                                                         * declared map 4's module read done and the unpack ran on a half-loaded buffer */
+                    *(uint32_t *)(xenolift_mem + 0x4FDFCu) = 0u;
                 *(uint32_t *)(xenolift_mem + 0x77448u) = 0u;
                 r472_fires++;
                 r472_chg = xl_wall();
@@ -28223,7 +28242,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
              * runs): LBA 8 +52 = 0x00FB00FC lands on block #8's header 0x800B3CCC
              * (sector base FE08=0x800B3C98), and HeapRelocate's HeapFreeAllBlocks
              * faults on it when mode 6 mounts at t~3s -> R777/R772/R765 restart. */
-            if (g_r1517_inloop &&
+            if (g_r1517_inloop && g_r1575_state != 1u /* R1656: not in state 1 - it faked a 1-sector read after the field movie's SetFilter (0x0D) and the player's data handler looped in CdGetSector */ &&
                 cd_seek_lba < 150u && fdf80 == 0u && cd_data_n >= 2048u && zrf0_fires < 40u &&
                 (fe1c0 == 0u || fe1c0 == 6u || fe1c0 == 7u || fe1c0 == 10u || fe1c0 == 11u)) {
                 if (zrf0_armed) {
@@ -28751,7 +28770,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
                          xenolift_mem_read32(0x8004FE04u), xenolift_mem_read32(0x8004FE08u),
                          (unsigned)cd_pending, cd_arm_int1_pending ? 1u : 0u, cd_scheduled ? 1u : 0u);
             }
-            if ((cd_last_cmd == 0x02u || cd_last_cmd == 0x06u || cd_last_cmd == 0x0Du || cd_last_cmd == 0x01u)
+            if ((cd_last_cmd == 0x02u || cd_last_cmd == 0x06u || (cd_last_cmd == 0x0Du && g_r1575_state != 1u /* R1655 */) || cd_last_cmd == 0x01u)
                 && (xenolift_mem_read32(0x8004FE08u) >= 0x80000000u
                     || xenolift_mem_read32(0x8004FE08u) == 1u)
                 && cd_pending == 0
@@ -28817,7 +28836,7 @@ r861_out("[cd] fd-tick: converting stuck INT1 (pending=%u) via handler pair\n", 
             && cd_arm_int1_pending == 0
             && cd_scheduled == 0
             && xenolift_mem_read32(0x8004FE1Cu) == 1u
-            && (cd_last_cmd == 0x02u || cd_last_cmd == 0x06u || cd_last_cmd == 0x0Du)) {
+            && (cd_last_cmd == 0x02u || cd_last_cmd == 0x06u || (cd_last_cmd == 0x0Du && g_r1575_state != 1u /* R1655: 0x0D is SetFilter, not a read (R1314) */))) {
             if (r1464a_seen < 4u) {
                 r1464a_seen++;
                 r861_out("[armst28] R1464A near-miss @286CC (seek=%u cmd=%02X FDF8=%u FE04=%08X FE1C=%u) - armed-never-started posture seen\n",
@@ -33385,6 +33404,7 @@ static int r1394_interp(uint32_t entry)
         r680j_prev = npc; r680j_prev_pc = pc;
         r1523_tick(pc, entry); /* R1523 */
         g_r1590_ipc = pc; /* R1590 */
+        if (g_r1622_menu && pc == 0x801C5440u) g_r1625_done = 1; /* R1625e: New Game (item 2 -> 0x8001B970) executed - stop tapping */
         if (g_r1622_menu && (pc == 0x801D99A8u || pc == 0x801D99ACu || pc == 0x801C5450u || pc == 0x801D9A90u || pc == 0x801D98D0u)) { /* R1627 [ngdlg] New Game dialog */
             static uint32_t nd; uint32_t ctx = *(uint32_t *)(xenolift_mem + 0x625A0u) & 0x1FFFFFu;
             if (nd++ < 30u) xenolift_receipt("[ngdlg] R1627 pc=%08X s0=%08X s2=%08X s3=%08X sub=%u v1=%08X\n", pc, r[16], r[18], r[19], xenolift_mem[(ctx + 0x338u) & 0x1FFFFFu], r[3]);
