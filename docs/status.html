@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xenolift Status</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b1f24;--mute:#5b6470;--line:#dfe3e8;--ok:#1f7a4d;--now:#b35c00;--todo:#8a93a0;--acc:#2350c8}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--card:#1a1d21;--ink:#e6e8eb;--mute:#9aa3ad;--line:#2b3036;--ok:#4fc28a;--now:#f0a24a;--todo:#6b7480;--acc:#7da2ff}}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:20px;margin:0 0 2px}h2{font-size:15px;margin:22px 0 8px}
+.sub{color:var(--mute);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+ol.ladder{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+ol.ladder li{display:flex;gap:8px;align-items:baseline}
+.b{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.ok{color:var(--ok)}.now{color:var(--now)}.todo{color:var(--todo)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:12px}
+td.r{font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+.wrap{overflow-x:auto}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+img{max-width:100%;border-radius:6px;border:1px solid var(--line)}
+</style></head><body><main>
+<h1>Xenolift Status</h1>
+<div class="sub">Xenogears Disc 1 static recompilation, updated 2026-10-06 17:45. Source of truth: ~/Downloads/xenolift. Commits are local in xenolift-verify (not pushed).</div>
+
+<h2>Where the game gets to</h2>
+<div class="card"><ol class="ladder">
+<li><span class="b ok">done</span> Boot and the SquareSoft logo</li>
+<li><span class="b ok">done</span> Opening movie: all 233 MDEC frames, real-time pace</li>
+<li><span class="b ok">done</span> Title screen (map 490) renders and takes input</li>
+<li><span class="b ok">done</span> Title menu overlay (file 17) loads at its fixed address and runs</li>
+<li><span class="b ok">done</span> New Game is chosen through the real menu (cursor item 2)</li>
+<li><span class="b ok">done</span> Map 4 starts loading (t ≈ 24-33 s); its 507,904-byte ring read now completes</li>
+<li><span class="b ok">done</span> The field-movie module lands at its fixed address 0x801D3000 (R1646)</li>
+<li><span class="b ok">done</span> Module runs compiled (R1648): MDEC set up, frame buffers allocated, prologue movie 0x0F (446 frames) starts streaming</li>
+<li><span class="b ok">done</span> Prologue movie 0x0F streams (ReadS at ~170 sectors/s) and its MDEC frames reach VRAM (R1653-R1657)</li>
+<li><span class="b ok">done</span> Prologue plays cleanly: "I am Alpha and Omega..." and the space scene (R1690)</li>
+<li><span class="b now">now</span> Let the prologue run to its end and hand over to the first field (Lahan); intermittent CD stalls still stop some runs before the menu</li>
+<li><span class="b todo">later</span> Field gameplay (3D, actors, dialogue), then battle</li>
+</ol></div>
+
+<h2>Latest milestone (R1690)</h2>
+<div class="card">
+<p><b>The New Game prologue decodes cleanly.</b> Garbled frames came from a store guard (R518) that drops every 0x03 byte written at an address ending in 3. Map 4 copies the movie player byte by byte over memory the title menu used, so those bytes kept the menu's old values. That broke instructions such as <code>jr ra</code> and the player's VLC lookup tables (0x03F5 became 0x00F5, i.e. every negative long-code level). It was found by decoding the disc's STR frames offline (<code>tools/strv2.py</code>): frames 1-2 matched the runtime's MDEC input exactly, and frame 3 diverged at block 380 on exactly those values. R1690 exempts the module's block in state 1. The module now matches the attract copy byte for byte.</p>
+<p class="sub">GIF: ~/Desktop/xenolift_prologue.gif. Committed locally as ff8fae4.</p>
+</div>
+<h2>Opening movie remaster</h2>
+<div class="card">The 4K opening movie now shows the Square Enix logo (vector, traced from your reference, white letters with red bars on black). It unfolds from the line of light, holds, fades out, and after a 1 s pause the star leads into the Xenogears logo. File: ~/Desktop/xenolift_opening_movie_4k_square_enix.mov (15.6 s).</div>
+<h2>Fixes today</h2>
+<div class="card wrap"><table>
+<tr><th>R</th><th>Problem</th><th>Fix</th></tr>
+<tr><td class="r">1615</td><td>An old LZSS heal rewrote register t7 on every store, so PushMatrix smashed a heap header</td><td>Heal limited to the LZSS core</td></tr>
+<tr><td class="r">1619</td><td>Menu overlay landed at the wrong address (unmerged free blocks)</td><td>Merge free blocks before that allocation</td></tr>
+<tr><td class="r">1620</td><td>Kernel jumped into NOP-compiled overlay code, which wrecked the stack</td><td>Those functions defer to the file-17 interpreter</td></tr>
+<tr><td class="r">1625</td><td>Menu timed out with no input / cursor on CONTINUE</td><td>Virtual pad moves the cursor to New Game, then presses Cross</td></tr>
+<tr><td class="r">1630</td><td>No way to view the movie output</td><td>Frame dump plus a GIF encoder</td></tr>
+<tr><td class="r">1631</td><td>A forced-read heal hung the title ring</td><td>Disabled in state 1</td></tr>
+<tr><td class="r">1637</td><td>System text overwritten, so New Game hung</td><td>Snapshot it and restore it before the menu</td></tr>
+<tr><td class="r">1641</td><td>Menu returned with a drifted sp, so FieldMain crashed later</td><td>Restore entry sp/ra after the menu</td></tr>
+<tr><td class="r">1629/1642-1644</td><td>Field CD reads at 4-14 sectors/s, with stalls</td><td>150 sectors/s service, re-announced stuck sectors, Pause completion, poll-site flags</td></tr>
+<tr><td class="r">1645</td><td>Late Pause completion wiped the ring's ready callback</td><td>Keep the ring handler</td></tr>
+<tr><td class="r">1648</td><td>Field-movie module code was interpreted as menu code and jumped to 0x10</td><td>The file-17 window ends at 0x801D3000 once the menu returns</td></tr>
+<tr><td class="r">1649</td><td>Field movie restarts (VSync unpaced in state 1)</td><td>Movie pacing and CD service also for field movies</td></tr>
+<tr><td class="r">1650</td><td>R1458 discard ping-ponged with the FIFO re-prime</td><td>R1458 off in state 1</td></tr>
+<tr><td class="r">1653</td><td>State 1 ran at ~580 fps, so timeouts fired early (title, menu)</td><td>Real-time 60 Hz VSync pacing in state 1</td></tr>
+<tr><td class="r">1654</td><td>Rescue heal declared a half-loaded map-4 read done, so the unpack ran away</td><td>Only clear FDFC once FDF8 is 0</td></tr>
+<tr><td class="r">1655/1656</td><td>SetFilter (0x0D) treated as a read, so the player looped</td><td>0x0D read-inference and R515 off in state 1</td></tr>
+<tr><td class="r">1657</td><td>ReadS never started a read in state 1</td><td>Activate ReadS for field movies</td></tr>
+<tr><td class="r">1659</td><td>Pad interrupt frames overwrote FieldMain's return address</td><td>Interrupt handlers run on their own stack (as on hardware)</td></tr>
+<tr><td class="r">1662</td><td>D-pad taps raced the menu</td><td>Set the menu cursor directly (New Game)</td></tr>
+<tr><td class="r">1663</td><td>A heal reset the CD state during map 4's SetLoc</td><td>R1376 assist off in state 1</td></tr>
+<tr><td class="r">1669</td><td>Movie player's CD-DMA callback replayed via the archive-ring path</td><td>Only the ring callback goes that way</td></tr>
+<tr><td class="r">1690</td><td>R518 dropped 0x03 bytes of the movie module copy: broken code and VLC tables, noise frames</td><td>Exempt the module block in state 1</td></tr>
+<tr><td class="r">1646</td><td>Movie module landed at 0x801C52C0, not 0x801D3000</td><td>Same free-block merge before its allocation</td></tr>
+</table></div>
+
+<h2>Output so far</h2>
+<p class="sub">Full movie as a GIF: ~/Desktop/xenolift_opening_movie.gif</p>
+
+<h2>Test protocol</h2>
+<div class="card">One or more fixes, then one run capped at 90 s wall time (<code>boot_protocol.sh</code> with stop patterns and a 60 s kill). The stall is named from <code>trial_1.raw</code> right after each run.</div>
+</main></body></html>

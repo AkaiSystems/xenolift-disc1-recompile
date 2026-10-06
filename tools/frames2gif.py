@@ -56,12 +56,14 @@ def main():
         if len(raw) < w * h * 3: continue
         if raw == last: dup[-1] += 1; continue
         last = raw; frames.append(raw); dup.append(1)
-    delay_cs = max(2, round(100 / fps))
+    # each dump is one display refresh (fps per dump, 60 for the runtime's flips); accumulate real time so rounding doesn't drift
     g = bytearray(b'GIF89a') + struct.pack('<HHBBB', w, h, 0xF7, 0, 0) + pal
     g += b'\x21\xFF\x0BNETSCAPE2.0\x03\x01\x00\x00\x00'  # loop forever
+    t_acc = 0.0; t_emitted = 0
     for raw, n in zip(frames, dup):
+        t_acc += n * 100.0 / fps; d = max(2, int(round(t_acc)) - t_emitted); t_emitted += d
         idx = bytes(((raw[i] >> 5) << 5) | ((raw[i + 1] >> 5) << 2) | (raw[i + 2] >> 6) for i in range(0, len(raw), 3))
-        g += b'\x21\xF9\x04\x00' + struct.pack('<H', delay_cs * n) + b'\x00\x00'
+        g += b'\x21\xF9\x04\x00' + struct.pack('<H', d) + b'\x00\x00'
         g += b'\x2C' + struct.pack('<HHHHB', 0, 0, w, h, 0) + b'\x08' + lzw(idx)
     g += b'\x3B'
     open(outp, 'wb').write(g)
